@@ -1,0 +1,371 @@
+#pragma once
+
+#include <Math/Random/GlobalRandom.hpp>
+#include <Container/ArrayS2/ArrayS2.hpp>
+
+#include <Math/Random/GlobalRandomThreadSafe.hpp>
+
+/*
+	DiamondSquareAlgorithm
+
+	This algorithm should have less artifacts than the midpoint displacement algorithm.
+
+	The passed array must be initialised with 0s.
+
+	Implementation seems to be imperfect (most likely for diamond mode). Requires tweaking to get good results.
+
+	High smoothing causes strange artifacts. Must investigate.
+
+	When variance hits 0, artifacts happen.
+
+	Using doubles for the array might reduce artifacts.
+
+	In the future I would like multithreading.
+
+	0223413688. Algorithm will now respect non-zero entries by leaving them alone.
+
+	023-236-2049: Fixed bug where freesteps were only being done in diamond mode. (This may have made artifacts worse... Maybe change it. (just comment out the freesteps bit).
+
+	025-162-5792: Removed old code. Noticed that aValueTable isn't working properly. Improved performance, etc, etc. Removed thread related stuff, since this library has nothing to do with threads at the moment. Still needs work.
+
+	The value table isn't working properly on the fly, so I made it do it again at the end. This can be fixed later. Value table seems to be working now.
+
+	Smoothing now continues through free steps to ensure consistent smoothing while playing with free steps values.
+	
+	//Variance should not be set excessively high otherwise it will bias towards extreme values. A good rule is to start it at half the maximum range.
+	//Tweaked variance random range to respect bounds.
+*/
+
+class DiamondSquareAlgorithm
+{
+	private:
+	Random random;
+	
+
+	//MTRand random;
+
+	static void addToValueTable(int* valueTable, int value)
+	{
+		if ( valueTable!=0 )
+		{
+			valueTable[value]++;
+		}
+	}
+
+	public:
+	
+	int seed;
+	//bool wrappingMode;
+	
+	bool wrapX;
+	bool wrapY;
+	
+	DiamondSquareAlgorithm()
+	{
+		seed = 0;
+		wrapX=false;
+		wrapY=false;
+	}
+
+	void generate(ArrayS2 <unsigned char>* aMap=0, int* aValueTable=0, int freeSteps = 0, double smoothing = 0.85, double variance = 250, double varianceDecrement = 0.1)
+	{
+		std::cout<<"Passed seed is: "<<seed<<".\n";
+		if ( seed==0 )
+		{
+			random.seed();
+		}
+		else
+		{
+			std::cout<<"Seed is fixed at "<<seed<<".\n";
+			random.seed(seed);
+		}
+		//std::cout<<"GenerateThreadSafe\n";
+			// RESET VALUE TABLE
+		if ( aValueTable!=0 )
+		{
+			for ( int i=0;i<256;++i)
+			{
+				aValueTable[i]=0;
+			}
+		}
+
+
+		int freeStepValue = -1; // -1 == random.
+
+		int squareSize = aMap->nX-1;
+
+		// BASE CASE: SET CORNER VALUES (ONLY IF THEY AREN'T ALREADY SET).
+		// NOTE THAT A VALUE OF 0 WILL ALWAYS BE OVERWRITTEN.
+		//if ( wrappingMode==false )
+		{
+			if ( (*aMap)(0,0) == 0 )
+			{
+				(*aMap)(0,0)=random.randInt(255);
+			}
+			addToValueTable(aValueTable,(*aMap)(0,0));
+
+			if ( (*aMap)(0,aMap->nY-1) == 0 )
+			{
+				(*aMap)(0,aMap->nY-1)=random.randInt(255);
+			}
+			addToValueTable(aValueTable,(*aMap)(0,aMap->nY-1));
+
+			if ( (*aMap)(aMap->nX-1,0) == 0 )
+			{
+				(*aMap)(aMap->nX-1,0)=random.randInt(255);
+			}
+			addToValueTable(aValueTable,(*aMap)(aMap->nX-1,0));
+
+			if ( (*aMap)(aMap->nX-1,aMap->nY-1) == 0 )
+			{
+				(*aMap)(aMap->nX-1,aMap->nY-1)=random.randInt(255);
+			}
+			addToValueTable(aValueTable,(*aMap)(aMap->nX-1,aMap->nY-1));
+		}
+		// else
+		// {
+			// const int cornerValue = random.randInt(255);
+			// addToValueTable(aValueTable,cornerValue);
+			// addToValueTable(aValueTable,cornerValue);
+			// addToValueTable(aValueTable,cornerValue);
+			// addToValueTable(aValueTable,cornerValue);
+			// (*aMap)(0,0)=cornerValue;
+			// (*aMap)(0,aMap->nY-1)=cornerValue;
+			// (*aMap)(aMap->nX-1,0)=cornerValue;
+			// (*aMap)(aMap->nX-1,aMap->nY-1)=cornerValue;
+		// }
+
+		bool squareMode = true;
+
+		while ( squareSize > 1 )
+		{
+			if ( squareMode==true)
+			{
+				// Skip the last tile because there's no need to do them.
+				for (int _y=0;_y<aMap->nY-1;_y+=squareSize)
+				{
+					for (int _x=0;_x<aMap->nX-1;_x+=squareSize)
+					{
+						int targetX = _x + (squareSize/2);
+						int targetY = _y + (squareSize/2);
+
+						if ( (*aMap)(targetX,targetY) == 0 ) // DON'T OVERWRITE NON-ZERO ENTRIES.
+						{
+							if ( freeSteps > 0 )
+							{
+								if ( freeStepValue == -1 )
+								{
+									const unsigned char _rand = random.randInt(255);
+									(*aMap)(targetX,targetY)=_rand;
+									addToValueTable(aValueTable,_rand);
+								}
+								else
+								{
+									(*aMap)(targetX,targetY)=freeStepValue;
+									addToValueTable(aValueTable,freeStepValue);
+								}
+							}
+							else
+							{
+								int nCorners = 0;
+								int totalCorners = 0;
+
+									// ADD UP CORNERS TO GET AVERAGE.
+								if ( aMap->isSafe(_x,_y) == true )
+								{
+									++nCorners;
+									totalCorners+=(*aMap)(_x,_y);
+								}
+								if ( aMap->isSafe(_x+squareSize,_y) == true )
+								{
+									++nCorners;
+									totalCorners+=(*aMap)(_x+squareSize,_y);
+								}
+								if ( aMap->isSafe(_x,_y+squareSize) == true )
+								{
+									++nCorners;
+									totalCorners+=(*aMap)(_x,_y+squareSize);
+								}
+								if ( aMap->isSafe(_x+squareSize,_y+squareSize) == true )
+								{
+									++nCorners;
+									totalCorners+=(*aMap)(_x+squareSize,_y+squareSize);
+								}
+
+									// NCORNERS SHOULD ALWAYS EQUAL. SO THE BOUNDS TESTING WOULD NOT NORMALLY BE REQUIRED.
+									const int average = totalCorners/4;
+
+								//int variance2 = random.randInt(variance) - (variance/2);
+								int result = average;
+								if ( variance > 0 )
+								{
+											// Ensure that random range stays in bounds to prevent biases from rounding. This pokes lots of holes in landmasses though, so I've disabled it.
+									int lowerRange = -variance;
+									//if (lowerRange<0) { lowerRange=0; }
+									int higherRange = variance;
+									//if (higherRange > 255) { higherRange = 255; }
+									result = average+random.range(lowerRange,higherRange);
+								}
+								
+									// Just to be sure.
+								if (result<0) { result=0; }
+								if (result>255) { result=255; }
+
+								(*aMap)(targetX,targetY)=result;
+								addToValueTable(aValueTable,result);
+							}
+						}
+						else
+						{
+							// MAKE SURE NON-ZERO VALUES STILL GET COUNTED IN THE TABLE.
+							addToValueTable(aValueTable,(*aMap)(targetX,targetY));
+						}
+					}
+				}
+			}
+			else // DIAMOND MODE
+			{
+				squareSize/=2;
+
+					// NEED TO RECHECK THIS. EARLIER NOTES INDICATE POSSIBLE PROBLEM.
+
+				for (int _y=0;_y<aMap->nY;_y+=squareSize)
+				{
+					for (int _x=0;_x<aMap->nX;_x+=squareSize)
+					{
+						// if ( wrappingMode == true )
+						// {
+							// if ( _y == 0 )
+							// {
+								// if ( (*amap)(_x,aMap->nY-1) != 0 )
+								// {
+									// (*aMap)(_x,_y)=(*amap)(_x,aMap->nY-1);
+								// }
+							// }
+						// }
+						
+						
+						if ( (*aMap)(_x,_y) == 0 ) // DON'T OVERWRITE NON-ZERO ENTRIES.
+						{
+							if ( freeSteps > 0 )
+							{
+								if ( freeStepValue == -1 )
+								{
+									const unsigned char _rand = random.randInt(255);
+									(*aMap)(_x,_y)=_rand;
+									addToValueTable(aValueTable,_rand);
+								}
+								else
+								{
+									(*aMap)(_x,_y)=freeStepValue;
+									addToValueTable(aValueTable,freeStepValue);
+								}
+							}
+							else
+							{
+								double total=0;
+								int nSides=0; // NOTE THAT IN THIS CASE NSIDES MAY NOT BE 4.
+
+								if ( aMap->isSafe(_x-squareSize,_y) == true )
+								{
+									++nSides;
+									total+= (*aMap)(_x-squareSize,_y);
+								}
+								if ( aMap->isSafe(_x,_y+squareSize) == true )
+								{
+									++nSides;
+									total+= (*aMap)(_x,_y+squareSize);
+								}
+								if ( aMap->isSafe(_x+squareSize,_y) == true )
+								{
+									++nSides;
+									total+= (*aMap)(_x+squareSize,_y);
+								}
+								if ( aMap->isSafe(_x,_y-squareSize) == true )
+								{
+									++nSides;
+									total+= (*aMap)(_x,_y-squareSize);
+								}
+
+
+								int average = 0;
+								if (nSides!=0)
+								{
+									average = total/nSides;
+								}
+
+								int result = average+random.range(-variance,variance);
+
+								if (result<0) { result=0; }
+								if (result>255) { result=255; }
+
+								(*aMap)(_x,_y)=result;
+								addToValueTable(aValueTable,result);
+								
+								// Wrap X and Y. This is a basic implementation which works well enough. Need to improve base case.
+								if ( wrapX == true && _x == 0 )
+								{
+									(*aMap)(aMap->nX-1,_y) = result;
+								}
+								if ( wrapY == true && _y == 0 )
+								{
+									(*aMap)(_x,aMap->nY-1) = result;
+								}
+							}
+						}
+						else
+						{
+							// MAKE SURE NON-ZERO VALUES STILL GET COUNTED IN THE TABLE.
+							//std::cout<<"Notouch\n";
+							//addToValueTable(aValueTable,(*aMap)(_x,_y));
+						}
+					}
+				}
+			}
+			squareMode = !squareMode;
+
+
+				// WE DON'T MODIFY VARIANCE UNTIL THE FREE STEPS RUN OUT.
+			if ( freeSteps > 0 )
+			{ --freeSteps; }
+			//else
+			//{
+				
+					// Smoothing will not be ignored by freesteps because this changes smoothing when changing freesteps.
+					// This looks like it needs to be debugged.
+				if ( variance > 0 )
+				{
+					variance *= smoothing;
+					variance-=varianceDecrement;
+				}
+				if ( variance < 1 )
+				{ variance=0; }
+				//{ variance=1; }
+			
+				
+				//variance *= smoothing;
+				//variance=10;
+			//}
+			//std::cout<<"Free step counter: " <<freeSteps<<".\n";
+		}
+
+			// TEMPORARY FIX FOR VALUE TABLE PROBLEMS.
+		if (aValueTable!=0)
+		{
+			for ( int i=0;i<256;++i)
+			{
+				aValueTable[i]=0;
+			}
+
+			for (int _y=0;_y<aMap->nY;++_y)
+			{
+				for (int _x=0;_x<aMap->nX;++_x)
+				{
+					//addToValueTable(aValue);
+					aValueTable[(*aMap)(_x,_y)]++;
+				}
+			}
+		}
+	}
+
+};
