@@ -38,7 +38,7 @@ Code for file operations. Allows easy creation, deletion, and modification of fi
 Current OpenGL code used for the projects.
 
 #### Graphics
-Code relating to textures, images and fonts.
+Code relating to textures, images and fonts. Contains lodepng and picopng.
 
 #### GUI
 Code relating to GUI controls, such as scrollbars, textboxes, buttons, etc.
