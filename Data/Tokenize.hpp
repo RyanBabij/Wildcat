@@ -79,7 +79,6 @@ class Tokenize
 				currentLine+=_data[i];
 			}
 		}
-
 		return vTokenized;
 	}
 

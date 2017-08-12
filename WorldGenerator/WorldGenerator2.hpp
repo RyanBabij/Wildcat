@@ -1028,10 +1028,10 @@ class WorldGenerator2
 		FileManagerStatic::writeString("WILDCAT_WORLDGEN_SAVEDATA 10005.\nWorld Metadata goes here. Tile data follows.\n","worldSaveData.txt");
 		FileManagerStatic::writeString("Format:[Land/ocean][Biome][Heightmap (3 digits)][tile seed (9 digits)][Good/evil][delimiter (comma)]\n","worldSaveData.txt");
 		
-		std::string saveDataMapSize=DataTools::toString(mapSize,5);
-		FileManagerStatic::writeString(saveDataMapSize+"\n[BEGIN_WORLD_DATA]","worldSaveData.txt");
+		std::string saveDataMapSize="<MAP_SIZE>"+DataTools::toString(mapSize,5)+"</MAP_SIZE>";
+		FileManagerStatic::writeString(saveDataMapSize+"\n<WORLD_DATA>","worldSaveData.txt");
 
-		FileManagerStatic::writeString(landFormSaveData+"[END_WORLD_DATA]","worldSaveData.txt");
+		FileManagerStatic::writeString(landFormSaveData+"</WORLD_DATA>","worldSaveData.txt");
 		
 		
 			// GREYSCALE.PNG
