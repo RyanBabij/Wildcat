@@ -1,78 +1,78 @@
 # Wildcat
 The Wildcat library is my personal code library for game development.
 
-### Audio
+#### Audio
 Contains code for playing audio in wav format. Uses OpenAL.
 
-### Board
+#### Board
 Code for manipulating "Boards" which are the containers for objects in a tile-based game.
 
-### BoardViewer
+#### BoardViewer
 Code for rendering "Boards" which are the containers for objects in a tile-based game.
 
-### Checksum
+#### Checksum
 Code for easily creating checksums of files and data. Uses md5.
 
-### Collision
+#### Collision
 Code for detecting and handling collisions between 2d shapes.
 
-### Container
+#### Container
 Code for handling 2d arrays, 3d arrays and vectors.
 
-### Data
+#### Data
 Code for bitwise operations, conversions between datatypes, miscellaneous operations, serialisation, tokenisation and strings.
 
-### Debug
+#### Debug
 Code to aid debugging.
 
-### Device
+#### Device
 Code for handling display output, and keyboard and mouse input.
 
-### ErrorHandling
+#### ErrorHandling
 Probably should be in Debug.
 
-### File
+#### File
 Code for file operations. Allows easy creation, deletion, and modification of files. Also contains tools for savefiles.
 
-### GL
+#### GL
 Current OpenGL code used for the projects.
 
-### Graphics
+#### Graphics
 Code relating to textures, images and fonts.
 
-### GUI
+#### GUI
 Code relating to GUI controls, such as scrollbars, textboxes, buttons, etc.
 
-### Interface
+#### Interface
 Code to aid abstraction. Guarantees various functions.
 
-### LogicTick
+#### LogicTick
 Code for handling logic ticks for gameplay.
 
-### Math
+#### Math
 Code for mathematical algorithms, includng random number generation.
 
-### Misc
+#### Misc
 Any self contained functions which I don't know where to put.
 
-### NameGen
+#### NameGen
 Code for random name generation.
 
-### Output
+#### Output
 
-### Render
+#### Render
 
-### Sleep
+#### Sleep
 Small cross-platform library for allowing sleep between Windows and Linux.
 
-### String
+#### String
 Wrapper for std::string, has some extra functions.
 
-### Thread
+#### Thread
 Code for threading.
 
-### Time
+#### Time
 Code for timers and calendars.
 
-### WorldGenerator
+#### WorldGenerator
 Code for random world generation algorithms (pretty much diamond-square with a few twists).
