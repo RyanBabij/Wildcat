@@ -16,6 +16,13 @@
 
 #include <Math/BasicMath/BasicMath.hpp> // TO CHECK IF MAPSIZE IS POW2+1.
 
+#include <File/FileManagerStatic.hpp> /* For saving the world data to file. */
+
+#include <thread>
+#include <mutex>
+#include <condition_variable> // std::condition_variable
+#include <Time/Timer.hpp>
+
 /*	WorldGenerator2
 	#include <WorldGenerator/WorldGenerator2.hpp>
 
@@ -133,9 +140,13 @@ class WorldGenerator2
 	private:
 
 			// RNG for generating seeds.
-		Random random;
+		RandomNonStatic random;
 		// Landform RNG.
 	//Random randomLandform;
+	
+	std::mutex mutexArrayAccess;
+	
+	//std::condition_variable cvDesertFinished;
 
 
 	public:
@@ -165,15 +176,20 @@ class WorldGenerator2
 	bool islandMode; // SETS EDGES AS WATER.
 	bool landMode; // SETS EDGES AS LAND.
 
-	enum enumBiome { NOTHING=0, OCEAN=1, GRASSLAND=2, FOREST=3, DESERT=4, MOUNTAIN=5, SNOW=6, HILLY=7, JUNGLE=8, WETLAND=9, STEPPES=10, CAVE=11, RUIN=12, ICE=13};
-	
+	enum enumBiome { NOTHING=0, OCEAN=1, GRASSLAND=2, FOREST=3, DESERT=4, MOUNTAIN=5, SNOW=6, HILLY=7, JUNGLE=8, WETLAND=9, STEPPES=10, CAVE=11, RUIN=12, ICE=13, RIVER=14};
+	//const std::string biomeName [15] = { "nothing", "ocean", "grassland", "forest", "desert", "mountain", "snow", "hilly", "jungle", "wetland", "steppes", "cave", "ruin", "ice", "river" };
+	static std::string biomeName [15];
+	static int N_BIOMES;
+	// Initialised as:
+	//std::string WorldGenerator2::biomeName [15] = { "nothing", "ocean", "grassland", "forest", "desert", "mountain", "snow", "hilly", "jungle", "wetland", "steppes", "cave", "ruin", "ice", "river" };
 	//enum enumFeature { NOTHING=0, CAVE=1, PRECURSOR_RUIN=2 };
 	
 	ArrayS2 <WorldGenerator2_Tile> aTile;
 
 	ArrayS2 <unsigned char> aTerrainType;
 	ArrayS3 <unsigned char> aTopoMap;
-	ArrayS2 <unsigned char> aHeightMap;
+	ArrayS2 <unsigned char> aHeightMap; /* This one is for landmasses. It should really be called aLandMassMap */
+	ArrayS2 <unsigned char> aHeightMap2; /* This one is for elevations */
 	
 	ArrayS2 <unsigned char> aTectonicMap;
 	
@@ -197,8 +213,10 @@ class WorldGenerator2
 
 	WorldGenerator2()
 	{
+			// seed is a core seed. If this is selected, it is used to create the other seeds.
 			// seed 0 is random seed.
 		seed=0;
+		
 		landformSeed=0;
 		oceanPercent=0.5;
 		mountainPercent=0.025;
@@ -238,7 +256,7 @@ class WorldGenerator2
 		seaLevel=0;
 	}
 	
-	void createLand()
+	void createLand(int _seed = 0)
 	{
 		for ( int i=0;i<256;++i)
 		{ heightTable[i] = 0; }
@@ -258,11 +276,12 @@ class WorldGenerator2
 		landSmoothing=0.78;
 		
 			// HEIGHTMAP TABLE FREESTEPS SMOOTHING VARIANCE
-		dsa.seed = landformSeed;
+		dsa.seed = _seed;
 		dsa.wrapX = wrapX;
 		dsa.wrapY = wrapY;
 		
 		dsa.generate(&aHeightMap, heightTable, freeSteps, landSmoothing, variance, 0);
+		//exit(1);
 
 		//unsigned char seaLevel=0;
 		seaLevel=0;
@@ -299,7 +318,129 @@ class WorldGenerator2
 		
 		// TODO: OPTION TO REMOVE DIAGONAL LAND/SEA CONNECTIONS FOR BETTER GAMEPLAY.
 	}
+	
+	
+	void generateHeightmap()
+	{
+		std::cout<<"Generating heightmap.\n";
 
+		aHeightMap2.init(mapSize,mapSize,0);
+
+
+		DiamondSquareAlgorithm dsa;
+		landSmoothing=0.78;
+		
+			// HEIGHTMAP TABLE FREESTEPS SMOOTHING VARIANCE
+		dsa.seed = landformSeed+1; /* Temporary */
+		dsa.wrapX = wrapX;
+		dsa.wrapY = wrapY;
+		
+		dsa.generate(&aHeightMap, 0, freeSteps, landSmoothing, variance, 0);
+
+
+
+		for (int _y=0;_y<mapSize;++_y)
+		{
+			for (int _x=0;_x<mapSize;++_x)
+			{
+				if ( aHeightMap(_x,_y) > 250 )
+				{
+					//aTerrainType(_x,_y) = MOUNTAIN;
+					//aTile(_x,_y).terrainType=MOUNTAIN;
+					//Count the land tiles for later use.
+					//++totalLandTiles;
+				}
+				else
+				{
+					// aTerrainType(_x,_y) = OCEAN;
+					// aTile(_x,_y).terrainType = OCEAN;
+					// ++totalOceanTiles;
+				}
+			}
+		}
+		
+		// TODO: OPTION TO REMOVE DIAGONAL LAND/SEA CONNECTIONS FOR BETTER GAMEPLAY.
+	}
+		
+		// Rivers should eventually go on their own layer.
+	void createRivers(int nRivers=1)
+	{
+		std::cout<<"Creating rivers.\n";
+		
+		//Get a heightmap for rivers.
+		
+		//Rivers always flow from mountain tiles.
+		
+		Vector <HasXY*> vMountainTiles;
+		
+		//ArrayS2 <int> aOceanID;
+		//aOceanID.init(mapSize,mapSize,0);
+
+		int nOceanTiles=0;
+		for(int _y=0;_y<mapSize;++_y)
+		{
+			for(int _x=0;_x<mapSize;++_x)
+			{
+				if (aTerrainType(_x,_y)==MOUNTAIN)
+				{
+					vMountainTiles.push(new HasXY (_x,_y));
+				}
+			}
+		}
+		vMountainTiles.shuffle();
+		
+		for (int i=0;i<nRivers && i<vMountainTiles.size();++i)
+		{
+			aTerrainType(vMountainTiles(i)) = RIVER;
+			
+			int currentX = vMountainTiles(i)->x;
+			int currentY = vMountainTiles(i)->y;
+			
+			int maxRiverLength = 200;
+			while (maxRiverLength-- > 0)
+			{
+			
+				// Spread to lowest neighbor which isn't river. Abort when next to ocean.
+				Vector <HasXY*>* vNeighbors = aTerrainType.getNeighbors(currentX,currentY,false);
+				vNeighbors->shuffle();
+				//int i2=0;
+				int lowestHeight = 256;
+				HasXY* lowestTile = 0;
+				
+				for (int i2=0;i2<vNeighbors->size();++i2)
+				{
+						// Abort when the river is touching an ocean.
+					if (aTerrainType((*vNeighbors)(i2)) == OCEAN )
+					{
+						lowestTile=0;
+						break;
+					}
+					
+					else if ( aTerrainType((*vNeighbors)(i2)) != RIVER && aHeightMap((*vNeighbors)(i2)) < lowestHeight )
+					{
+						lowestTile = (*vNeighbors)(i2);
+						lowestHeight = aHeightMap((*vNeighbors)(i2));
+					}
+				}
+				if ( lowestTile != 0 )
+				{
+					aTerrainType(lowestTile) = RIVER;
+					currentX = lowestTile->x;
+					currentY = lowestTile->y;
+				}
+				else
+				{
+					break;
+				}
+			}
+		
+		}
+	}
+
+	
+	// Possible biome configuration options:
+	// Pass it a map to share with other biomes.
+	// Specify it to use the highest, lowest, or middle values.
 	void addBiome(const std::string _name, const double _percentLand, const int _freeSteps, const int _smoothing, const int _seed=0)
 	{
 		//std::cout<<"Biome added: "<<_name<<".\n";
@@ -318,12 +459,17 @@ class WorldGenerator2
 		snowPercent=(double)Random::randomInt(100) / 100;
 		std::cout<<"snowPercent "<<snowPercent<<".\n";
 	}
+	
+	void test()
+	{
+		std::cout<<"ayo\n";
+	}
 
 
 		// NEED TO IMPLEMENT FALSE RETURN IF WORLD CAN'T BE GENERATED.
 	char generate()
 	{
-		std::cout<<"WorldGenerator::generate()\n";
+		std::cout<<"WorldGenerator::generate(). Seed is "<<seed<<".\n";
 
 		if ( mapSize <= 0 )
 		{
@@ -346,90 +492,354 @@ class WorldGenerator2
 				// Randomly generate the base seed.
 			seed = Random::randomInt(INT_MAX);
 			random.seed(seed);
-			
-				// LANDFORM SEED
-				// Still cycle through the RNG to preserve the number order while tweaking sub-seeds.
-			int _landformSeed = random.randomInt(INT_MAX);
-			if ( landformSeed == 0)
-			{ landformSeed = _landformSeed; }
-		
 		}
 		else
 		{
-				// RANDOMISE EVERYTHING.
 			random.seed(seed);
-			
-			int _landformSeed = random.randomInt(INT_MAX);
-			if ( landformSeed == 0)
-			{ landformSeed = _landformSeed; }
 		}
-		std::cout<<"Base seed: "<<seed<<".\n";
-		std::cout<<"Landform seed: "<<landformSeed<<".\n";
+		
+			// Derive the sub seeds from the main seed.
+			// There's a bunch here so I can pull more later without
+			// changing the RNG too much over time.
+		int subSeed [100];
+		for (int& s : subSeed)
+		{
+			s = random.randomInt(INT_MAX);
+		}
+		
+
+		landformSeed = subSeed[0];
+		
+
+		//std::cout<<"Base seed: "<<seed<<".\n";
+		//std::cout<<"Landform seed: "<<landformSeed<<".\n";
 
 		// MAKE DEFAULT TILE OCEAN.
 		aTerrainType.init(mapSize,mapSize,OCEAN);
 		
 		WorldGenerator2_Tile nullTile;
 		aTile.init(mapSize,mapSize,nullTile);
+		
 
-		std::cout<<"Creating landmasses.\n";
-		createLand();
+		
+			// For some reason, desert is special, with
+			//dsa.generate(&aBiomeMap,0,0,_smoothing,80);
+			// everything else is:
+			// dsa.generate(&aBiomeMap,0,_freeSteps,_smoothing,200);
+			
+			
+			// if (_biomeName=="Desert")
+		// {		dsa.generate(&aBiomeMap,0,0,_smoothing,80);
+		// }
+		// else
+		// {		dsa.generate(&aBiomeMap,0,_freeSteps,_smoothing,200);
+		// }
+		
+
+		std::cout<<"Creating landmasses with seed: "<<landformSeed<<".\n";
+		createLand(subSeed[0]);
 
 		std::cout<<"Eroding coast.\n";
 		erodeCoast(2);
+		
+		
+		//std::thread * t[8];
+		// GENERATE BIOMES HERE IN PARALLEL
+			// GENERATE HEIGHTMAP
+		//DiamondSquareAlgorithm dsa [8];
+		
+		// for (int i=0;i<8;++i)
+		// {
+			// //dsa[i].wrapX = wrapX;
+			// //dsa[i].wrapY = wrapY;
+			// //dsa[i].seed = subSeed[i+1];
+			
+			// //td::thread t (&WorldGenerator2::test, this);
+			
+			// //t[i] (&WorldGenerator2::test, &this);
+			// //t[i] (&WorldGenerator2::test, &this->test, 1);
+			// //t[i] (&ArrayS2 <unsigned char>::init, &this->aHeightMap, x,y,0);
+		// }
+		// //ArrayS2 <unsigned char> aBiomeMap;
+		// //aBiomeMap.init(mapSize,mapSize,0);
+		
+		// //unsigned char biomeTable [256] = {0};
+		// //int * const valueTableNull = 0;
+		// //std::thread t1 (&DiamondSquareAlgorithm::generate, &dsa[0],&aBiomeMap,valueTableNull,0,0,200,0.01,false);
+		// //std::thread t2 (&DiamondSquareAlgorithm::generate, &dsa[0],&aBiomeMap,valueTableNull,0,0,200,0.01,false);
+		// //std::thread t3 (&DiamondSquareAlgorithm::generate, &dsa[0],&aBiomeMap,valueTableNull,0,0,200,0.01,false);
+		
+		
+		
+		// //std::thread t1 (&DiamondSquareAlgorithm::generate, &dsa[0]);
+		// //std::thread t1 (&DiamondSquareAlgorithm::test, &dsa[0]);
+		// //std::thread t1 (&DiamondSquareAlgorithm::test2, &dsa[0], &aBiomeMap, valueTableNull);
+		
+		// for (int i=0;i<8;++i)
+		// {
+		// //	t[i].join();
+		// }
+		
+		//int biomeTable [256] = {0};
+		
+		
+		//std::thread t1 (&ArrayS2 <unsigned char>::init, &this->aHeightMap, x,y,0);
+		
+		//std::thread t1 (&ArrayS2 <unsigned char>::init, &this->aHeightMap, x,y,0);
 
-		createBiome (FOREST, 0.6, 8, 0.8, "Forest");
-		createBiome (STEPPES, 0.09, 3, 0.8, "Steppes");
-		createBiome (WETLAND, 0.2, 5, 0.8, "Wetland");
-		createBiome (JUNGLE, 0.28, 3, 0.8, "Jungle");
-		createBiome (DESERT, 0.11, 1, 0.8, "Desert");
-		createBiome (SNOW, 0.25, 2, 0.76, "Tundra");
-		createBiome (HILLY, 0.05, 8, 0.8, "Hills");
-		createBiome (MOUNTAIN, 0.08, 8, 0.8, "Mountains");
+		
+		//void createBiome (const enumBiome BIOME_TYPE, const double biomePercent, const int _freeSteps=0, const double _smoothing=0.85, const std::string _biomeName="?", ArrayS2 <unsigned char> * biomeMap=0, int _seed=0)
+		
+		
+		//void createBiome (const enumBiome BIOME_TYPE, const double biomePercent, const int _freeSteps=0, const double _smoothing=0.85, const std::string _biomeName="?", ArrayS2 <unsigned char> * biomeMap=0, int _seed=0)
+		
+		Timer timerBiome;
+		timerBiome.init();
+		timerBiome.start();
+		
+		// This section benefits greatly from multithreading.
+		//Biome creation time reduced from 3.2 seconds to 0.8 on my quad core.
+		
+		#define THREADED_BIOMES
+		
+		#ifndef THREADED_BIOMES
+		
+		createBiome (JUNGLE, 0.33, 4, 0.78, "Jungle", 0, subSeed[1]);
+		createBiome (FOREST, 0.5, 8, 0.8, "Forest", 0, subSeed[2]);
+		createBiome (WETLAND, 0.05, 11, 0.79, "Wetland", 0, subSeed[3]);
+		
+		createBiome (STEPPES, 0.05, 2, 0.77, "Steppes", 0, subSeed[4]);
+		
+		createBiome (SNOW, 0.25, 2, 0.76, "Tundra", 0, subSeed[5]);
+		
+		createBiome (DESERT, 0.11, 1, 0.8, "Desert", 0, subSeed[6]);
+		createBiome (HILLY, 0.05, 8, 0.8, "Hills", 0, subSeed[7]);
+		createBiome (MOUNTAIN, 0.07, 13, 0.78, "Mountains", 0, subSeed[8]);
+		
+		#else
+			
+		ArrayS2 <unsigned char> * const biomeMap2 = 0;
+		//ArrayS2 <unsigned char> * const biomeMap3 = 0;
+		
+		//int ss1 = subSeed[1];
+		//int ss2 = subSeed[2];
 		
 		
 		
+		std::thread t1 (WorldGenerator2::createBiome, this, WorldGenerator2::JUNGLE, 0.33, 4, 0.78, "Jungle", biomeMap2, subSeed[1]);
+		std::thread t2 (WorldGenerator2::createBiome, this, WorldGenerator2::FOREST, 0.5, 8, 0.8, "Forest", biomeMap2, subSeed[2]);
+		std::thread t3 (&WorldGenerator2::createBiome, this, WorldGenerator2::WETLAND, 0.05, 11, 0.79, "Wetland", biomeMap2, subSeed[3]);
+		std::thread t4 (&WorldGenerator2::createBiome, this, WorldGenerator2::STEPPES, 0.05, 2, 0.77, "Steppes", biomeMap2, subSeed[4]);
+		std::thread t5 (&WorldGenerator2::createBiome, this, WorldGenerator2::SNOW, 0.25, 2, 0.76, "Tundra", biomeMap2, subSeed[5]);
+		std::thread t6 (&WorldGenerator2::createBiome, this, WorldGenerator2::DESERT, 0.11, 1, 0.8, "Desert", biomeMap2, subSeed[6]);
+		std::thread t7 (&WorldGenerator2::createBiome, this, WorldGenerator2::HILLY, 0.05, 8, 0.8, "Hills", biomeMap2, subSeed[7]);
+		std::thread t8 (&WorldGenerator2::createBiome, this, WorldGenerator2::MOUNTAIN, 0.07, 13, 0.78, "Mountains", biomeMap2, subSeed[8]);
+
+		t1.join();
+		t2.join();
+		t3.join();
+		t4.join();
+		t5.join();
+		t6.join();
+		t7.join();
+		t8.join();
+			
+		#endif
+
+		timerBiome.update();
+		
+		std::cout<<"Biomes created in "<<timerBiome.fullSeconds<<" seconds.\n";
+
 			// Place caves. (somehow layer this over base biome)
 			
 			// Freesteps set high enough basically makes static.
 		//createBiome (CAVE, 0.01, 100, 0.86, "Cave");
 		//createBiomePrecise (RUIN, 0.0001, 100, 0.86, "Ruin");
+		
+		createRivers(20);	
 
 		std::cout<<"Creating ice caps.\n";
-		createIceCaps();
-		std::cout<<"Creating good/evil zones.\n";
+		createIceCaps(true, subSeed[10]);
+		//std::cout<<"Creating good/evil zones.\n";
 		createGoodEvil();
 		// createFeatures();
-		std::cout<<"Creating world info.\n";
-		createWorldInfo();
+		//std::cout<<"Creating world info.\n";
+		//createWorldInfo();
+		
+		
+		
+		// Build a topographical map. This should be ported because it should be build within the viewing app.
+		//buildTopoMap();
+		
 
 		return WILDCAT_NOT_IMPLEMENTED;
 	}
-
-	void createWorldInfo()
+	
+		// This should be done externally.
+	void buildTopoMap()
 	{
-		std::cout<<"Generating world info.\n";
+		aTopoMap.init(mapSize,mapSize,3,255);
+		
+// Create a lightening darkening texture fractal.
+		ArrayS2 <int> aLightModifier2 (mapSize,mapSize,0);
+		//aLightModifier2.init(mapSize,mapSize,0);
 
-		// FIGURE OUT HOW MANY BODIES OF WATER THERE ARE.
+			// GENERATE HEIGHTMAP
+		DiamondSquareAlgorithmCustomRange dsa2;
+		dsa2.maxValue=12;
+		//HEIGHTMAP TABLE FREESTEPS SMOOTHING
+		dsa2.generate(&aLightModifier2,0,2,0.75,250);
 
-		// COUNT OCEAN TILES.
-
-		ArrayS2 <int> aOceanID;
-		aOceanID.init(mapSize,mapSize,0);
-
-		int nOceanTiles=0;
-		for(int _y=0;_y<mapSize;++_y)
+		for (int _y=0;_y<mapSize;++_y)
 		{
-			for(int _x=0;_x<mapSize;++_x)
+			for (int _x=0;_x<mapSize;++_x)
 			{
-				if (aTerrainType(_x,_y)==OCEAN)
+				const int lightModifier = aLightModifier2(_x,_y);
+				//const int lightModifier = 0;
+				
+				int _red;
+				int _green;
+				int _blue;
+				
+				if ( aTerrainType(_x,_y) == OCEAN )
 				{
-					++nOceanTiles;
+					_red=50;
+					_green=50;
+					_blue=240;
 				}
+				else if ( aTerrainType(_x,_y) == RIVER )
+				{
+					 _red=100;
+					 _green=100;
+					 _blue=240;
+					// _red=255;
+					// _green=0;
+					// _blue=0;
+				}
+				else if ( aTerrainType(_x,_y) == MOUNTAIN )
+				{
+					_red=80;
+					_green=80;
+					_blue=80;
+				}
+				else if ( aTerrainType(_x,_y) == HILLY )
+				{
+					_red=80;
+					_green=140;
+					_blue=80;
+				}
+				else if ( aTerrainType(_x,_y) == FOREST )
+				{
+					_red=0;
+					_green=120;
+					_blue=0;
+				}
+				else if ( aTerrainType(_x,_y) == DESERT )
+				{
+					_red=200;
+					_green=200;
+					_blue=20;
+				}
+				else if ( aTerrainType(_x,_y) == SNOW )
+				{
+					_red=220;
+					_green=220;
+					_blue=240;
+				}
+				else if ( aTerrainType(_x,_y) == JUNGLE )
+				{
+					_red=0;
+					_green=70;
+					_blue=0;
+				}
+				else if ( aTerrainType(_x,_y) == WETLAND )
+				{
+					_red=20;
+					_green=150;
+					_blue=200;
+				}
+				else if ( aTerrainType(_x,_y) == STEPPES )
+				{
+					_red=180;
+					_green=120;
+					_blue=40;
+				}
+				else if ( aTerrainType(_x,_y) == ICE )
+				{
+					_red=255;
+					_green=255;
+					_blue=255;
+				}
+				else if ( aTerrainType(_x,_y) == CAVE )
+				{
+					_red=0;
+					_green=0;
+					_blue=0;
+				}
+				else if ( aTerrainType(_x,_y) == RUIN )
+				{
+					_red=255;
+					_green=0;
+					_blue=255;
+				}
+				else
+				{
+					_red=66;
+					_green=180;
+					_blue=66;
+				}
+				
+				//mof light values.
+				// _red += lightModifier;
+				// if ( _red > 255 ) { _red = 255; }
+
+				// _green += lightModifier;
+				// if ( _green > 255 ) { _green = 255; }
+				
+				// _blue += lightModifier;
+				//if ( _blue > 255 ) { _blue = 255; }
+				
+				_red -= lightModifier;
+				if ( _red < 0 ) { _red = 0; }
+
+				_green -= lightModifier;
+				if ( _green < 0 ) { _green = 0; }
+				
+				_blue -= lightModifier;
+				if ( _blue < 0 ) { _blue = 0; }
+				
+				
+				aTopoMap(_x,_y,0) = _red;
+				aTopoMap(_x,_y,1) = _green;
+				aTopoMap(_x,_y,2) = _blue;
 			}
 		}
-		std::cout<<"There are "<<nOceanTiles<<" ocean tiles.\n";
 	}
+
+	// void createWorldInfo()
+	// {
+		// std::cout<<"Generating world info.\n";
+
+		// // FIGURE OUT HOW MANY BODIES OF WATER THERE ARE.
+
+		// // COUNT OCEAN TILES.
+
+		// ArrayS2 <int> aOceanID;
+		// aOceanID.init(mapSize,mapSize,0);
+
+		// int nOceanTiles=0;
+		// for(int _y=0;_y<mapSize;++_y)
+		// {
+			// for(int _x=0;_x<mapSize;++_x)
+			// {
+				// if (aTerrainType(_x,_y)==OCEAN)
+				// {
+					// ++nOceanTiles;
+				// }
+			// }
+		// }
+		// std::cout<<"There are "<<nOceanTiles<<" ocean tiles.\n";
+	// }
 
 	
 		// WE MAY NEED TO CONSIDER WRAPPING IN ARRAY CHECKS, HOWEVER THE QUICK AND DIRTY NORMAL METHOD SEEMS TO BE WORKING OKAY FOR NOW.
@@ -598,10 +1008,10 @@ class WorldGenerator2
 	}
 	
 
-	void createIceCaps()
+	void createIceCaps(bool overrideAll = true, int _seed = 0)
 	{
 		//double biomePercent = 0.05;
-		double biomePercent = 0.055;
+		double biomePercent = 0.035;
 		
 		//std::cout<<"Creating ice caps.\n";
 		int biomeTable [256];
@@ -624,6 +1034,8 @@ class WorldGenerator2
 		DiamondSquareAlgorithm dsa;
 		dsa.wrapX = wrapX;
 		dsa.wrapY = wrapY;
+		dsa.seed = _seed;
+		
 		//HEIGHTMAP TABLE FREESTEPS SMOOTHING
 		dsa.generate(&aBiomeMap,0,0,0.8,100);
 		
@@ -682,7 +1094,12 @@ class WorldGenerator2
 			for (int _x=0;_x<mapSize;++_x)
 			{
 					// NEW: ONLY PUT ICE OVER THE WATER, SINCE ICE REPRESENTS FLOATING ICE.
-				if ( aBiomeMap(_x,_y) <= biomeThreshold  && aTerrainType(_x,_y) == OCEAN  )
+				if ( overrideAll==false && aBiomeMap(_x,_y) <= biomeThreshold  && aTerrainType(_x,_y) == OCEAN )
+				{
+					nnn++;
+					aTerrainType(_x,_y) = ICE;
+				}
+				else if (overrideAll==true && aBiomeMap(_x,_y) <= biomeThreshold )
 				{
 					nnn++;
 					aTerrainType(_x,_y) = ICE;
@@ -788,15 +1205,22 @@ class WorldGenerator2
 		std::cout<<"Final biome tiles: "<<nnn<<"\n";
 	}
 		
-	void createBiome (const enumBiome BIOME_TYPE, const double biomePercent, const int _freeSteps=0, const double _smoothing=0.85, const std::string _biomeName="?")
+		/* 0272144293 NEW FEATURE: Can pass a pre-existing map for the biome generator to use. */
+	void createBiome (const enumBiome BIOME_TYPE, const double biomePercent, const int _freeSteps=0, const double _smoothing=0.85, const std::string _biomeName="?", ArrayS2 <unsigned char> * const biomeMap=0, const int _seed=0)
 	{
+		//std::lock_guard<std::mutex> guard(mutexArrayAccess);
+		//std::lock_guard<std::mutex> guard2(render_mutex);
+		
 		std::cout<<"Creating biome: "<<_biomeName<<".\n";
-		int biomeTable [256];
-		for ( int i=0;i<256;++i)
-		{ biomeTable[i] = 0; }
+		//int biomeTable [256] = {0};
+		int biomeTable [256] = {0};
+		//for ( int i=0;i<256;++i)
+		//{ biomeTable[i] = 0; }
 
-		ArrayS2 <unsigned char> aBiomeMap;
-		aBiomeMap.init(mapSize,mapSize,0);
+		ArrayS2 <unsigned char> aBiomeMap (mapSize,mapSize,0);
+		//aBiomeMap.init(mapSize,mapSize,0);
+		
+
 		
 		
 		// DESERT TEST
@@ -839,7 +1263,7 @@ class WorldGenerator2
 		}
 		else if (_biomeName=="Tundra")
 		{
-			std::cout<<"SNOW\n";
+			//std::cout<<"SNOW\n";
 			for ( int _x=0;_x<aBiomeMap.nX;++_x)
 			{
 					//std::cout<<"Moving snow\n";
@@ -861,6 +1285,7 @@ class WorldGenerator2
 		DiamondSquareAlgorithm dsa;
 		dsa.wrapX = wrapX;
 		dsa.wrapY = wrapY;
+		dsa.seed = _seed;
 		
 		//HEIGHTMAP TABLE FREESTEPS SMOOTHING
 		if (_biomeName=="Desert")
@@ -869,6 +1294,8 @@ class WorldGenerator2
 		else
 		{		dsa.generate(&aBiomeMap,0,_freeSteps,_smoothing,200);
 		}
+		
+		
 
 
 			// MANUALLY BUILD THE BIOME TABLE (WE NEED TO ONLY COUNT LAND TILES).
@@ -911,7 +1338,24 @@ class WorldGenerator2
 		//std::cout<<"Biome threshold: "<<(int)biomeThreshold<<"\n";
 		int nnn=0;
 
+		
+		std::lock_guard<std::mutex> guard(mutexArrayAccess);
+		
+		//cvDesertFinished
+		
+		// std::thread t1 (WorldGenerator2::createBiome, this, WorldGenerator2::JUNGLE, 0.33, 4, 0.78, "Jungle", biomeMap2, subSeed[1]);
+		// std::thread t2 (WorldGenerator2::createBiome, this, WorldGenerator2::FOREST, 0.5, 8, 0.8, "Forest", biomeMap2, subSeed[2]);
+		// std::thread t3 (&WorldGenerator2::createBiome, this, WorldGenerator2::WETLAND, 0.05, 11, 0.79, "Wetland", biomeMap2, subSeed[3]);
+		// std::thread t4 (&WorldGenerator2::createBiome, this, WorldGenerator2::STEPPES, 0.05, 2, 0.77, "Steppes", biomeMap2, subSeed[4]);
+		// std::thread t5 (&WorldGenerator2::createBiome, this, WorldGenerator2::SNOW, 0.25, 2, 0.76, "Tundra", biomeMap2, subSeed[5]);
+		// std::thread t6 (&WorldGenerator2::createBiome, this, WorldGenerator2::DESERT, 0.11, 1, 0.8, "Desert", biomeMap2, subSeed[6]);
+		// std::thread t7 (&WorldGenerator2::createBiome, this, WorldGenerator2::HILLY, 0.05, 8, 0.8, "Hills", biomeMap2, subSeed[7]);
+		// std::thread t8 (&WorldGenerator2::createBiome, this, WorldGenerator2::MOUNTAIN, 0.07, 13, 0.78, "Mountains", biomeMap2, subSeed[8]);
+		
 			// MERGE DOWN THE BIOME LAYER
+			// THIS MUST BE DONE IN ORDER.
+
+			
 		for (int _y=0;_y<mapSize;++_y)
 		{
 			for (int _x=0;_x<mapSize;++_x)
@@ -923,7 +1367,13 @@ class WorldGenerator2
 				}
 			}
 		}
-		std::cout<<"Final biome tiles: "<<nnn<<"\n";
+		
+		// if ( BIOME_TYPE == JUNGLE)
+		// {
+			// cvDesertFinished.notify_all();
+		// }
+		
+		//std::cout<<"Final biome tiles: "<<nnn<<"\n";
 		
 		//std::cout<<"Debug biome table:\n";
 		
@@ -931,6 +1381,8 @@ class WorldGenerator2
 		//{
 		//std::cout<<"["<<i<<"] : "<<biomeTable[i]<<".\n";
 		//}
+		std::cout<<"END creating biome: "<<_biomeName<<".\n";
+		//std::cout<<"finished\n";
 	}
 
 		// DO NOT INCLUDE .PNG IN THE FILENAME, IT WILL BE INCLUDED AUTOMATICALLY.
@@ -1445,5 +1897,7 @@ class WorldGenerator2
 
 	}
 };
+
+std::string WorldGenerator2::biomeName [15] = { "nothing", "ocean", "grassland", "forest", "desert", "mountain", "snow", "hilly", "jungle", "wetland", "steppes", "cave", "ruin", "ice", "river" };
 
 #endif

@@ -7,28 +7,28 @@
 #ifndef GLOBALRANDOMTHREADSAFE_HPP
 #define GLOBALRANDOMTHREADSAFE_HPP
 
-#include <Math/Random/MersenneTwister.hpp>
-#include <Thread/Thread.hpp>
+//#include <Math/Random/MersenneTwister.hpp>
+//#include <Thread/Thread.hpp>
 
-class Random_ThreadSafe
-{
-	public:
-	ThreadLock randomLock;
+// class Random_ThreadSafe
+// {
+	// public:
+	// ThreadLock randomLock;
 
-	MTRand random;
+	// //MTRand random;
 	
-	Random_ThreadSafe()
-	{}
+	// Random_ThreadSafe()
+	// {}
 	
 
 	
-	int randomInt(const int val)
-	{
-		randomLock.lock();
-		const int randomNumber = random.randInt(val);
-		randomLock.unlock();
-		return randomNumber;
-	}
-};
+	// int randomInt(const int val)
+	// {
+		// randomLock.lock();
+		// const int randomNumber = random.randInt(val);
+		// randomLock.unlock();
+		// return randomNumber;
+	// }
+// };
 
 #endif

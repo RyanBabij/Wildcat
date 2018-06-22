@@ -1,8 +1,6 @@
 #ifndef DEVICE_MOUSE_HPP
 #define DEVICE_MOUSE_HPP
 
-#include <GL/glut.h>
-
 class Mouse
 {
 	public:
@@ -11,9 +9,13 @@ class Mouse
 	int lastX;
 	int lastY;
 	
+	/* I should make it so that isLeftClick is only down for the first event. isLeftDown is down until mouse button is lifted. */
+	
 	bool isLeftClick;
 	bool isRightClick;
 	bool isMiddleClick;
+	
+	bool isLeftDown;
 	
 	bool isWheelUp;
 	bool isWheelDown;
@@ -23,6 +25,8 @@ class Mouse
 		isLeftClick=false;
 		isRightClick=false;
 		isMiddleClick=false;
+		
+		isLeftDown=false;
 		
 		isWheelUp=false;
 		isWheelDown=false;

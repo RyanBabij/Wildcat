@@ -9,6 +9,8 @@
 
 #include <Data/DataTools.hpp>
 
+#include <experimental/filesystem> /* New c++14 experimental support for filesystems. Should be standard in C++17 */
+
 /* File/FileManager.hpp
 Library to make file IO easier. Also allows easier object serialisation.
 */
@@ -222,6 +224,136 @@ class FileManager
 		delete data3;
 	}
 
+	
+	static bool createDirectory(std::string _path)
+	{
+		if (CreateDirectory(_path.c_str(), NULL) ||
+			ERROR_ALREADY_EXISTS == GetLastError())
+		{
+			// CopyFile(...)
+		}
+		else
+		{
+			return false;
+		}
+		return true;
+	}
+	
+	// for some reason I'm having permission issues with this. Wait for g++ update. For now use DeleteDirectory instead.
+	static bool removeDirectory(std::string _path)
+	{
+		
+		
+		
+		//std::filesystem::remove_all("test");
+		
+		/* New c++17 feature. */
+		namespace filesys = std::experimental::filesystem;
+		filesys::remove(_path);
+		
+		return false;	
+		
+
+	}
+	//https://stackoverflow.com/questions/734717/how-to-delete-a-folder-in-c
+	
+static int DeleteDirectory(const std::string &refcstrRootDirectory, bool bDeleteSubdirectories = true)
+{
+	bool            bSubdirectory = false;       // Flag, indicating whether
+	// subdirectories have been found
+	HANDLE          hFile;                       // Handle to directory
+	std::string     strFilePath;                 // Filepath
+	std::string     strPattern;                  // Pattern
+	WIN32_FIND_DATA FileInformation;             // File information
+
+
+	strPattern = refcstrRootDirectory + "\\*.*";
+	hFile = ::FindFirstFile(strPattern.c_str(), &FileInformation);
+	if(hFile != INVALID_HANDLE_VALUE)
+	{
+		do
+		{
+			if(FileInformation.cFileName[0] != '.')
+			{
+				strFilePath.erase();
+				strFilePath = refcstrRootDirectory + "\\" + FileInformation.cFileName;
+
+				if(FileInformation.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+				{
+					if(bDeleteSubdirectories)
+					{
+						// Delete subdirectory
+						int iRC = DeleteDirectory(strFilePath, bDeleteSubdirectories);
+						if(iRC)
+							return iRC;
+					}
+					else
+						bSubdirectory = true;
+				}
+				else
+				{
+					// Set file attributes
+					if(::SetFileAttributes(strFilePath.c_str(),
+					FILE_ATTRIBUTE_NORMAL) == FALSE)
+					return ::GetLastError();
+
+					// Delete file
+					if(::DeleteFile(strFilePath.c_str()) == FALSE)
+					return ::GetLastError();
+				}
+			}
+		} while(::FindNextFile(hFile, &FileInformation) == TRUE);
+
+		// Close handle
+		::FindClose(hFile);
+
+		DWORD dwError = ::GetLastError();
+		if(dwError != ERROR_NO_MORE_FILES)
+		return dwError;
+		else
+		{
+			if(!bSubdirectory)
+			{
+				// Set directory attributes
+				if(::SetFileAttributes(refcstrRootDirectory.c_str(),
+				FILE_ATTRIBUTE_NORMAL) == FALSE)
+				return ::GetLastError();
+
+				// Delete directory
+				if(::RemoveDirectory(refcstrRootDirectory.c_str()) == FALSE)
+				return ::GetLastError();
+			}
+		}
+	}
+
+	return 0;
+}
+	
+	
+		// https://stackoverflow.com/questions/8233842/how-to-check-if-directory-exist-using-c-and-winapi
+	static bool directoryExists(std::string _dirName)
+	{
+		DWORD attribs = GetFileAttributesA(_dirName.c_str());
+		if (attribs == INVALID_FILE_ATTRIBUTES)
+		{
+			return false;
+		}
+		return (attribs & FILE_ATTRIBUTE_DIRECTORY);
+	}
+	
+	// Make a new blank file. If the file already exists, make it blank. Returns false if something went wrong.
+	static bool makeNewFile(const std::string filePath)
+	{
+		/* Create a blank file */
+		std::FILE * pFile = std::fopen (filePath.c_str(),"w");
+		if (pFile!=NULL)
+		{ std::fclose (pFile); }
+		return true;
+	}
+		inline static bool createFile(const std::string filePath)
+		{ return makeNewFile(filePath); }
+	
+	
 	~FileManager() {}
 };
 #endif

@@ -60,10 +60,111 @@ class Png
 	int nData;
 	bool useCompression;
 	
+		// Averages for faster rendering for small textures.
+	unsigned char averageRed, averageGreen, averageBlue;
+	
 	Png()
 	{
 		data=0;
 		useCompression=false;
+		
+		averageRed = 0;
+		averageGreen = 0;
+		averageBlue = 0;
+	}
+	
+	~Png()
+	{
+	//	delete [] data;
+	}
+	
+	void getAverageColour()
+	{
+		const double nValues = nX*nY;
+		double _averageRed = 0;
+		double _averageGreen = 0;
+		double _averageBlue = 0;
+
+		for (int _y=0;_y<nY;++_y)
+		{
+			for (int _x=0;_x<nX;++_x)
+			{
+				_averageRed += (getPixel3D(_x,_y,0)/nValues);
+				_averageGreen += (getPixel3D(_x,_y,1)/nValues);
+				_averageBlue += (getPixel3D(_x,_y,2)/nValues);
+			}
+		}
+		
+		averageRed = _averageRed;
+		averageGreen = _averageGreen;
+		averageBlue = _averageBlue;
+		
+		// for(int i=0;i<nValues;++i)
+		// { finalValue+=(data.at(i)/nValues); }
+
+		// return finalValue;
+	}
+	
+	void copy ( Png * png )
+	{
+		delete [] data;
+		nX = png->nX;
+		nY = png->nY;
+		nPixels = png->nPixels;
+		nData = png->nData;
+		useCompression = png->useCompression;
+		averageRed = png->averageRed;
+		averageGreen = png->averageGreen;
+		averageBlue = png->averageBlue;
+		
+		data = new unsigned char [nX*nY*4];
+		
+		for(int _y=0;_y<nY;++_y)
+		{
+			for(int _x=0;_x<nX;++_x)
+			{
+				setPixel3D(_x,_y,0, png->getPixel3D(_x,_y,0) );
+				setPixel3D(_x,_y,1, png->getPixel3D(_x,_y,1) );
+				setPixel3D(_x,_y,2, png->getPixel3D(_x,_y,2) );
+				setPixel3D(_x,_y,3, png->getPixel3D(_x,_y,3) );
+
+			}
+			if ( _y < 10 )
+			{
+				std::cout<<(int)getPixel3D(0,_y,0)<<"\n";
+			}
+		}
+	}
+	
+		// Rotate the image 90 degrees clockwise.
+	void rotate90Clockwise()
+	{
+		std::cout<<"rotating png\n";
+		
+		Png temp;
+		temp.copy(this);
+		
+		
+		
+		for(int _y=0;_y<nY;++_y)
+		{
+			for(int _x=0;_x<nX;++_x)
+			{
+				//setPixel3D(_x,_y,0, temp.getPixel3D(_y,_x,0) );
+				//setPixel3D(_x,_y,1, temp.getPixel3D(_y,_x,1) );
+				//setPixel3D(_x,_y,2, temp.getPixel3D(_y,_x,2) );
+				//setPixel3D(_x,_y,3, temp.getPixel3D(_y,_x,3) );
+				
+				setPixel3D(nY-_y-1,_x,0,temp.getPixel3D(_x,_y,0));
+				setPixel3D(nY-_y-1,_x,1,temp.getPixel3D(_x,_y,1));
+				setPixel3D(nY-_y-1,_x,2,temp.getPixel3D(_x,_y,2));
+				setPixel3D(nY-_y-1,_x,3,temp.getPixel3D(_x,_y,3));
+			}
+			if ( _y < 10 )
+			{
+				std::cout<<(int)getPixel3D(0,_y,0)<<"\n";
+			}
+		}
 	}
 	
 	inline unsigned char getPixel3D(const int _x, const int _y, const int _z)
@@ -101,7 +202,7 @@ class Png
 			
 			nX=decoder.infoPng.width;
 			nY=decoder.infoPng.height;
-			std::cout<<"PNG dimensions are: "<<nX<<", "<<nY<<".\n";
+			//std::cout<<"PNG dimensions are: "<<nX<<", "<<nY<<".\n";
 			
 			if(data==0)
 			{
@@ -198,7 +299,7 @@ class Png
 // }
 	
 		//LodePNG_encode_file(fileName.c_str(),mono->data,mono->nX,mono->nY,2,8);
-		std::cout<<"Encoding file: "<<fileName<<".\n";
+		std::cout<<"Encoding filez: "<<fileName<<".\n";
 		
 		//std::vector<unsigned char> buffer;
 		//encoder.encode(buffer, 0, mono->nX,mono->nY);

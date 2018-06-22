@@ -35,7 +35,7 @@ class MidpointDisplacement
 		
 		/* heightTable. A table that records a count of each height generated. */
 		
-	static void midpointDisplacement(ArrayS2 <unsigned char>* const heightMap, const int SEED=0,
+	void midpointDisplacement(ArrayS2 <unsigned char>* const heightMap, const int SEED=0,
 	const int BREAK_SMOOTHNESS=0, const int BROKEN_MULTIPLIER=0, const int SQUARESIZE_LIMIT=0, int freeSteps=0, int* heightTable=0)
 	{
 	
@@ -62,7 +62,7 @@ class MidpointDisplacement
 		
 		
 		/* Configure RNG. 0 = random seed. */
-		Random random;
+		RandomNonStatic random;
 		if(SEED!=0)
 		{ random.seed(SEED); }
 		
@@ -72,25 +72,25 @@ class MidpointDisplacement
 		// BASE CASE: SET CORNER VALUES (ONLY IF THEY AREN'T ALREADY SET).
 		if ( (*heightMap)(0,0) == 0 )
 		{
-			unsigned char _rand = Random::randomInt(255);
+			unsigned char _rand = random.randomInt(255);
 			(*heightMap)(0,0)=_rand;
 			addToValueTable(heightTable,_rand);
 		}
 		if ( (*heightMap)(0,heightMap->nY-1) == 0 )
 		{
-			unsigned char _rand = Random::randomInt(255);
+			unsigned char _rand = random.randomInt(255);
 			(*heightMap)(0,heightMap->nY-1)=_rand;
 			addToValueTable(heightTable,_rand);
 		}
 		if ( (*heightMap)(heightMap->nX-1,0) == 0 )
 		{
-			unsigned char _rand = Random::randomInt(255);
+			unsigned char _rand = random.randomInt(255);
 			(*heightMap)(heightMap->nX-1,0)=_rand;
 			addToValueTable(heightTable,_rand);
 		}
 		if ( (*heightMap)(heightMap->nX-1,heightMap->nY-1) == 0 )
 		{
-			unsigned char _rand = Random::randomInt(255);
+			unsigned char _rand = random.randomInt(255);
 			(*heightMap)(heightMap->nX-1,heightMap->nY-1)=_rand;
 			addToValueTable(heightTable,_rand);
 		}

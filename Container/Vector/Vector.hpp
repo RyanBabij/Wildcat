@@ -1,4 +1,6 @@
 #pragma once
+#ifndef WILDCAT_CONTAINER_VECTOR_HPP
+#define WILDCAT_CONTAINER_VECTOR_HPP
 
 /* #include <Container/Vector/Vector.hpp>
 Class to store an expandable list of items. Currently just a wrapper of std::vector with some additional functions.
@@ -6,6 +8,8 @@ Class to store an expandable list of items. Currently just a wrapper of std::vec
 
 #include <iostream>
 #include <vector>
+#include <algorithm> /* std::random_shuffle */
+#include <numeric> /* iota */
 
 /* Debug macro */
 #ifdef CONTAINER_VECTOR_VERBOSE
@@ -16,6 +20,7 @@ Class to store an expandable list of items. Currently just a wrapper of std::vec
 #undef verbose
 #define verbose //
 #endif
+
 
 
 template <class T>
@@ -40,11 +45,37 @@ class Vector
 	
 	Vector()
 	{}
+	
+	void shrinkToFit()
+	{
+		data.shrink_to_fit();
+	}
 
 	//Support added for initializer lists. Now you can build a Vector quick and easy:
 	// Vector <int> v {1,2,3,4};
 	Vector(std::initializer_list<T> init) : data(init)
 	{}
+	
+		// Initialise the vector with nSlots of uninitialized values.
+	Vector(int nSlots) : data(nSlots)
+	{}
+	
+	
+		/* ITERATORS
+			You can loop through a vector easily using:
+			
+			for(auto const& value: vChildren) { std::cout<<"Person: "<<value->firstName<<".\n"; }
+		
+		*/
+	
+	auto begin()
+	{
+		return data.begin();
+	}
+	auto end()
+	{
+		return data.end();
+	}
 	
 	
 	void copy (Vector <T> * _vector)
@@ -59,6 +90,12 @@ class Vector
 			push((*_vector)(i));
 		}
 	}
+	
+		/* Shuffles the entries in the vector */
+	void shuffle ()
+	{
+		std::random_shuffle(begin(),end());
+	}
 
 		// RETURN THE SLOT WITH THE PASSED VALUE. OTHERWISE RETURN -1.
 	int findSlot(T _value)
@@ -72,79 +109,132 @@ class Vector
 		}
 		return -1;
 	}
+	
+	//template <typename T>
+	std::vector<size_t> sort_indexes() {
+
+	  // initialize original index locations
+	  std::vector<size_t> idx(size());
+
+	  iota(idx.begin(), idx.end(), 0);
+ 
+	  // sort indexes based on comparing values in v
+	  sort(idx.begin(), idx.end(),
+		   [this](size_t i1, size_t i2) {return (*this)(i1) < (*this)(i2);});
+
+	  return idx;
+	}
 
 
 		// RETURN A VECTOR OF THE INDEXES SORTED ASCENDING (USING OPERATOR <).
+		// 0272534434 - The new algorithm is many times faster than my hand-written one. The old one took about 10 seconds to sort 5000 strings. This one is pretty much instant.
+		// Source: https://stackoverflow.com/questions/1577475/c-sorting-and-keeping-track-of-indexes
 	Vector <int> * getIndexesAscending()
 	{
-		Vector <int> * _vIndex = new Vector <int>;
+		Vector <int> * _vIndex = new Vector <int> (size());
+			// This function iterates through a container and fills it with an incrementing value.
+		iota(_vIndex->data.begin(),_vIndex->data.end(),0);
 
-		//Vector <int> vOrder;
-		// Get lowest number not currently added.
-		while (_vIndex->size() < size() )
-		{
-			int lowestSlot=-1;
-			for (int i=0;i<size();++i)
-			{
-				if ( _vIndex->contains(i) == false )
-				{
-					if (lowestSlot==-1 || (*this)(i) < (*this)(lowestSlot))
-					{
-						lowestSlot=i;
-					}
-				}
-			}
-			_vIndex->push(lowestSlot);
-			//std::cout<<(*this)(lowestSlot)<<".\n";
-		}
+	  // sort indexes based on comparing values in v. Using lambda function.
+	  sort(_vIndex->data.begin(), _vIndex->data.end(),
+		   [this](size_t i1, size_t i2) {return (*this)(i1) < (*this)(i2);});
 
-		return _vIndex;
+		   return _vIndex;
+
+		// //Vector <int> vOrder;
+		// // Get lowest number not currently added.
+		// while (_vIndex->size() < size() )
+		// {
+			// std::cout<<".";
+			// int lowestSlot=-1;
+			// for (int i=0;i<size();++i)
+			// {
+				// if ( _vIndex->contains(i) == false )
+				// {
+						// if ( lowestSlot != -1 )
+						// {
+							// std::cout<<"compare "<<(*this)(i)<<" < "<<(*this)(lowestSlot)<<".\n";
+						// }
+					// if (lowestSlot==-1 || (*this)(i) < (*this)(lowestSlot))
+					// {	
+						// lowestSlot=i;
+					// }
+				// }
+			// }
+			// _vIndex->push(lowestSlot);
+			// //std::cout<<(*this)(lowestSlot)<<".\n";
+		// }
+		// //std::sort (myvector.begin(), myvector.end()); 
+
+		//return _vIndex;
 	}
 		// RETURN A VECTOR OF THE INDEXES SORTED DESCENDING (USING OPERATOR >).
 	Vector <int> * getIndexesDescending()
 	{
-		Vector <int> * _vIndex = new Vector <int>;
+		Vector <int> * _vIndex = new Vector <int> (size());
+			// This function iterates through a container and fills it with an incrementing value.
+		iota(_vIndex->data.begin(),_vIndex->data.end(),0);
 
-		//Vector <int> vOrder;
-		// Get lowest number not currently added.
-		while (_vIndex->size() < size() )
-		{
-			int lowestSlot=-1;
-			for (int i=0;i<size();++i)
-			{
-				if ( _vIndex->contains(i) == false )
-				{
-					if (lowestSlot==-1 || (*this)(i) > (*this)(lowestSlot))
-					{
-						lowestSlot=i;
-					}
-				}
-			}
-			_vIndex->push(lowestSlot);
-			//std::cout<<(*this)(lowestSlot)<<".\n";
-		}
+	  // sort indexes based on comparing values in v. Using lambda function.
+	  sort(_vIndex->data.begin(), _vIndex->data.end(),
+		   [this](size_t i1, size_t i2) {return (*this)(i1) > (*this)(i2);});
 
-		return _vIndex;
+		   return _vIndex;
+
+		   
+		   
+		// Vector <int> * _vIndex = new Vector <int>;
+
+		// //Vector <int> vOrder;
+		// // Get lowest number not currently added.
+		// while (_vIndex->size() < size() )
+		// {
+			// int lowestSlot=-1;
+			// for (int i=0;i<size();++i)
+			// {
+				// if ( _vIndex->contains(i) == false )
+				// {
+					// if (lowestSlot==-1 || (*this)(i) > (*this)(lowestSlot))
+					// {
+						// lowestSlot=i;
+					// }
+				// }
+			// }
+			// _vIndex->push(lowestSlot);
+			// //std::cout<<(*this)(lowestSlot)<<".\n";
+		// }
+		// return _vIndex;
 	}
 
 		// RETURN A VECTOR WITH NO REPEATING ENTRIES.
 
 	// NOTE THAT THIS TAKES A WHILE WITH LARGE VECTORS ( > 10,000 ENTRIES )
-	Vector <T> * removeDuplicates()
+	// Vector <T> * removeDuplicates()
+	// {
+		// Vector <T> * vUnique = new Vector <T>;
+		// for(unsigned int i=0;i<data.size();++i)
+		// {
+			// //for(unsigned int i2=0;i2<vUnique->size();++i2)
+			// //{
+				// // IF NOT IN UNIQUE. ADD IT.
+				// if ( vUnique->findSlot(data[i]) == -1 )
+				// {
+					// vUnique->push(data[i]);
+				// }
+			// //}
+		// }
+		// return vUnique;
+	// }
+	
+	// NOTE THAT THIS TAKES A WHILE WITH LARGE VECTORS ( > 10,000 ENTRIES )
+	// New code copied from https://stackoverflow.com/questions/1041620/whats-the-most-efficient-way-to-erase-duplicates-and-sort-a-vector.
+	// Note: Consider using std::set for data which needs to be unique and always sorted.
+	void removeDuplicates()
 	{
-		Vector <T> * vUnique = new Vector <T>;
-		for(unsigned int i=0;i<data.size();++i)
-		{
-			//for(unsigned int i2=0;i2<vUnique->size();++i2)
-			//{
-				// IF NOT IN UNIQUE. ADD IT.
-				if ( vUnique->findSlot(data[i]) == -1 )
-				{
-					vUnique->push(data[i]);
-				}
-			//}
-		}
-		return vUnique;
+		
+		sort( data.begin(), data.end() );
+		data.erase( unique( data.begin(), data.end() ), data.end() );
+
 	}
 
 
@@ -243,10 +333,10 @@ class Vector
 	{
 		data.erase(data.begin()+_slot);
 	}
-	void removeSlot (const int _slot)
-	{ eraseSlot(_slot); }
-	void deleteSlot (const int _slot)
-	{ eraseSlot(_slot); }
+		void removeSlot (const int _slot)
+		{ eraseSlot(_slot); }
+		void deleteSlot (const int _slot)
+		{ eraseSlot(_slot); }
 
 	bool erasePosition(const int _slot)
 	{
@@ -267,6 +357,8 @@ class Vector
 		}
 		return false;
 	}
+		bool remove(const T item)
+		{ return erase(item); }
 
 	/* Finds the average of a value and the X values surrounding it, for every value in the vector. */
 	/* Radius is the range in one direction, therefore the total range is 2*radius. */
@@ -495,10 +587,17 @@ class Vector
 		}
 		data.clear();
 	}
+		inline void clearData()
+		{ clearPtr(); }
+		
 	void reserveSpace(const int nSpace)
 	{
 		data.reserve(nSpace);
 	}
+		void reserve (const int nSpace)
+		{
+			reserveSpace(nSpace);
+		}
 	inline bool isEmpty()
 	{
 		if(data.size()==0)
@@ -506,3 +605,6 @@ class Vector
 		return false;
 	}
 };
+
+
+#endif

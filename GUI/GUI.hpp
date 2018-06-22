@@ -26,130 +26,7 @@
 //using namespace Wildcat;
 
 
-/* GUI_Manager is the container for GUI objects. */
-class GUI_Manager: public DisplayInterface, public MouseInterface
-{
-	public:
-	bool active; /* Used to switch the menu off and on. */
-	/* Vector of all GUI controls. */
-	Vector <GUI_Interface*> vGUI;
-	GUI_Interface* selectedControl; /* selectedControl gets rendered last, to put it on top. It also recieves events first. */
 
-	int panelX1, panelY1, panelX2, panelY2; /* Optional. Sets the coordinates that the GUI panel occupies. */
-
-
-	GUI_Manager()
-	{ selectedControl=0;
-		active = true;
-	}
-
-	int panelNX()
-	{
-		return panelX2-panelX1;
-	}
-
-	void setFont(Wildcat::Font* _font)
-	{
-		for(int i=0;i<vGUI.size();++i)
-		{
-			vGUI(i)->setFont(_font);
-		}
-	}
-
-	void clearMemory()
-	{
-		vGUI.clear();
-	}
-
-	void moveAllControls (const int moveX, const int moveY)
-	{
-		for(int i=0;i<vGUI.size();++i)
-		{ vGUI(i)->movePanel(moveX,moveY);
-		}
-	}
-
-	void setPanel( const int _x1, const int _y1, const int _x2, const int _y2)
-	{
-		panelX1=_x1;
-		panelY1=_y1;
-		panelX2=_x2;
-		panelY2=_y2;
-	}
-
-	/* Add a control to the manager. It will then recieve events and can render. */
-	void addControl(GUI_Interface* gui)
-	{ vGUI.push(gui); }
-	void add(GUI_Interface* gui)
-	{ vGUI.push(gui); }
-
-	/* Remove a control from the manager. It will no longer recieve events or render. */
-	bool removeControl(GUI_Interface* gui)
-	{ return vGUI.erase(gui); selectedControl=0; }
-
-	/* Render all controls in the control vector. */
-	void render()
-	{
-		if(active)
-		{
-			for(int i=0;i<vGUI.size();++i)
-			{
-				if (vGUI(i)!=0)
-				{ vGUI(i)->render();
-				}
-				else
-				{
-					std::cout<<"Bad render.\n";
-				}
-			}
-
-			if(selectedControl!=0)
-			{ selectedControl->render();
-			}
-		}
-	}
-
-	bool mouseEvent(Mouse* mouse)
-	{
-		if(active)
-		{
-
-			/* Let the selectedcontrol get the first chance at input. */
-			if(selectedControl!=0 && selectedControl->mouseEvent(mouse)==true)
-			{ return true; }
-			for(int i=0;i<vGUI.size();++i)
-			{
-				if(vGUI(i)->mouseEvent(mouse)==true)
-				{
-					/* Interesting idea. If a control uses device input, then it is selected. */
-					selectedControl=vGUI(i);
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
-	bool keyboardEvent(Keyboard* keyboard)
-	{
-		if(active)
-		{
-			/* Let the selectedcontrol get the first chance at input. */
-			if(selectedControl!=0 && selectedControl->keyboardEvent(keyboard)==true)
-			{ return true; }
-			for(int i=0;i<vGUI.size();++i)
-			{
-				if(vGUI(i)->keyboardEvent(keyboard)==true)
-				{
-					/* Interesting idea. If a control uses device input, then it is selected. */
-					selectedControl=vGUI(i);
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
-};
 
 
 
@@ -657,6 +534,88 @@ class GUI_TextBox: public GUI_Interface
 
 };
 
+/* Link. Clickable text. */
+class GUI_Link: public GUI_Interface
+{
+	public:
+	std::string text;
+	//Font* font;
+	Colour boxColour;
+
+	bool centeredX, centeredY;
+	
+	bool clicked;
+	Wildcat::Region regionButtonArea;
+
+	GUI_Link() : GUI_Interface() /* Super */
+	{
+		font=0;
+		boxColour.set(255,255,255); /* White as default. */
+		text="";
+		centeredX=false;
+		centeredY=false;
+		
+		clicked=false;
+
+		//drawBox=true;
+	}
+	
+	virtual ~GUI_Link()
+	{
+	}
+	
+	void setPanel(const int _x1, const int _y1, const int _x2, const int _y2)
+	{
+		GUI_Interface::setPanel(_x1,_y1,_x2,_y2);
+		regionButtonArea.set(panelX1,panelY1,panelX2,panelY2);
+	}
+
+	void movePanel ( const int _moveX, const int _moveY )
+	{
+		GUI_Interface::movePanel(_moveX,_moveY);
+		regionButtonArea.move(_moveX,_moveY);
+	}
+
+	void setColours(const Colour* bColour)
+	{
+		//boxColour.set(bColour);
+	}
+
+	void render()
+	{
+		if(active==true)
+		{
+			//if ( drawBox==true)
+			//{ Renderer::placeColour4(&boxColour, panelX1, panelY1, panelX2, panelY2); }
+
+			font8x8.drawText(text,panelX1,panelY2,panelX2,panelY1,centeredX,centeredY,20,20,200);
+		}
+	}
+	
+	/* Handle mouse input. */
+	bool mouseEvent ( Mouse* mouse )
+	{
+		if(active==true)
+		{
+			if ( mouse->isLeftClick )
+			{
+				if (regionButtonArea.liesOn(mouse->x,mouse->y))
+				{
+					clicked = !clicked;
+				}
+			}
+		}
+		return false;
+	}
+	
+	void unclick()
+	{
+		clicked=false;
+	}
+		inline void unClick() { unclick(); }
+
+};
+
 /* DropList. The user clicks the droplist, and a list drops down showing all selectable options, with a scrollbar, if all the options can't fit on the screen. The user then clicks on the option he wishes to select. The list then disappears, and only the selected option is displayed. The user can use the keyboard to narrow down the options on the list. The user can use the arrow keys to move through the options without using a mouse. */
 
 class GUI_DropList: public GUI_Interface
@@ -785,8 +744,8 @@ class GUI_DropList: public GUI_Interface
 				font->drawText(vOption(i),panelX1,currentY);
 
 
-				Wildcat::Region* r = new Wildcat::Region (panelX1,currentY-(font->nY+1),panelX2,currentY+1);
-				vListOption.push(r);
+				Wildcat::Region* region = new Wildcat::Region (panelX1,currentY-(font->nY+1),panelX2,currentY+1);
+				vListOption.push(region);
 
 				currentY-=(font->nY+2);
 			}
@@ -1324,7 +1283,7 @@ class GUI_TextEntry: public GUI_Interface
 			{
 				Renderer::placeColour4(&colourSelected,panelX1,panelY1,panelX2,panelY2);
 			}
-			font8x8.drawText(fieldName+" "+input, panelX1+2, panelY2, panelX2-2, panelY1, false, false);
+			font8x8.drawText(fieldName+" "+input, panelX1+2, panelY2, panelX2-2, panelY1, false, true);
 		}
 
 	}
@@ -1342,20 +1301,30 @@ class GUI_TextEntry: public GUI_Interface
 					/* Activate the text field, so that the user can enter data using the keyboard. */
 					selected=true;
 					mouse->isLeftClick=false;
+					return true;
 				}
 				/* If the player has clicked away from the text field, deactivate it. */
 				else
 				{
 					selected=false;
 					//mouse->isLeftClick=false;
+					
+					
 				}
 			}
 		}
 		return false;
 	}
+	
+		/* If this control is selected, it should take all keyboard events (except critical commands). */
+	bool stealKeyboard()
+	{
+		return (selected);
+	}
 
 	bool keyboardEvent(Keyboard* keyboard)
 	{
+		
 		if ( active==true && selected==true && keyboard->keyWasPressed==true )
 		{
 			/* If the player pressed an alpha-numeric key, then add it to the input. */

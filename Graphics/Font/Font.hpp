@@ -114,7 +114,8 @@ class Font
 
 
 		Renderer::setTextureMode();
-
+//Renderer::setColour(_colourRed,_colourGreen,_colourBlue);
+//glColor3ub(_colourRed,_colourGreen,_colourBlue);
 
 		const int charsPerLine = (x2-x1) / nX;
 		
@@ -226,7 +227,7 @@ class Font
 						int remainderPixels = x2 - currentX2;
 						
 						currentX = x1+(remainderPixels/2);
-					
+						
 					
 					}
 

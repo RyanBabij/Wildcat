@@ -30,14 +30,17 @@ class HasXY
 		x=_x;
 		y=_y;
 	}
-	void setXY(const int _x, const int _y)
-	{
-		x=_x;
-		y=_y;
-	}
+		void setXY(const int _x, const int _y)
+		{ setCoordinates(_x,_y); }
+		inline void setXY (HasXY xy)
+		{ setCoordinates(xy.x,xy.y); }
+		inline void setXY (HasXY* xy)
+		{ setCoordinates(xy->x,xy->y); }
+
 	
 	// DISTANCE FUNCTION
 };
 
 
 #endif
+

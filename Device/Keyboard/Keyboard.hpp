@@ -159,6 +159,7 @@ class Keyboard
     static const int F11=138;
     static const int F12=139;
 
+		// KEYBOARD ARROW KEYS
     static const int LEFT=227;
     static const int UP=228;
     static const int RIGHT=229;
@@ -221,7 +222,6 @@ class Keyboard
     }
     void specialKeyDown(const int keyVal)
     {
-		std::cout<<"Special.\n";
         keyMap[keyVal+SPECIAL_KEY_MODIFIER]=true;
     }
     void specialKeyUp(const int keyVal)

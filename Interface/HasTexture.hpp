@@ -13,6 +13,8 @@
 
 	0231713910: PROMOTED TO WILDCAT FROM GUILD/ETNA. CHANGED FROM TEXTURE INTERFACE TO HAS TEXTURE.
 */
+#include <Debug/DebugMacro.hpp>
+
 class Texture;
 
 class HasTexture
@@ -20,7 +22,8 @@ class HasTexture
 	public:
 	// The object must return the current texture to be displayed when this is called.
 	// THE TEXTURE DOESN'T HAVE TO ALWAYS BE THE SAME ONE. THIS ALLOWS FOR ANIMATIONS AND WHATNOT.
-	virtual Texture* currentTexture() { return 0; }
+	//virtual Texture* currentTexture() { return 0; }
+	virtual Texture* currentTexture() =0;
 
 		// THE MINIMUM SIZE THE TEXTURE CAN BE DRAWN AT. UNLESS SET TO 1, IT SHOULD BE DIVISIBLE BY 2.
 	virtual int getMinSize() { return 1; }

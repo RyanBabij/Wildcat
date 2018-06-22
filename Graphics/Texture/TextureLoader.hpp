@@ -296,15 +296,101 @@ bool loadTextureNearestNeighbour(const std::string filePath, Texture* texture)
 		{
 			Png png;
 			png.load(data,fileSize);
+			
+			//std::cout<<"Getting average colour.\n";
+			png.getAverageColour();
 			//Texture* texture = new Texture;
 			texture->create(png.nX,png.nY,1);
 			texture->data=png.data;
+			texture->averageRed = png.averageRed;
+			texture->averageGreen = png.averageGreen;
+			texture->averageBlue = png.averageBlue;
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, texture->nX, texture->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->data);
 		}
 		else
 		{ return false; }
 		return true;
 
+	}
+	return false;
+}
+
+bool loadTextureRotate(const std::string filePath, Texture* tex0, Texture* tex90, Texture* tex180, Texture* tex270)
+{ /* will rotate the image clockwise 90 degrees 4 times, and store each rotation as a texture */
+
+	int fileSize;
+	unsigned char* data = FileManager::getFile(filePath,&fileSize);
+
+	if(data!=0)
+	{
+		Png png;
+		png.load(data,fileSize);
+		png.getAverageColour();
+
+		tex0->create(png.nX,png.nY,1);
+		tex0->data=png.data;
+		tex0->averageRed = png.averageRed;
+		tex0->averageGreen = png.averageGreen;
+		tex0->averageBlue = png.averageBlue;
+		
+		Png png2;
+		png2.copy(&png);
+		png2.rotate90Clockwise();
+		tex90->create(png2.nX,png2.nY,1);
+		tex90->data=png2.data;
+		tex90->averageRed = png2.averageRed;
+		tex90->averageGreen = png2.averageGreen;
+		tex90->averageBlue = png2.averageBlue;
+		
+		Png png3;
+		png3.copy(&png2);
+		png3.rotate90Clockwise();
+		tex180->create(png3.nX,png3.nY,1);
+		tex180->data=png3.data;
+		tex180->averageRed = png3.averageRed;
+		tex180->averageGreen = png3.averageGreen;
+		tex180->averageBlue = png3.averageBlue;
+		
+		Png png4;
+		png4.copy(&png3);
+		png4.rotate90Clockwise();
+		tex270->create(png4.nX,png4.nY,1);
+		tex270->data=png4.data;
+		tex270->averageRed = png4.averageRed;
+		tex270->averageGreen = png4.averageGreen;
+		tex270->averageBlue = png4.averageBlue;
+
+		//tex90 = tex0->rotate90Clockwise();
+		//tex180 = text90->rotate90Clockwise();
+		//tex270 = tex180->rotate90Clockwise();
+
+		
+		glGenTextures(1,&tex0->textureID);
+		glBindTexture(GL_TEXTURE_2D, tex0->textureID);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, tex0->nX, tex0->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex0->data);
+		
+		glGenTextures(1,&tex90->textureID);
+		glBindTexture(GL_TEXTURE_2D, tex90->textureID);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, tex90->nX, tex90->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex90->data);
+		
+		glGenTextures(1,&tex180->textureID);
+		glBindTexture(GL_TEXTURE_2D, tex180->textureID);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, tex180->nX, tex180->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex180->data);
+		
+		glGenTextures(1,&tex270->textureID);
+		glBindTexture(GL_TEXTURE_2D, tex270->textureID);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, tex270->nX, tex270->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex270->data);
+		
+
+		return true;
 	}
 	return false;
 }

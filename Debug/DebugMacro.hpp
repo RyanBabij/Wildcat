@@ -19,5 +19,8 @@
 	#else
 		#define _(x) x
 	#endif
+	
+	/* Easy, you just put DBG wherever you want a kind of breakpoint. */
+	#define DBG std::cout<<"DBG:"<<__FILE__<<":"<<__func__<<":"<<__LINE__<<"\n";
 
 #endif

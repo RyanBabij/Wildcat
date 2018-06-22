@@ -501,12 +501,14 @@ class Table2
 	
 	void sortAscendingBy(const std::string _column)
 	{
+		//std::cout<<"Sorting table\n";
 		if ( vRow.size()==0)
 		{ return; }
 		
 		if ( vRow(0)->getColumnType(_column) == "number" )
 		{
 			Vector <int> vSort;
+			vSort.reserve(nRows());
 			for ( int i=0;i<nRows();++i)
 			{
 				vSort.push(DataTools::toInt(vRow(i)->getColumn(_column)));
@@ -516,13 +518,19 @@ class Table2
 		}
 		else
 		{
+			//std::cout<<"sorting strings\n";
 			Vector <std::string> vSort;
+			vSort.reserve(nRows());
+			//std::cout<<"for loop\n";
 			for ( int i=0;i<nRows();++i)
 			{
 				vSort.push(vRow(i)->getColumn(_column));
 			}
 			vID.clear();
+			//std::cout<<"vid copy\n";
 			vID.copy(vSort.getIndexesAscending());
+			//std::vector <size_t> sortedIndices = vSort.
+			//std::cout<<"Finished sorting strings\n";
 		}
 	}
 	void sortDescendingBy(const std::string _column)

@@ -12,7 +12,7 @@
 #include <Math/Geometry/Geometry.hpp> /* For rotations and coordinates. */
 #include <Graphics/Colour/Colour.hpp> /* For rendering colours. */
 
-
+#include <Debug/DebugMacro.hpp>
 
 /* Initialise static variables. */
 #ifdef WILDCAT_USE_OPENGL
@@ -170,6 +170,8 @@ Anyway, this new method is recommended for new texture loading, but I'll keep th
 */
 void Renderer::placeTexture4(const int _x1, const int _y1, const int _x2, const int _y2, const Texture* _texture, const bool preserveAspectRatio /* Default false. */)
 {
+	if (_texture == 0)
+	{ return; }
 	#ifdef WILDCAT_USE_OPENGL
 		setTextureMode();
 	

@@ -3,7 +3,9 @@
 #include <Math/Random/GlobalRandom.hpp>
 #include <Container/ArrayS2/ArrayS2.hpp>
 
-#include <Math/Random/GlobalRandomThreadSafe.hpp>
+//#include <Math/Random/GlobalRandomThreadSafe.hpp>
+
+#include <File/FileLog.hpp>
 
 /*
 	DiamondSquareAlgorithm
@@ -34,15 +36,22 @@
 	
 	//Variance should not be set excessively high otherwise it will bias towards extreme values. A good rule is to start it at half the maximum range.
 	//Tweaked variance random range to respect bounds.
+	
+	027-248-0059 - Readded basic cratering option.
 */
+
+//#include <Math/Random/MersenneTwister.hpp>
+//MTRand r2;
+
+
+// Mersenne twister is now part of c++
+#include <random>
+#include <functional>
 
 class DiamondSquareAlgorithm
 {
 	private:
-	Random random;
-	
-
-	//MTRand random;
+	RandomNonStatic random;
 
 	static void addToValueTable(int* valueTable, int value)
 	{
@@ -55,7 +64,6 @@ class DiamondSquareAlgorithm
 	public:
 	
 	int seed;
-	//bool wrappingMode;
 	
 	bool wrapX;
 	bool wrapY;
@@ -67,19 +75,28 @@ class DiamondSquareAlgorithm
 		wrapY=false;
 	}
 
-	void generate(ArrayS2 <unsigned char>* aMap=0, int* aValueTable=0, int freeSteps = 0, double smoothing = 0.85, double variance = 250, double varianceDecrement = 0.1)
+	void test()
 	{
-		std::cout<<"Passed seed is: "<<seed<<".\n";
+	}
+	
+	void test2(ArrayS2 <unsigned char>* aMap=0, int* aValueTable=0)
+	{
+	}
+	
+		// Note that random numbers are generated even if they aren't used, to map rng output to each tile regardless of settings.
+	void generate(ArrayS2 <unsigned char>* aMap=0, int* aValueTable=0, int freeSteps = 0, double smoothing = 0.85, double variance = 250, double varianceDecrement = 0.1, bool cratering=false)
+	{
+		//std::cout<<"Passed seed is: "<<seed<<".\n";
 		if ( seed==0 )
 		{
 			random.seed();
 		}
 		else
 		{
-			std::cout<<"Seed is fixed at "<<seed<<".\n";
+			//std::cout<<"Seed is fixed at "<<seed<<".\n";
 			random.seed(seed);
 		}
-		//std::cout<<"GenerateThreadSafe\n";
+		
 			// RESET VALUE TABLE
 		if ( aValueTable!=0 )
 		{
@@ -89,11 +106,15 @@ class DiamondSquareAlgorithm
 			}
 		}
 
-
 		int freeStepValue = -1; // -1 == random.
+
+
+		if (aMap==0) { std::cout<<"ERROR\n"; return; }
+		int mapSize = aMap->nX;
 
 		int squareSize = aMap->nX-1;
 
+		
 		// BASE CASE: SET CORNER VALUES (ONLY IF THEY AREN'T ALREADY SET).
 		// NOTE THAT A VALUE OF 0 WILL ALWAYS BE OVERWRITTEN.
 		//if ( wrappingMode==false )
@@ -102,25 +123,25 @@ class DiamondSquareAlgorithm
 			{
 				(*aMap)(0,0)=random.randInt(255);
 			}
-			addToValueTable(aValueTable,(*aMap)(0,0));
+		//	addToValueTable(aValueTable,(*aMap)(0,0));
 
 			if ( (*aMap)(0,aMap->nY-1) == 0 )
 			{
 				(*aMap)(0,aMap->nY-1)=random.randInt(255);
 			}
-			addToValueTable(aValueTable,(*aMap)(0,aMap->nY-1));
+		//	addToValueTable(aValueTable,(*aMap)(0,aMap->nY-1));
 
 			if ( (*aMap)(aMap->nX-1,0) == 0 )
 			{
 				(*aMap)(aMap->nX-1,0)=random.randInt(255);
 			}
-			addToValueTable(aValueTable,(*aMap)(aMap->nX-1,0));
+		//	addToValueTable(aValueTable,(*aMap)(aMap->nX-1,0));
 
 			if ( (*aMap)(aMap->nX-1,aMap->nY-1) == 0 )
 			{
 				(*aMap)(aMap->nX-1,aMap->nY-1)=random.randInt(255);
 			}
-			addToValueTable(aValueTable,(*aMap)(aMap->nX-1,aMap->nY-1));
+		//	addToValueTable(aValueTable,(*aMap)(aMap->nX-1,aMap->nY-1));
 		}
 		// else
 		// {
@@ -141,11 +162,13 @@ class DiamondSquareAlgorithm
 		{
 			if ( squareMode==true)
 			{
+
 				// Skip the last tile because there's no need to do them.
 				for (int _y=0;_y<aMap->nY-1;_y+=squareSize)
 				{
 					for (int _x=0;_x<aMap->nX-1;_x+=squareSize)
 					{
+						
 						int targetX = _x + (squareSize/2);
 						int targetY = _y + (squareSize/2);
 
@@ -155,15 +178,24 @@ class DiamondSquareAlgorithm
 							{
 								if ( freeStepValue == -1 )
 								{
-									const unsigned char _rand = random.randInt(255);
+									const int _rand = random.randInt(255);
 									(*aMap)(targetX,targetY)=_rand;
-									addToValueTable(aValueTable,_rand);
+							//		addToValueTable(aValueTable,_rand);
 								}
 								else
 								{
 									(*aMap)(targetX,targetY)=freeStepValue;
-									addToValueTable(aValueTable,freeStepValue);
+							//		addToValueTable(aValueTable,freeStepValue);
+									// Generate a random number to keep rng predictable for each tile.
+									random.randInt(255);
 								}
+							}
+							else if ( squareSize > 6 && cratering==true && random.randInt(100)==0 )
+							{
+								const int _rand = random.randInt(255);
+								(*aMap)(targetX,targetY)=_rand;
+								//(*aMap)(targetX,targetY)=0;
+						//		addToValueTable(aValueTable,_rand);
 							}
 							else
 							{
@@ -206,45 +238,41 @@ class DiamondSquareAlgorithm
 									//if (higherRange > 255) { higherRange = 255; }
 									result = average+random.range(lowerRange,higherRange);
 								}
+								else
+								{
+									// Generate a random number to keep rng predictable for each tile.
+									random.randInt(255);
+								}
 								
 									// Just to be sure.
 								if (result<0) { result=0; }
 								if (result>255) { result=255; }
 
 								(*aMap)(targetX,targetY)=result;
-								addToValueTable(aValueTable,result);
+							//	addToValueTable(aValueTable,result);
 							}
 						}
 						else
 						{
 							// MAKE SURE NON-ZERO VALUES STILL GET COUNTED IN THE TABLE.
-							addToValueTable(aValueTable,(*aMap)(targetX,targetY));
+							//addToValueTable(aValueTable,(*aMap)(targetX,targetY));
+							// Generate a random number to keep rng predictable for each tile.
+							random.randInt(255);
 						}
 					}
 				}
 			}
 			else // DIAMOND MODE
 			{
+
 				squareSize/=2;
+				
 
 					// NEED TO RECHECK THIS. EARLIER NOTES INDICATE POSSIBLE PROBLEM.
-
 				for (int _y=0;_y<aMap->nY;_y+=squareSize)
 				{
 					for (int _x=0;_x<aMap->nX;_x+=squareSize)
 					{
-						// if ( wrappingMode == true )
-						// {
-							// if ( _y == 0 )
-							// {
-								// if ( (*amap)(_x,aMap->nY-1) != 0 )
-								// {
-									// (*aMap)(_x,_y)=(*amap)(_x,aMap->nY-1);
-								// }
-							// }
-						// }
-						
-						
 						if ( (*aMap)(_x,_y) == 0 ) // DON'T OVERWRITE NON-ZERO ENTRIES.
 						{
 							if ( freeSteps > 0 )
@@ -253,12 +281,15 @@ class DiamondSquareAlgorithm
 								{
 									const unsigned char _rand = random.randInt(255);
 									(*aMap)(_x,_y)=_rand;
-									addToValueTable(aValueTable,_rand);
+								//	addToValueTable(aValueTable,_rand);
 								}
 								else
 								{
 									(*aMap)(_x,_y)=freeStepValue;
-									addToValueTable(aValueTable,freeStepValue);
+								//	addToValueTable(aValueTable,freeStepValue);
+								
+									// Generate a random number to keep rng predictable for each tile.
+									random.randInt(255);
 								}
 							}
 							else
@@ -300,7 +331,7 @@ class DiamondSquareAlgorithm
 								if (result>255) { result=255; }
 
 								(*aMap)(_x,_y)=result;
-								addToValueTable(aValueTable,result);
+							//	addToValueTable(aValueTable,result);
 								
 								// Wrap X and Y. This is a basic implementation which works well enough. Need to improve base case.
 								if ( wrapX == true && _x == 0 )
@@ -318,35 +349,29 @@ class DiamondSquareAlgorithm
 							// MAKE SURE NON-ZERO VALUES STILL GET COUNTED IN THE TABLE.
 							//std::cout<<"Notouch\n";
 							//addToValueTable(aValueTable,(*aMap)(_x,_y));
+							
+							// Generate a random number to keep rng predictable for each tile.
+							random.randInt(255);
 						}
 					}
 				}
 			}
-			squareMode = !squareMode;
-
 
 				// WE DON'T MODIFY VARIANCE UNTIL THE FREE STEPS RUN OUT.
 			if ( freeSteps > 0 )
 			{ --freeSteps; }
-			//else
-			//{
-				
-					// Smoothing will not be ignored by freesteps because this changes smoothing when changing freesteps.
-					// This looks like it needs to be debugged.
-				if ( variance > 0 )
-				{
-					variance *= smoothing;
-					variance-=varianceDecrement;
-				}
-				if ( variance < 1 )
-				{ variance=0; }
-				//{ variance=1; }
-			
-				
-				//variance *= smoothing;
-				//variance=10;
-			//}
-			//std::cout<<"Free step counter: " <<freeSteps<<".\n";
+
+				// Smoothing will not be ignored by freesteps because this changes smoothing when changing freesteps.
+				// This looks like it needs to be debugged.
+			if ( variance > 0 )
+			{
+				variance *= smoothing;
+				variance -= varianceDecrement;
+			}
+			if ( variance < 1 )
+			{ variance=0; }
+
+			squareMode=!squareMode;
 		}
 
 			// TEMPORARY FIX FOR VALUE TABLE PROBLEMS.

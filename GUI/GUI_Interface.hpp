@@ -29,6 +29,10 @@ class GUI_Interface: public DisplayInterface, public MouseInterface, public Keyb
 		panelX1=0; panelX2=0; panelY1=0; panelY2=0; panelNX=0; panelNY=0;
 	}
 	
+	~GUI_Interface()
+	{
+	}
+	
 	/* This is called to init the panel, but can also be called when the window is resized. */
 	/* Probably make this non-virtual, but throw an eventResize() virtual function. */
 	virtual void setPanel(const int _panelX1, const int _panelY1, const int _panelX2, const int _panelY2)
@@ -64,8 +68,8 @@ class GUI_Interface: public DisplayInterface, public MouseInterface, public Keyb
 	//virtual bool mouseEvent( Mouse* )
 	//{ return false; }
 	
-	virtual bool keyboardEvent ( Keyboard* )
-	{ return false; }
+	//virtual bool keyboardEvent ( Keyboard* )
+	//{ return false; }
 	
 	virtual void setFont(Wildcat::Font* _font)
 	{ font=_font; }

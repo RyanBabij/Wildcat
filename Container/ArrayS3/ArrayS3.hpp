@@ -258,6 +258,22 @@ class ArrayS3: public CanLoadSave
 		outOfBounds=nullValue;
 		overFlow=false;
 	}
+	
+		// Save some cycles for important code. This should be initialised manually.
+	void initNoFill(const unsigned int _x, const unsigned int _y, const unsigned int _z, T _nullValue)
+	{
+		delete[] data;
+		nullValue=_nullValue;
+		nX=_x;
+		nY=_y;
+		nZ=_z;
+		data = new T [_x*_y*_z];
+		nullAddress=&data[_x*_y*_z];
+		currentElement=&data[0];
+		//fill(nullValue);
+		outOfBounds=_nullValue;
+		overFlow=false;
+	}
 
 
 	bool load(unsigned char __attribute__ ((unused)) * pointData)

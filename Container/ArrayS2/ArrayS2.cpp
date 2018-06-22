@@ -75,6 +75,21 @@ void ArrayS2<ARRAYS2_T>::init(const unsigned int x, const unsigned int y, const 
 }
 
 template <class ARRAYS2_T>
+void ArrayS2<ARRAYS2_T>::initClass(const unsigned int x, const unsigned int y)
+{
+	delete[] data;	
+	nX=x;
+	nY=y;
+	data = new ARRAYS2_T [x*y];
+	nullAddress=&data[x*y];
+	//this->nullValue=nullValue;
+	currentElement=&data[0];
+	//fill(_nullValue);
+}
+
+
+
+template <class ARRAYS2_T>
 void ArrayS2<ARRAYS2_T>::safeSet(const int _x, const int _y, const ARRAYS2_T _value)
 {
 	if (isSafe(_x,_y))
@@ -320,12 +335,12 @@ bool ArrayS2<ARRAYS2_T>::isSafe(const int _x, const int _y)
 	{ return true; }
 	return false;
 }
-
-template <class ARRAYS2_T>
-bool ArrayS2<ARRAYS2_T>::isSafe(HasXY* _objectWithXY)
-{
-	return isSafe(_objectWithXY->x,_objectWithXY->y);
-}
+	template <class ARRAYS2_T>
+	inline bool ArrayS2<ARRAYS2_T>::isSafe(HasXY* _objectWithXY)
+	{ return isSafe(_objectWithXY->x,_objectWithXY->y); }
+	// template <class ARRAYS2_T>
+	// inline bool ArrayS2<ARRAYS2_T>::isSafe(HasXY _objectWithXY)
+	// { return isSafe(_objectWithXY.x,_objectWithXY.y); }
 
 template <class ARRAYS2_T>
 inline void ArrayS2<ARRAYS2_T>::getIndexCoords(const int _index, int* _returnX, int* _returnY)

@@ -24,6 +24,9 @@ class Texture: public CanLoadSave, public HasTexture
 	int nY;
 	unsigned char type; /* RGB, RGBA */
 	unsigned char* data;
+	
+		// Get the average colour of the texture. This allows faster rendering if the texture is very small.
+	unsigned char averageRed, averageGreen, averageBlue;
 
 	/* OpenGL pointer/reference to the texture. */
 	GLuint textureID;
@@ -40,6 +43,10 @@ class Texture: public CanLoadSave, public HasTexture
 
 		/* NOTE: Earlier notes suggest that GLuint texture references need to be initialised. */
 		textureID=0;
+		
+		averageRed=0;
+		averageGreen=0;
+		averageBlue=0;
 	}
 
 	Texture* currentTexture() { return this; }

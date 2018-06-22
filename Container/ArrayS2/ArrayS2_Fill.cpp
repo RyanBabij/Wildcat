@@ -5,7 +5,7 @@
 
 
 template <class ARRAYS2_T>
-void ArrayS2<ARRAYS2_T>::fill(ARRAYS2_T value)
+void ArrayS2<ARRAYS2_T>::fill(const ARRAYS2_T value)
 {
 	currentElement=&data[0];
 	while(currentElement!=nullAddress)
@@ -14,6 +14,9 @@ void ArrayS2<ARRAYS2_T>::fill(ARRAYS2_T value)
 		++currentElement;
 	}
 	currentElement=&data[0];
+	
+		// This is about 3% faster. It also causes crashes. oops.
+	//std::fill_n(data, (nX*nY)-1, value);
 }
 
 template <class ARRAYS2_T>

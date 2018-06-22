@@ -279,6 +279,9 @@ class FileManagerStatic
 		//std::fsetpos (pFile, &filePosition);
 		return false;
 	}
+	
+
+
 
 
 

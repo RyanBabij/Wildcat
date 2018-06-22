@@ -16,6 +16,8 @@ class NameGen
 	static const unsigned char SOFT=0;
 	static const unsigned char HARD=1;
 	//MTRand rnd;
+	
+	RandomNonStatic random;
 
 	std::string name;
 
@@ -23,6 +25,7 @@ class NameGen
 
 	NameGen()
 	{
+		random.seed();
 	}
 
 	std::string generate(const int minLength=1, const int maxLength=100, bool capitalise=true)
@@ -30,12 +33,13 @@ class NameGen
 		name="";
 		//Name length... Using a normal distribution.
 		//int length= (int)rnd.randNorm(7,2);
-		int length=(int)Random::r.randNorm(7,1.5);
+		//int length=(int)random.randNorm(7,1.5);
+		int length=(int)random.multiRoll(3,4);
 		if(length<minLength) { length=minLength; }
 		if(length>maxLength) { length=maxLength; }
 
 		bool sound=SOFT;
-		if(Random::randInt(2)==0) { sound=HARD; }
+		if(random.randInt(2)==0) { sound=HARD; }
 
 		int length2=0;
 		while(length2<length)
@@ -58,7 +62,7 @@ class NameGen
 		std::string _name="";
 		//Starting sound... Biased towards starting with a consonant.
 		bool startingSound = true;
-		if (Random::randInt(2) == 0)
+		if (random.randInt(2) == 0)
 		{
 			startingSound = false;
 		}
@@ -87,7 +91,7 @@ class NameGen
 	void addSingleVowel()
 	{
 		//Evenly weighted vowels.
-		unsigned int chance=Random::randInt(6);
+		unsigned int chance=random.randInt(6);
 		if (chance == 0)
 		{ name+="a"; }
 		else if (chance == 1)
@@ -105,7 +109,7 @@ class NameGen
 	}
 	void addSingleConsonant()
 	{
-		unsigned int chance=Random::randInt(17);
+		unsigned int chance=random.randInt(17);
 		if     (chance==0) { name+="b"; }
 		else if(chance==1) { name+="c"; }
 		else if(chance==2) { name+="d"; }
@@ -126,7 +130,7 @@ class NameGen
 		else if(chance==17) { name+="y"; }
 
 
-// 		unsigned int chance=Random::randInt(20);
+// 		unsigned int chance=random.randInt(20);
 // 		if(chance==0) { name+="b"; }
 // 		else if(chance==1) { name+="c"; }
 // 		else if(chance==2) { name+="d"; }
@@ -152,7 +156,7 @@ class NameGen
 	void addDoubleConsonant()
 	{
 		//chshphrhwhckstllqussnzldhnggghfrrxrm
-		unsigned int chance=Random::randInt(18);
+		unsigned int chance=random.randInt(18);
 
 		//ch
 		if(chance==0)
@@ -234,7 +238,7 @@ class NameGen
 		else
 		{
 			//addSingleConsonant();
-			if(Random::randInt(20)==0)
+			if(random.randInt(20)==0)
 			//if(0)
 			{
 				addDoubleConsonant();
@@ -262,15 +266,15 @@ class NameGen
 
 
 		/* 022-172 NOTE: Changed name length algo. This seems to approximate a kind of bell curve, which seems to work well. */
-			//unsigned short int nameLength = Random::randInt(3) + 3;
+			//unsigned short int nameLength = random.randInt(3) + 3;
 		unsigned short int nameLength = 3;
 
 		/* Shift bellcurve over by 1. */
-		nameLength+=Random::randomInt(1);
+		nameLength+=random.randomInt(1);
 
 		for (int i=0;i<5;++i)
 		{
-			int extend = Random::randInt(1);
+			int extend = random.randInt(1);
 			if(extend==0)
 			{ ++nameLength;
 			}
@@ -281,22 +285,22 @@ class NameGen
 		}
 
 
-		// unsigned short int modifier = Random::randInt(110);
+		// unsigned short int modifier = random.randInt(110);
 		// if (modifier <= 40)
 		// {
-			// nameLength += Random::randInt(2);
+			// nameLength += random.randInt(2);
 		// }
 		// if (modifier >= 41 && modifier <= 45)
 		// {
-			// nameLength += Random::randInt(4);
+			// nameLength += random.randInt(4);
 		// }
 		// if (modifier == 46)
 		// {
-			// nameLength += Random::randInt(8);
+			// nameLength += random.randInt(8);
 		// }
 		// if (modifier == 100)
 		// {
-			// nameLength -= Random::randInt(2);
+			// nameLength -= random.randInt(2);
 		// }
 		// if (modifier == 101)
 		// {
@@ -310,15 +314,15 @@ class NameGen
 		char consonantList[] = "bcdfghjklmnprstvwxz";
 		char doubleConsonantList[] = "chshphrhwhckstllqussnzldhnggghfrrxrm";
 		std::string nameSegment = "";
-		//if (Random::randInt(20) == 0)
+		//if (random.randInt(20) == 0)
 		if (0)
 		{
 			//Double consonant
-			unsigned char consonant = makeEven(Random::randInt(sizeof(doubleConsonantList) - 2));
+			unsigned char consonant = makeEven(random.randInt(sizeof(doubleConsonantList) - 2));
 			//Rerolls
 			if (doubleConsonantList[consonant] == 'g' && doubleConsonantList[consonant+1] == 'h' && a == 0)
 			{
-				consonant = makeEven(Random::randInt(sizeof(consonantList)-2));
+				consonant = makeEven(random.randInt(sizeof(consonantList)-2));
 			}
 			nameSegment = doubleConsonantList[consonant];
 			nameSegment += doubleConsonantList[consonant+1];
@@ -326,16 +330,16 @@ class NameGen
 
 		else
 		{
-			unsigned char consonant = Random::randInt(sizeof(consonantList)-2);
+			unsigned char consonant = random.randInt(sizeof(consonantList)-2);
 			//Reroll some single consonants
 
 
 			if (consonantList[consonant] == 'x' || consonantList[consonant] == 'z' || consonantList[consonant] == 'w' ||(consonantList[consonant] == 'j' && a == 0))
 			{
 				/* 022-172. Removed 1/16 chance of keeping. */
-				//if (Random::randInt(16) != 0)
+				//if (random.randInt(16) != 0)
 				//{
-					consonant = Random::randInt(sizeof(consonantList)-2);
+					consonant = random.randInt(sizeof(consonantList)-2);
 				//}
 			}
 			nameSegment = consonantList[consonant];
@@ -356,30 +360,30 @@ class NameGen
         char vowelList[] = "aeiouy";
 		char doubleVowelList[] = "ooeeaeoeyaeiiaieyoyu";
 		std::string nameSegment = "";
-		if (Random::randInt(26) == 0)
+		if (random.randInt(26) == 0)
 		{
 			//Double vowels
-			unsigned char vowel = makeEven(Random::randInt(sizeof(doubleVowelList)-2));
+			unsigned char vowel = makeEven(random.randInt(sizeof(doubleVowelList)-2));
 			nameSegment = doubleVowelList[vowel];
 			nameSegment += doubleVowelList[vowel+1];
 		}
 		else
 		{
-			unsigned char vowel = Random::randInt(sizeof(vowelList)-2);
+			unsigned char vowel = random.randInt(sizeof(vowelList)-2);
 			if (vowelList[vowel] == 'y')
 			{
 				if (nameSegment == "")
 				{
-					if (Random::randInt(20) != 0)
+					if (random.randInt(20) != 0)
 					{
-						vowel = Random::randInt(sizeof(vowelList)-2);
+						vowel = random.randInt(sizeof(vowelList)-2);
 					}
 				}
 				else
 				{
-					if (Random::randInt(3) != 0)
+					if (random.randInt(3) != 0)
 					{
-						vowel = Random::randInt(sizeof(vowelList)-2);
+						vowel = random.randInt(sizeof(vowelList)-2);
 					}
 				}
 			}

@@ -75,6 +75,8 @@ class ArrayS2
 	ArrayS2 (const ArrayS2 <ARRAYS2_T> &array);
 		// EXPLICIT INITIALISATION
 	void init(const unsigned int x, const unsigned int y, const ARRAYS2_T _nullValue);
+		// When initializing without pointers, we can't pass a default address.
+	void initClass(const unsigned int x, const unsigned int y);
 
 		// SET FUNCTIONS
 		// 0223626497
@@ -104,6 +106,24 @@ class ArrayS2
 		}
 	}
 
+	
+		/* ITERATORS
+			You can loop through a vector easily using:
+			
+			for(auto const& value: vChildren) { std::cout<<"Person: "<<value->firstName<<".\n"; }
+			
+			Todo: Test this for ArrayS2
+		
+		*/
+	
+	ARRAYS2_T* begin()
+	{
+		return &data[0];
+	}
+	ARRAYS2_T* end()
+	{
+		return &data[nX*nY];
+	}
 
 
 template<class Function>
@@ -1116,7 +1136,7 @@ void resetNeighbor()
 	// This function gets all unique areas. We should keep this functionality.
 	
 //template <class ARRAYS2_T>
-Vector <HasXY> * floodFillVector ( const int _startX=0, const int _startY=0, bool includeDiagonals=true )
+Vector <HasXY> * floodFillVectorNOPE ( const int _startX=0, const int _startY=0, bool includeDiagonals=true )
 {
 	std::cout<<"Fill called for coordinates: ("<<_startX<<", "<<_startY<<")\n";
 	const ARRAYS2_T initialValue = (*this)(_startX,_startY);
@@ -1341,6 +1361,7 @@ Vector <HasXY> * floodFillVector ( const int _startX=0, const int _startY=0, boo
 	
 	#include <Container/ArrayS2/ArrayS2_Neighbours.hpp>
 
+	#include <Container/ArrayS2/ArrayS2_FloodFill.hpp>
 };
 
 #include <Container/ArrayS2/ArrayS2.cpp>
