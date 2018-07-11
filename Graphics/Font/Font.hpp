@@ -95,9 +95,11 @@ class Font
 		CenteredX and CenteredY were implemented 0221152847, and
 		is a mess. This whole lib is a mess though.
 		The whole thing needs to be cleaned up.
+    
+    Update: will return the number of lines it drew. (0 for error)
 			
 	*/
-	void drawText(const std::string text, unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2, bool centeredX = false, bool centeredY=false,
+	int drawText(const std::string text, unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2, bool centeredX = false, bool centeredY=false,
 				unsigned char _colourRed=0, unsigned char _colourGreen=0,unsigned char _colourBlue=0)
 	{
 		/* Automatically sort the box coordinates here, so we don't need to input the coordinates in any particular order. */
@@ -109,8 +111,10 @@ class Font
 
 		if ( panelWidth < nX || panelHeight < nY || text.size() == 0 )
 		{
-			return;
+			return 0;
 		}
+    
+    int linesDrawn = 1;
 
 
 		Renderer::setTextureMode();
@@ -132,8 +136,6 @@ class Font
 			{
 				//lineWidth+=nX;
 				currentX2+=nX;
-				
-
 			}
 			
 			int remainderPixels = x2 - currentX2;
@@ -144,24 +146,13 @@ class Font
 		
 		if(centeredY==true)
 		{
-			//std::cout<<"CharsperLine: "<<charsPerLine<<".\n";
 			int nLines = (text.size()/charsPerLine)+1;
-			//std::cout<<"NX,NY: "<<nX<<","<<nY<<".\n";
 			int vSpace = nLines*(nY+2)-2;
-			
-			//std::cout<<"Vertical pixel space: "<<vSpace<<".\n";
-			
-			//std::cout<<"Available vertical space: "<<y1-y2<<".\n";
 			
 			int sY = y1-y2;
 			currentY = y1 - ((sY-vSpace)/2);
-			
-			//std::cout<<"nLines: "<<nLines<<".\n";
-		}
-		
 
-			//std::cout<<"cccc\n";
-			//std::cout<<"cccc\n";
+		}
 		
 		for(unsigned int i=0;i<text.size();++i)
 		{
@@ -212,7 +203,7 @@ class Font
 				{
 					currentX=x1;
 					currentY-=(nY+2);
-					
+					++linesDrawn;
 					
 					
 					/* Center the new line. */
@@ -253,6 +244,7 @@ class Font
 						{
 							currentX=x1;
 							currentY-=(nY+2);
+              ++linesDrawn;
 						}
 					}
 				}
@@ -260,11 +252,12 @@ class Font
 
 				/* If we are out of space, return. */
 				if (currentY-nY < y2)
-				{ return; }
+				{ return linesDrawn; }
 		}
 		//glColor3ub(255,255,255);
 		//Renderer::resetColour();
-	}
+    return linesDrawn;
+  }
 	
 	void drawText(const std::string text, int x1, int y1)
 	{
