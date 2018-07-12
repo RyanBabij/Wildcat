@@ -1,4 +1,6 @@
 #pragma once
+#ifndef WILDCAT_GUI_GUI_HPP
+#define WILDCAT_GUI_GUI_HPP
 
 /* GUI.hpp
 	Parent file for all GUI libraries.
@@ -1485,3 +1487,4 @@ class GUI_ScrollBar: public GUI_Interface
 
 };
 
+#endif

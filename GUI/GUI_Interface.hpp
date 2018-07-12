@@ -6,6 +6,8 @@
 #include <Device/Mouse/MouseInterface.hpp>
 #include <Device/Keyboard/KeyboardInterface.hpp>
 
+#include <Graphics/Font/Font.hpp>
+
 /* GUI interface. */
 class GUI_Interface: public DisplayInterface, public MouseInterface, public KeyboardInterface
 {

@@ -21,6 +21,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable> // std::condition_variable
+
 #include <Time/Timer.hpp>
 
 /*	WorldGenerator2
@@ -176,7 +177,7 @@ class WorldGenerator2
 	bool islandMode; // SETS EDGES AS WATER.
 	bool landMode; // SETS EDGES AS LAND.
 
-	enum enumBiome { NOTHING=0, OCEAN=1, GRASSLAND=2, FOREST=3, DESERT=4, MOUNTAIN=5, SNOW=6, HILLY=7, JUNGLE=8, WETLAND=9, STEPPES=10, CAVE=11, RUIN=12, ICE=13, RIVER=14};
+	//enum enumBiome { NOTHING=0, OCEAN=1, GRASSLAND=2, FOREST=3, DESERT=4, MOUNTAIN=5, SNOW=6, HILLY=7, JUNGLE=8, WETLAND=9, STEPPES=10, CAVE=11, RUIN=12, ICE=13, RIVER=14};
 	//const std::string biomeName [15] = { "nothing", "ocean", "grassland", "forest", "desert", "mountain", "snow", "hilly", "jungle", "wetland", "steppes", "cave", "ruin", "ice", "river" };
 	static std::string biomeName [15];
 	static int N_BIOMES;
@@ -186,7 +187,7 @@ class WorldGenerator2
 	
 	ArrayS2 <WorldGenerator2_Tile> aTile;
 
-	ArrayS2 <unsigned char> aTerrainType;
+	ArrayS2 <enumBiome> aTerrainType;
 	ArrayS3 <unsigned char> aTopoMap;
 	ArrayS2 <unsigned char> aHeightMap; /* This one is for landmasses. It should really be called aLandMassMap */
 	ArrayS2 <unsigned char> aHeightMap2; /* This one is for elevations */
@@ -626,14 +627,14 @@ class WorldGenerator2
 		
 		
 		
-		std::thread t1 (WorldGenerator2::createBiome, this, WorldGenerator2::JUNGLE, 0.33, 4, 0.78, "Jungle", biomeMap2, subSeed[1]);
-		std::thread t2 (WorldGenerator2::createBiome, this, WorldGenerator2::FOREST, 0.5, 8, 0.8, "Forest", biomeMap2, subSeed[2]);
-		std::thread t3 (&WorldGenerator2::createBiome, this, WorldGenerator2::WETLAND, 0.05, 11, 0.79, "Wetland", biomeMap2, subSeed[3]);
-		std::thread t4 (&WorldGenerator2::createBiome, this, WorldGenerator2::STEPPES, 0.05, 2, 0.77, "Steppes", biomeMap2, subSeed[4]);
-		std::thread t5 (&WorldGenerator2::createBiome, this, WorldGenerator2::SNOW, 0.25, 2, 0.76, "Tundra", biomeMap2, subSeed[5]);
-		std::thread t6 (&WorldGenerator2::createBiome, this, WorldGenerator2::DESERT, 0.11, 1, 0.8, "Desert", biomeMap2, subSeed[6]);
-		std::thread t7 (&WorldGenerator2::createBiome, this, WorldGenerator2::HILLY, 0.05, 8, 0.8, "Hills", biomeMap2, subSeed[7]);
-		std::thread t8 (&WorldGenerator2::createBiome, this, WorldGenerator2::MOUNTAIN, 0.07, 13, 0.78, "Mountains", biomeMap2, subSeed[8]);
+		std::thread t1 (WorldGenerator2::createBiome, this, JUNGLE, 0.33, 4, 0.78, "Jungle", biomeMap2, subSeed[1]);
+		std::thread t2 (WorldGenerator2::createBiome, this, FOREST, 0.5, 8, 0.8, "Forest", biomeMap2, subSeed[2]);
+		std::thread t3 (&WorldGenerator2::createBiome, this, WETLAND, 0.05, 11, 0.79, "Wetland", biomeMap2, subSeed[3]);
+		std::thread t4 (&WorldGenerator2::createBiome, this, STEPPES, 0.05, 2, 0.77, "Steppes", biomeMap2, subSeed[4]);
+		std::thread t5 (&WorldGenerator2::createBiome, this, SNOW, 0.25, 2, 0.76, "Tundra", biomeMap2, subSeed[5]);
+		std::thread t6 (&WorldGenerator2::createBiome, this, DESERT, 0.11, 1, 0.8, "Desert", biomeMap2, subSeed[6]);
+		std::thread t7 (&WorldGenerator2::createBiome, this, HILLY, 0.05, 8, 0.8, "Hills", biomeMap2, subSeed[7]);
+		std::thread t8 (&WorldGenerator2::createBiome, this, MOUNTAIN, 0.07, 13, 0.78, "Mountains", biomeMap2, subSeed[8]);
 
 		t1.join();
 		t2.join();
@@ -848,7 +849,7 @@ class WorldGenerator2
 		for (int i=0;i<iterations;++i)
 		{
 			ArrayS2 <bool> aChangeTile (mapSize,mapSize,false);
-			ArrayS2 <unsigned char> aChangeTo (mapSize,mapSize,OCEAN);
+			ArrayS2 <enumBiome> aChangeTo (mapSize,mapSize,OCEAN);
 
 			// The edges aren't smoothed because they don't have a 'normal' amount of neighboring tiles.
 			for(int y=1;y<mapSize-1;++y)

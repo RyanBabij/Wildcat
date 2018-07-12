@@ -4,6 +4,9 @@
 	Makes UI code easier. Allows quick checking to see if the mouse lies within a region. Regionmanager makes it easier to manage menus and submenus.
 */
 
+
+#include <Container/Vector/Vector.hpp>
+
 namespace Wildcat
 {
 	// REGION conflicts with an X11 class...

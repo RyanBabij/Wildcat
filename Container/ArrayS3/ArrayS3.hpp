@@ -18,6 +18,8 @@
 #include <Math/BasicMath/BasicMath.hpp>
 #include <limits> // TO DETERMINE IF A VALUE IS EQUAL TO INFINITY.
 
+#include <Interface/HasXY.hpp>
+
 
 template <class T>
 class ArrayS3: public CanLoadSave

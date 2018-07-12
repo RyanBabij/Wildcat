@@ -4,6 +4,8 @@
 Any object that recieves keyboard input should inherit this class.
 */
 
+class Keyboard;
+
 class KeyboardInterface
 {
 	public:
