@@ -131,7 +131,7 @@ class Png
 			}
 			if ( _y < 10 )
 			{
-				std::cout<<(int)getPixel3D(0,_y,0)<<"\n";
+				//std::cout<<(int)getPixel3D(0,_y,0)<<"\n";
 			}
 		}
 	}
@@ -139,7 +139,7 @@ class Png
 		// Rotate the image 90 degrees clockwise.
 	void rotate90Clockwise()
 	{
-		std::cout<<"rotating png\n";
+		//std::cout<<"rotating png\n";
 		
 		Png temp;
 		temp.copy(this);
@@ -162,7 +162,7 @@ class Png
 			}
 			if ( _y < 10 )
 			{
-				std::cout<<(int)getPixel3D(0,_y,0)<<"\n";
+				//std::cout<<(int)getPixel3D(0,_y,0)<<"\n";
 			}
 		}
 	}
