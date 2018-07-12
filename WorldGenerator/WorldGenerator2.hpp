@@ -2,6 +2,10 @@
 #ifndef WILDCAT_MISC_WORLDGEN_WORLDGEN_HPP
 #define WILDCAT_MISC_WORLDGEN_WORLDGEN_HPP
 
+// These are hardcoded globals for now.
+
+#include <WorldGenerator/Biome.hpp>
+
 #include <Debug/RetCode.hpp> // FOR RETURN CODES.
 
 #include <Math/Fractal/DiamondSquareAlgorithm.hpp>
@@ -364,15 +368,20 @@ class WorldGenerator2
 	}
 		
 		// Rivers should eventually go on their own layer.
-	void createRivers(int nRivers=1)
+	void createRivers(int nRivers=1, int _seed=0)
 	{
 		std::cout<<"Creating rivers.\n";
 		
+    std::cout<<"River seed: "<<_seed<<".\n";
+    
 		//Get a heightmap for rivers.
 		
 		//Rivers always flow from mountain tiles.
 		
 		Vector <HasXY*> vMountainTiles;
+    
+    std::mt19937 rng;
+    rng.seed(_seed);
 		
 		//ArrayS2 <int> aOceanID;
 		//aOceanID.init(mapSize,mapSize,0);
@@ -388,7 +397,15 @@ class WorldGenerator2
 				}
 			}
 		}
-		vMountainTiles.shuffle();
+    if (_seed == 0)
+    {
+      vMountainTiles.shuffle();
+    }
+    else
+    {
+      vMountainTiles.shuffle(_seed);
+    }
+
 		
 		for (int i=0;i<nRivers && i<vMountainTiles.size();++i)
 		{
@@ -403,7 +420,18 @@ class WorldGenerator2
 			
 				// Spread to lowest neighbor which isn't river. Abort when next to ocean.
 				Vector <HasXY*>* vNeighbors = aTerrainType.getNeighbors(currentX,currentY,false);
-				vNeighbors->shuffle();
+        
+
+          //Shuffle vectors to randomly resolve equal height neighbors.
+        if ( _seed==0)
+        {
+          vNeighbors->shuffle();
+        }
+				else
+        {
+          vNeighbors->shuffle(rng);
+        }
+
 				//int i2=0;
 				int lowestHeight = 256;
 				HasXY* lowestTile = 0;
@@ -600,19 +628,17 @@ class WorldGenerator2
 		
 		// This section benefits greatly from multithreading.
 		//Biome creation time reduced from 3.2 seconds to 0.8 on my quad core.
+    // The main problem is that the biomes need to merge together in a predictable way.
 		
-		#define THREADED_BIOMES
+		//#define THREADED_BIOMES
 		
 		#ifndef THREADED_BIOMES
 		
 		createBiome (JUNGLE, 0.33, 4, 0.78, "Jungle", 0, subSeed[1]);
 		createBiome (FOREST, 0.5, 8, 0.8, "Forest", 0, subSeed[2]);
 		createBiome (WETLAND, 0.05, 11, 0.79, "Wetland", 0, subSeed[3]);
-		
 		createBiome (STEPPES, 0.05, 2, 0.77, "Steppes", 0, subSeed[4]);
-		
 		createBiome (SNOW, 0.25, 2, 0.76, "Tundra", 0, subSeed[5]);
-		
 		createBiome (DESERT, 0.11, 1, 0.8, "Desert", 0, subSeed[6]);
 		createBiome (HILLY, 0.05, 8, 0.8, "Hills", 0, subSeed[7]);
 		createBiome (MOUNTAIN, 0.07, 13, 0.78, "Mountains", 0, subSeed[8]);
@@ -657,7 +683,7 @@ class WorldGenerator2
 		//createBiome (CAVE, 0.01, 100, 0.86, "Cave");
 		//createBiomePrecise (RUIN, 0.0001, 100, 0.86, "Ruin");
 		
-		createRivers(20);	
+		createRivers(20, subSeed[11]);	
 
 		std::cout<<"Creating ice caps.\n";
 		createIceCaps(true, subSeed[10]);

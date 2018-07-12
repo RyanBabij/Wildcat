@@ -11,6 +11,8 @@ Class to store an expandable list of items. Currently just a wrapper of std::vec
 #include <algorithm> /* std::random_shuffle */
 #include <numeric> /* iota */
 
+#include <random> // for vector shuffle (only with seed).
+
 /* Debug macro */
 #ifdef CONTAINER_VECTOR_VERBOSE
 #include <iostream>
@@ -91,10 +93,35 @@ class Vector
 		}
 	}
 	
-		/* Shuffles the entries in the vector */
+  /* VECTOR SHUFFLE
+    Randomly shuffle the vector. Useful when you want to go through a collection
+    randomly without repeating.
+      There are 3 options:
+        Complete random shuffle.
+        Random shuffle with seed (when you only need to do one repeatable shuffle).
+        Random shuffle with rng (when you are chaining multiple shuffles and you
+        want predictable output).
+  */
+  
 	void shuffle ()
 	{
 		std::random_shuffle(begin(),end());
+	}
+    /* To shuffle vector in a predictable way. */
+	void shuffle (int _seed)
+	{
+    std::mt19937 g;
+    g.seed(_seed);
+ 
+    std::shuffle(begin(), end(), g);
+
+	}
+    /* To shuffle vector in a predictable way. */
+	void shuffle(std::mt19937 rng)
+	{
+    
+		std::shuffle(begin(),end(), rng);
+
 	}
 
 		// RETURN THE SLOT WITH THE PASSED VALUE. OTHERWISE RETURN -1.
