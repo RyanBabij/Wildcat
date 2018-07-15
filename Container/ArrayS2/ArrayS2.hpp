@@ -303,7 +303,7 @@ void setNeighbors(const int _x, const int _y, const ARRAYS2_T _value, const int 
 }
 
 	// RETURN A VECTOR OF INDEXES SURROUNDING (AND POSSIBLY INCLUDING) THE PASSED COORDINATES.
-Vector <HasXY*> * getNeighbors(const int _x, const int _y, const bool _includeSelf=false)
+Vector <HasXY*> * getNeighbors(const int _x, const int _y, const bool _includeSelf=false, const bool _shuffle=false)
 {
 	Vector <HasXY*> * vectorIndex = new Vector <HasXY*>;
 
@@ -327,9 +327,12 @@ Vector <HasXY*> * getNeighbors(const int _x, const int _y, const bool _includeSe
 	if(isSafe(_x+1,_y+1))
 	{ vectorIndex->push(new HasXY(_x+1,_y+1)); }
 
+  // Often we will want the neighbor vector shuffled to prevent directional bias.
+  if (_shuffle) { vectorIndex->shuffle(); }
+
 	return vectorIndex;
 }
-Vector <HasXY*> * getNeighbors( HasXY* _index, const bool _includeSelf=false)
+Vector <HasXY*> * getNeighbors( HasXY* _index, const bool _includeSelf=false, const bool _shuffle=false)
 { return getNeighbors(_index->x, _index->y, _includeSelf); }
 
 	// 0241794590: APPARENTLY THIS NEVER EXISTED BEFORE NOW. MAYBE MAKE THIS THE NEW STANDARD FUNCTION.

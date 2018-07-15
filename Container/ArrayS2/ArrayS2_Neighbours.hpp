@@ -15,7 +15,7 @@
 
 
 	// WHAT THE HELL IS 'INDEX'? I'LL PUT A HASXY IMPLEMENTATION HERE.
-Vector <HasXY*> * getNeighbors(const int _x, const int _y, const bool _includeSelf=false)
+Vector <HasXY*> * getNeighbors(const int _x, const int _y, const bool _includeSelf=false, const bool _shuffle = false)
 {
 	Vector <HasXY*> * vectorIndex = new Vector <HasXY*>;
 
@@ -38,6 +38,9 @@ Vector <HasXY*> * getNeighbors(const int _x, const int _y, const bool _includeSe
 	{ vectorIndex->push(new HasXY(_x+1,_y)); }
 	if(isSafe(_x+1,_y+1))
 	{ vectorIndex->push(new HasXY(_x+1,_y+1)); }
+
+  // Often we will want the vector of neighbors to be shuffled to prevent directional bias.
+  if (_shuffle) { vectorIndex.shuffle(); }
 
 	return vectorIndex;
 }
