@@ -7,13 +7,6 @@
 
 	My implementation of a 2D array. This header contains just the basic functions.
 
-	0230223265
-	Moving all non-basic stuff out of core header. Did cpp/hpp thingy. Tidied things up.
-
-	0252764426
-	Note that HasXY may end up being replaced with tuples... In this case, std::pair.
-	
-	
 	NOTES:
 	
 	How to initialise null value for an array of non-pointer objects.
@@ -75,7 +68,8 @@ class ArrayS2
 	ArrayS2 (const ArrayS2 <ARRAYS2_T> &array);
 		// EXPLICIT INITIALISATION
 	void init(const unsigned int x, const unsigned int y, const ARRAYS2_T _nullValue);
-		// When initializing without pointers, we can't pass a default address.
+  
+		// When initializing without pointers, we can't pass a default address. Instead we must construct a class on each address.
 	void initClass(const unsigned int x, const unsigned int y);
 
 		// SET FUNCTIONS

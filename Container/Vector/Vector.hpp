@@ -12,6 +12,7 @@ Class to store an expandable list of items. Currently just a wrapper of std::vec
 #include <numeric> /* iota */
 
 #include <random> // for vector shuffle (only with seed).
+#include <Math/Random/GlobalRandom.hpp> // Used for getting random entries.
 
 /* Debug macro */
 #ifdef CONTAINER_VECTOR_VERBOSE
@@ -123,6 +124,10 @@ class Vector
 		std::shuffle(begin(),end(), rng);
 
 	}
+  
+  //Get a random entry. (must pass an rng)
+	inline T& getRandom(RandomNonStatic& rng)
+	{ return data.at(rng.randomInt(size()-1)); }
 
 		// RETURN THE SLOT WITH THE PASSED VALUE. OTHERWISE RETURN -1.
 	int findSlot(T _value)

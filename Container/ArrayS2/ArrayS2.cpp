@@ -2,11 +2,13 @@
 #ifndef WILDCAT_CONTAINER_ARRAYS2_ARRAYS2_CPP
 #define WILDCAT_CONTAINER_ARRAYS2_ARRAYS2_CPP
 
-#include <stdlib.h> /* ABS */
+#include <stdlib.h> /* abs */
 
 /*
+
 	<Container/ArrayS2/ArrayS2.cpp>
 	Implementation of <Container/ArrayS2/ArrayS2.hpp>
+
 */
 
 template <class ARRAYS2_T>
