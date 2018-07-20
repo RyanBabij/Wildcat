@@ -340,6 +340,17 @@ static int DeleteDirectory(const std::string &refcstrRootDirectory, bool bDelete
 		}
 		return (attribs & FILE_ATTRIBUTE_DIRECTORY);
 	}
+  
+	// RETURN TRUE IF FILE EXISTS. RETURN FALSE IF FILE DOESN'T EXIST.
+	static bool fileExists(const std::string filePath)
+	{
+		std::fstream ifile(filePath.c_str());
+		// IF THE FILE DOESN'T EXIST, RETURN FALSE.
+		//if (ifile == 0) { return false; }
+			// COMPARISON TO 0 DOESN'T SEEM TO WORK ANYMORE HERE.
+		if (!ifile) { return false; }
+		return true;
+	}
 	
 	// Make a new blank file. If the file already exists, make it blank. Returns false if something went wrong.
 	static bool makeNewFile(const std::string filePath)
@@ -354,6 +365,35 @@ static int DeleteDirectory(const std::string &refcstrRootDirectory, bool bDelete
 		{ return makeNewFile(filePath); }
 	
 	
+	// WRITE A STRING TO A FILE. IF THE FILE DOESN'T EXIST, CREATE IT.
+	// RETURN FALSE IF SOMETHING WENT WRONG.
+	static bool writeString ( const std::string _text, const std::string _filePath)
+	{
+		// IF FILE DOESN'T EXIST, CREATE IT.
+		if ( fileExists (_filePath) == false )
+		{
+			makeNewFile(_filePath);
+		}
+
+		// DOUBLE CHECK FILE EXISTS NOW.
+		if ( fileExists (_filePath) == false )
+		{
+			// RETURN ERROR.
+			return false;
+		}
+
+
+		std::FILE * pFile = std::fopen (_filePath.c_str(),"a");
+		if (pFile!=NULL)
+		{
+			std::fputs (_text.c_str(),pFile);
+			std::fclose (pFile);
+			return true;
+		}
+		/* If there was an error, return false. */
+		return false;
+	}
+  
 	~FileManager() {}
 };
 #endif
