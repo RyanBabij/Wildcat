@@ -202,36 +202,40 @@ class Keyboard
 		keyWasPressed=false;
 		keyWasUnpressed=false;
 	}
-    void keyDown(const int keyVal)
+  void keyDown(const int keyVal)
+  {
+    if(keyMap[keyVal]==false)
     {
-		if(keyMap[keyVal]==false)
-		{
-			numKeysDown++;
-			keyMap[keyVal]=true;
-			lastKey=keyVal;
-		}
-		keyWasPressed=true;
+      numKeysDown++;
+      keyMap[keyVal]=true;
+      lastKey=keyVal;
     }
-    void keyUp(const int keyVal)
+    keyWasPressed=true;
+  }
+  void keyUp(const int keyVal)
+  {
+    if(keyMap[keyVal]==true)
     {
-		if(keyMap[keyVal]==true)
-		{
-			numKeysDown--;
-			keyMap[keyVal]=false;
-		}
+      numKeysDown--;
+      keyMap[keyVal]=false;
     }
-    void specialKeyDown(const int keyVal)
-    {
-        keyMap[keyVal+SPECIAL_KEY_MODIFIER]=true;
-    }
-    void specialKeyUp(const int keyVal)
-    {
-        keyMap[keyVal+SPECIAL_KEY_MODIFIER]=false;
-    }
-    bool isPressed(const int keyVal)
-    {
-        return(keyMap[keyVal]);
-    }
+  }
+  void unpress (const int keyVal) { keyUp(keyVal); }
+  void unPress (const int keyVal) { keyUp(keyVal); }
+  
+  
+  void specialKeyDown(const int keyVal)
+  {
+      keyMap[keyVal+SPECIAL_KEY_MODIFIER]=true;
+  }
+  void specialKeyUp(const int keyVal)
+  {
+      keyMap[keyVal+SPECIAL_KEY_MODIFIER]=false;
+  }
+  bool isPressed(const int keyVal)
+  {
+      return(keyMap[keyVal]);
+  }
     /*void printKey(int keyVal)
     {
 		std::cout<<"KEYBOARD::printkey Not functional\n";

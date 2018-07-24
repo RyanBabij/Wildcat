@@ -394,6 +394,57 @@ static int DeleteDirectory(const std::string &refcstrRootDirectory, bool bDelete
 		return false;
 	}
   
+	/* Get data from the entire file, in a string. This could cause memory problems if the file is too large. */
+	
+		// There seems to be a problem loading PNGs like this. There might be an issue reading terminators or something.
+		// I used a different method which works.
+		//https://stackoverflow.com/questions/2602013/read-whole-ascii-file-into-c-stdstring
+	static std::string getData(const std::string file)
+	{
+		std::string strRet = "";
+
+		std::ifstream file2;
+		file2.open(file.c_str(), std::ios::in|std::ios::binary|std::ios::ate);
+		if(file2.is_open())
+		{
+				// THIS NEW WAY CONVERTS DIRECTLY INTO STRING.
+			file2.seekg(0, std::ios::end);
+				// RESERVING MEMORY FOR THE STRING MAKES THINGS FASTER.
+			strRet.reserve(file2.tellg());
+			file2.seekg(0, std::ios::beg);
+			strRet.assign((std::istreambuf_iterator<char>(file2)),
+						std::istreambuf_iterator<char>());
+
+				// OLD WAY WHICH DOESN"T SEEM TO BE RELIABLE.
+			// const unsigned int fileSize=file2.tellg();
+			// std::cout<<"Filesize: "<<fileSize<<".\n";
+			// char* fileData = new char[fileSize+1];
+			// file2.seekg (0, std::ios::beg);
+			// file2.read (fileData, fileSize);
+			// file2.close();
+				// // Hafta add the null terminator myself.
+			// fileData [fileSize] = '\0';
+
+			// strRet = fileData;
+
+		}
+		
+		return strRet;
+	}
+	// ALIASES FOR static std::string getData(const std::string file)
+	static std::string loadFile(const std::string file) { return getData(file);  }
+	static std::string openFile(const std::string file) { return getData(file);  }
+	static std::string open(const std::string file) { return getData(file);  }
+	static std::string load(const std::string file) { return getData(file);  }
+	static std::string getFile(const std::string file) { return getData(file);  }
+
+  // RETURN THE DATA AFTER THE GIVEN TAG. END OF DATA IS NEWLINE. TAG
+  // MUST BE AT BEGINNING OF LINE.
+  std::string extractLineTag (std::string tagName)
+  {
+    return "";
+  }
+  
 	~FileManager() {}
 };
 #endif
