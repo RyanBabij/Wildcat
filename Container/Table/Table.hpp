@@ -367,43 +367,25 @@ class Table
 		vColumn(_column)->push(_data);
 	}
 	
-	void cout()
-	{
-			std::cout<<"Printing table.\n";
-		for ( int i2=0;i2<vColumn(0)->size();++i2)
-		{
-			for ( int i=0;i<vColumn.size();++i)
-			{
-				//std::cout<<"Column: "<<i<<".\n";
-				//Table_Column* c = vColumn(i);
-			
-
-				std::cout<<get(i,i2)<<", ";
-			}
-			std::cout<<"\n";
-		}
-	}
+	// void cout()
+	// {
+			// std::cout<<"Printing table.\n";
+		// for ( int i2=0;i2<vColumn(0)->size();++i2)
+		// {
+			// for ( int i=0;i<vColumn.size();++i)
+			// {
+				// std::cout<<get(i,i2)<<", ";
+			// }
+			// std::cout<<"\n";
+		// }
+	// }
 	
 	void sortAscendingBy(int _column)
 	{
 		vID.clear();
 		Vector <int>* vIndex = vColumn(_column)->sortAscending();
-		
-		//std::cout<<"Sorted... Indexes:\n";
-		
-		for (int i=0;i<vIndex->size();++i)
-		{
-			//std::cout<<(*vIndex)(i)<<".\n";
-		}
-		
 		vID.copy(vIndex);
-		
-		//std::cout<<"VID:\n";
-		
-		for (int i=0;i<vIndex->size();++i)
-		{
-			//std::cout<<vID(i)<<".\n";
-		}
+
 		delete vIndex;
 	}
 	void sortDescendingBy(int _column)
@@ -432,6 +414,21 @@ class Table
 		return "?";
 	}
 	
+    // Returns true if any column contains filter.
+  bool matchesFilter (std::string _filter, int _row)
+  {
+    
+    for ( int i=0;i<vColumn.size();++i)
+    {
+      if ( get(i,_row).find(_filter) )
+      {
+        return true;
+      }
+    }
+
+    
+    return false;
+  }
 	
 };
 
@@ -607,6 +604,39 @@ class Table2
 		//}
 		//return "?";
 	}
+  
+    // Returns true if any column contains filter.
+    // Case insensitive for now because the font is only uppercase.
+  bool matchesFilter (const std::string _filter, Vector <std::string>* vColumnQuery, const int _row)
+  {
+    //std::cout<<"Checking filter: "<<_filter<<".\n";
+    for ( int i=0;i<vColumnQuery->size();++i)
+    {
+      const std::string _query = get((*vColumnQuery)(i),_row);
+      
+      //Case insensitive string match
+      // Stolen from https://stackoverflow.com/questions/3152241/case-insensitive-stdstring-find
+      auto it = std::search(
+        _query.begin(), _query.end(),
+        _filter.begin(),   _filter.end(),
+        [](char ch1, char ch2) { return std::toupper(ch1) == std::toupper(ch2); }
+      );
+      
+      if (it != _query.end() )
+      {
+        return true;
+      }
+      
+      // if ( get((*vColumnQuery)(i),_row).find(_filter.toupper()) != std::string::npos)
+      // {
+        // //std::cout<<"GET: "<<get((*vColumnQuery)(i),_row)<<" matches.\n";
+        // return true;
+      // }
+    }
+
+    
+    return false;
+  }
 	
 
 	

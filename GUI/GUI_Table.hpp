@@ -111,8 +111,14 @@ class GUI_Table: public GUI_Interface
 			for (int i2=scrolledAmount;i2<table->nRows() && currentY>panelY1;++i2)
 			{
 				//font8x8.drawText(table->get(i,i2),panelX1+currentX,currentY,panelX1+currentX+vColumnWidth(i),currentY+12);
-				font8x8.drawText(table->get(vColumnQuery(i),i2),panelX1+currentX,currentY,panelX1+currentX+vColumnWidth(i),currentY+12,false,true);
-				currentY-=12;
+        
+        if ( textEntryFilter.input=="" || table->matchesFilter(textEntryFilter.input,&vColumnQuery,i2) )
+        {
+        
+          font8x8.drawText(table->get(vColumnQuery(i),i2),panelX1+currentX,currentY,panelX1+currentX+vColumnWidth(i),currentY+12,false,true);
+          currentY-=12;
+        
+        }
 			}
 			currentX+=vColumnWidth(i);
 		}
