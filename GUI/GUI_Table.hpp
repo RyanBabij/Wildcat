@@ -18,6 +18,13 @@ class GUI_Table: public GUI_Interface
 		Vector <std::string> vColumnQuery;
 		
 		int scrolledAmount; /* How many entries down we are scrolled. */
+    
+    // TextEntry: Filter input.
+    GUI_TextEntry textEntryFilter;
+    
+    Colour colourNormal;
+    Colour colourSelected;
+    
 	public:
 	
 	Table2* table;
@@ -70,18 +77,20 @@ class GUI_Table: public GUI_Interface
 		
 		tooltipX=0;
 		tooltipY=0;
+    
+		textEntryFilter.setColours(&colourNormal,&colourSelected);
+		textEntryFilter.fieldName="Filter:";
+		textEntryFilter.characterLimit=20;
+		textEntryFilter.input = "";
+    textEntryFilter.active=true;
+    
 	}
 	
 	void render()
 	{
-		if (active==false)
-		{
-			return;
-		}
-		if ( table==0 )
-		{
-			return;
-		}
+		if (active==false || table == 0)
+		{ return; }
+
 		Renderer::placeColour4a(150,150,150,alpha,panelX1,panelY1,panelX2,panelY2);
 		
 			// RENDER TABLE VIEW.
@@ -95,6 +104,8 @@ class GUI_Table: public GUI_Interface
 					// // DRAW COLUMN HEADING.
 			font8x8.drawText(vColumnHeading(i),panelX1+currentX,panelY2-2,panelX1+currentX+vColumnWidth(i),panelY2-12,false,true);
 			// }
+      
+      currentY-=8;
 
 				// DRAW COLUMN ENTRIES.
 			for (int i2=scrolledAmount;i2<table->nRows() && currentY>panelY1;++i2)
@@ -108,7 +119,7 @@ class GUI_Table: public GUI_Interface
 
 		if ( lastRowClicked != -1 )
 		{
-				Renderer::placeColour4a(250,250,250,60,panelX1,(panelY2-30)-(12*lastRowClicked),panelX2,(panelY2-30)-(12*lastRowClicked)+12);
+				Renderer::placeColour4a(250,250,250,60,panelX1,(panelY2-38)-(12*lastRowClicked),panelX2,(panelY2-38)-(12*lastRowClicked)+12);
 		}
 		
 		if ( getMaxRows() < table->nRows() )
@@ -144,11 +155,15 @@ class GUI_Table: public GUI_Interface
 			std::string strTooltip = DataTools::toString(scrolledAmount+1)+"-"+DataTools::toString(scrolledAmount+getMaxRows()+1)+"/"+DataTools::toString(table->nRows()+1);
 			font8x8.drawText(strTooltip,tooltipX-160,tooltipY,tooltipX,tooltipY+12,true,true);
 		}
+    
+    textEntryFilter.render();
 	}
 	
 	void eventResize()
 	{
 		//std::cout<<"Table resized\n";
+    textEntryFilter.setPanel(panelX1+20, panelY2-14, panelX2 -20, panelY2-24);
+
 	}
 	
 	void clear()
@@ -176,14 +191,9 @@ class GUI_Table: public GUI_Interface
 	bool mouseEvent (Mouse* _mouse)
 	{
 	
-		if ( active==false)
-		{
-			return false;
-		}
-		if ( table==0 )
-		{
-			return false;
-		}
+		if ( active==false || table == 0)
+		{ return false; }
+  
 		if (_mouse->isLeftDown==false)
 		{
 			mousePanning=false;
@@ -191,7 +201,6 @@ class GUI_Table: public GUI_Interface
 		
 		if ( _mouse->isLeftClick==true || mousePanning )
 		{
-			_mouse->isLeftClick=false;
 			
 			// Check if scrollbar is clicked
 			if ( getMaxRows() < table->nRows() && (mousePanning==true
@@ -256,11 +265,11 @@ class GUI_Table: public GUI_Interface
 			
 			if (mousePanning == false)
 			{
-		
+        // Check if a column heading was clicked.
 				int currentX=panelX1+2;
 				for (int i=0;i<vColumnHeading.size();++i)
 				{
-					int currentY = panelY2-30;
+					int currentY = panelY2-38;
 					if ( _mouse->inBounds(panelX1+currentX,panelY2-2,panelX1+currentX+vColumnWidth(i),panelY2-12) )
 					{
 						if ( i!=lastSortedIndex)
@@ -301,8 +310,47 @@ class GUI_Table: public GUI_Interface
 					currentX+=vColumnWidth(i);
 				}
 			}
-		
+
+      textEntryFilter.mouseEvent(_mouse);
+      _mouse->isLeftClick=false;
 		}
+    
+    if (_mouse->isRightClick )
+    {
+      // Check if a column heading was clicked.
+      int currentX=panelX1+2;
+      for (int i=0;i<vColumnHeading.size();++i)
+      {
+        int currentY = panelY2-30;
+        if ( _mouse->inBounds(panelX1+currentX,panelY2-2,panelX1+currentX+vColumnWidth(i),panelY2-12) )
+        {
+          std::cout<<"FILTER\n";
+          
+          
+          if ( i!=lastSortedIndex)
+          {
+            table->sortAscendingBy(vColumnQuery(i));
+            isAscending=true;
+          }
+          else
+          {
+            if ( isAscending==true )
+            {
+              table->sortDescendingBy(vColumnQuery(i));
+              isAscending=false;
+            }
+            else
+            {
+              table->sortAscendingBy(vColumnQuery(i));
+              isAscending=true;
+            }
+          }
+          lastSortedIndex=i;
+        }
+        currentX+=vColumnWidth(i);
+      }
+
+    }
 	
 		return false;
 	}
@@ -314,17 +362,14 @@ class GUI_Table: public GUI_Interface
 		{
 			if(_keyboard->isPressed(Keyboard::UP))
 			{
-				//std::cout<<"UP\n";
 				highlightPrevious();
 			}
 			if(_keyboard->isPressed(Keyboard::DOWN))
 			{
-				//std::cout<<"DOWN\n";
 				highlightNext();
 			}
 			if (_keyboard->isPressed(Keyboard::PAGE_UP))
 			{
-				//std::cout<<"pig up\n";
 				scrolledAmount-=getMaxRows();
 				lastRowClicked=0;
 				if ( scrolledAmount<0)
@@ -334,7 +379,6 @@ class GUI_Table: public GUI_Interface
 			}
 			if (_keyboard->isPressed(Keyboard::PAGE_DOWN))
 			{
-				//std::cout<<"pig down\n";
 				scrolledAmount+=getMaxRows();
 				lastRowClicked=getMaxRows();
 				
@@ -350,6 +394,7 @@ class GUI_Table: public GUI_Interface
 					--scrolledAmount;
 				}
 			}
+      textEntryFilter.keyboardEvent(_keyboard);
 		}
 		return false;
 	}
@@ -404,6 +449,15 @@ class GUI_Table: public GUI_Interface
 			}
 		}
 
+	}
+  
+  
+	void setColours(const Colour* cNormal, const Colour* cSelected)
+	{
+		colourNormal.set(cNormal);
+		colourSelected.set(cSelected);
+    
+    textEntryFilter.setColours(cNormal,cSelected);
 	}
 	
 };
