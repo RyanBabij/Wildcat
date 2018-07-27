@@ -81,6 +81,20 @@ class DiamondSquareAlgorithmCustomRange
 				aValueTable[i]=0;
 			}
 		}
+    
+    if ( aMap == 0 || aMap->nX==0 || aMap->nY == 0 )
+    {
+      std::cout<<"Error DiamondSquareAlgorithmCustomRange: Empty or zero-size array passed.\n";
+      return;
+    }
+    
+    //Quick check to make sure the array has dimensions (n^2)+1.
+    if ( (((aMap->nX-1) & (aMap->nX - 2)) != 0)  || (((aMap->nY-1) & (aMap->nY - 2)) != 0 ) )
+    {
+      std::cout<<"Error DiamondSquareAlgorithmCustomRange: Array dimensions must be (n^2)+1.\n";
+      return;
+    }
+    
 
 			// Warning: Messing with this can destroy several hours of your life.
 		int freeStepValue = -1; // -1 == random.

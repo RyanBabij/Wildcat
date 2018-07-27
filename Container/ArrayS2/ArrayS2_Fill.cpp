@@ -62,7 +62,7 @@ void ArrayS2<ARRAYS2_T>::fillFromCenterPoint(const int _centerX, const int _cent
 
 
 template <class ARRAYS2_T>
-void ArrayS2<ARRAYS2_T>::fillBorder ( const ARRAYS2_T _value, const int _startX, const int _startY, int _endX, int _endY )
+void ArrayS2<ARRAYS2_T>::fillBorder ( const ARRAYS2_T _value, const int _startX /*=0*/, const int _startY /*=0*/, int _endX /*=nX-1*/, int _endY /*=nY-1*/)
 {
 	// FOR SOME REASON I CAN REFERENCE THE CLASS VARS IN THE DEFAULT ASSIGNMENT...
 	if (_endX==-1) { _endX = nX-1; }

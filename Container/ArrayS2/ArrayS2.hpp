@@ -248,7 +248,7 @@ template<class Function>
 // also allow coordinates to be passed.
 // THE COORDS ARE INCLUSIVE.
 
-void fillBorder ( const ARRAYS2_T _value, const int _startX=0, const int _startY=0, const int _endX=-1, const int _endY=-1 );
+void fillBorder ( const ARRAYS2_T _value, const int _startX=0, const int _startY=0, int _endX=-1, int _endY=-1 );
 
 
 /* ArrayS2_Neighbours.hpp
