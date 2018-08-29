@@ -9,6 +9,8 @@ class LogicTickInterface
 	virtual void logicTick()
 	{
 	}
+  
+  ~LogicTickInterface() {}
 };
 
 #endif

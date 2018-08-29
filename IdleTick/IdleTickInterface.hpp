@@ -15,6 +15,8 @@ class IdleTickInterface
 	virtual void idleTick()
 	{
 	}
+  
+  ~IdleTickInterface() {}
 };
 
 #endif
