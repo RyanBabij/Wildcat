@@ -160,6 +160,47 @@ class FileManager
 		}
 		return 0;
 	}
+  
+  
+	/* Get data from the entire file, in a string. This could cause memory problems if the file is too large.
+	
+		There seems to be a problem loading PNGs like this. There might be an issue reading terminators or something.
+		I used a different method which works.
+		https://stackoverflow.com/questions/2602013/read-whole-ascii-file-into-c-stdstring
+  */
+	static std::string getFileAsString(const std::string file)
+	{
+		std::string strRet = "";
+
+		std::ifstream file2;
+		file2.open(file.c_str(), std::ios::in|std::ios::binary|std::ios::ate);
+		if(file2.is_open())
+		{
+				// THIS NEW WAY CONVERTS DIRECTLY INTO STRING.
+			file2.seekg(0, std::ios::end);
+				// RESERVING MEMORY FOR THE STRING MAKES THINGS FASTER.
+			strRet.reserve(file2.tellg());
+			file2.seekg(0, std::ios::beg);
+			strRet.assign((std::istreambuf_iterator<char>(file2)),
+						std::istreambuf_iterator<char>());
+
+				// OLD WAY WHICH DOESN"T SEEM TO BE RELIABLE.
+			// const unsigned int fileSize=file2.tellg();
+			// std::cout<<"Filesize: "<<fileSize<<".\n";
+			// char* fileData = new char[fileSize+1];
+			// file2.seekg (0, std::ios::beg);
+			// file2.read (fileData, fileSize);
+			// file2.close();
+				// // Hafta add the null terminator myself.
+			// fileData [fileSize] = '\0';
+
+			// strRet = fileData;
+
+		}
+		
+		return strRet;
+	}
+  
 	static bool saveToFile(std::string filePath, unsigned char* data2, int dataSize)
 	{
 		std::ofstream file;
@@ -387,6 +428,38 @@ static int DeleteDirectory(const std::string &refcstrRootDirectory, bool bDelete
 		if (pFile!=NULL)
 		{
 			std::fputs (_text.c_str(),pFile);
+			std::fclose (pFile);
+			return true;
+		}
+		/* If there was an error, return false. */
+		return false;
+	}
+  
+	// WRITE A STRING TO A FILE, WHICH WILL BE ENCLOSED IN TAGS. IF THE FILE DOESN'T EXIST, CREATE IT.
+	// RETURN FALSE IF SOMETHING WENT WRONG.
+  // TAGS ARE ENCLOSED IN SQUARE BRACKETS. [TAG:DATA].
+	static bool writeTag ( const std::string _tag, const std::string _text, const std::string _filePath)
+	{
+		// IF FILE DOESN'T EXIST, CREATE IT.
+		if ( fileExists (_filePath) == false )
+		{
+			makeNewFile(_filePath);
+		}
+
+		// DOUBLE CHECK FILE EXISTS NOW.
+		if ( fileExists (_filePath) == false )
+		{
+			// RETURN ERROR.
+			return false;
+		}
+    
+    std::string dataToWrite = "["+_tag+":"+_text+"]";
+
+
+		std::FILE * pFile = std::fopen (_filePath.c_str(),"a");
+		if (pFile!=NULL)
+		{
+			std::fputs (dataToWrite.c_str(),pFile);
 			std::fclose (pFile);
 			return true;
 		}
