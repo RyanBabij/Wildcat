@@ -11,6 +11,8 @@
 
 #include <experimental/filesystem> /* New c++14 experimental support for filesystems. Should be standard in C++17 */
 
+#include <windows.h> //CreateDirectory (will need to be ported)
+
 /* File/FileManager.hpp
 Library to make file IO easier. Also allows easier object serialisation.
 */

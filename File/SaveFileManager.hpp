@@ -2,6 +2,7 @@
 #define WILDCAT_SAVEFILEMANAGER_HPP
 
 #include <Data/DataTools.hpp>
+#include <File/FileManager.hpp>
 
 /* Wildcat:SaveFileManager.hpp
   #include <File/SaveFileManager.hpp>
@@ -48,13 +49,13 @@
   
 */
 
-#include <File/FileManager.hpp>
 
 /* Objects that can load and save should use this interface. */
 
 class SaveFileInterface
 {
   private:
+    // uid is used to store pointers between objects.
   long long int uid;
   
   public:
@@ -87,6 +88,10 @@ class SaveFileInterface
   {
     return "";
   }
+  
+  virtual void save()
+  {
+  }
 
   
 };
@@ -96,35 +101,122 @@ class SaveFileManager
 {
 	public:
   std::string data;
+  //std::string savePath;
   
-  Vector <SaveFileInterface*> vSaveObjects;
+  //Vector <SaveFileInterface*> vSaveObjects;
+  
+	//FileManager::createFile(worldFilePath);
+  //FileManager::writeTag("LANDSEED",DataTools::toString(landmassSeed),worldFilePath);
   
 
-	SaveFileManager() {}
+	SaveFileManager()
+  {
+    data = "";
+    //savePath = "";
+  }
+  
 	~SaveFileManager() {}
   
   
   // Load the savefile into RAM.
   void loadFile (std::string _file)
   {
-    std::cout<<"Load file.\n";
-    
+    std::cout<<"LOADING FILE: "<<_file<<".\n";
     data = FileManager::getFileAsString(_file);
     
   }
   
-  // Load the savefile into RAM.
-  void saveFile (std::string _file)
+  // ADD VARIABLE TO SAVE STRING
+  template <class T>
+  void addVariable(std::string _tag, T _value)
   {
-    std::cout<<"Save file.\n";
-    data = "";
-    for (int i=0;i<vSaveObjects.size();++i)
+    std::cout<<"ADD VARIABLE\n";
+    data+="["+_tag+":"+DataTools::toString(_value)+"]";
+  }
+  
+  // RETURN DATA THAT MATCHES TAG.
+  // IF CANNOT BE FOUND, RETURN EMPTY STRING.
+  std::string loadVariableString (std::string _tag)
+  {
+    
+    std::size_t found = data.find("["+_tag+":");
+    if (found!=std::string::npos)
     {
-      data += vSaveObjects(i)->getSaveData();
+      found += _tag.length() + 2;
+      
+      std::string _saveData = "";
+      while (found != std::string::npos && data[found] != ']')
+      {
+        _saveData+=data[found];
+        ++found;
+      }
+      
+      return _saveData;
     }
+      
+    std::cout<<"ERROR: DIDN'T FIND TAG: "<<_tag<<".\n";
+    return "";
+  }
+  
+  // Load the savefile into RAM.
+  void saveToFile (std::string _path)
+  {
+    std::cout<<"SAVING DATA TO: "<<_path<<".\n";
+    
+    //savePath = _path;
+    
+    FileManager::createFile(_path);
+    FileManager::writeString(data, _path);
+    
+    //data = "";
+    // for (int i=0;i<vSaveObjects.size();++i)
+    // {
+      // //data += vSaveObjects(i)->getSaveData();
+      // vSaveObjects(i)->save();
+    // }
     
     //data = FileManager::getFileAsString(_file);
     
   }
+  
+  // template <class T>
+  // bool saveVariable(std::string _tag, T _value)
+  // {
+    // std::cout<<"SAVE VARIABLE\n";
+    // //std::string saveData = DataTools::toString(_value);
+    // std::string saveData = "["+_tag+":"+DataTools::toString(_value)+"]";
+    // FileManager::writeString(saveData,savePath);
+    // return false;
+  // }
+  
+  // template <class T>
+  // std::string toSaveData(std::string _tag, T _value)
+  // {
+    // //std::cout<<"SAVE VARIABLE\n";
+    // //std::string saveData = DataTools::toString(_value);
+    // std::string saveData = "["+_tag+":"+DataTools::toString(_value)+"]";
+    // return saveData;
+  // }
+  
+  
+  // // Load the savefile into RAM.
+  // void saveFile (std::string _path)
+  // {
+    // std::cout<<"Save file.\n";
+    
+    // savePath = _path;
+    
+    // FileManager::createFile(_path);
+    
+    // //data = "";
+    // for (int i=0;i<vSaveObjects.size();++i)
+    // {
+      // //data += vSaveObjects(i)->getSaveData();
+      // vSaveObjects(i)->save();
+    // }
+    
+    // //data = FileManager::getFileAsString(_file);
+    
+  // }
 };
 #endif
