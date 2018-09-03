@@ -24,7 +24,7 @@ bool loadTextureMipmapRotate(const std::string filePath, GLuint* tex0, GLuint* t
 
 	if(data!=0)
 	{
-		Png png0;
+		Png png0(true);
 		png0.load(data,fileSize);
 
 		Texture* texture0 = new Texture;
@@ -100,7 +100,7 @@ bool loadTextureAutoMipmap(const std::string filePath, GLuint* textureID)
 	unsigned char* data = FileManager::getFile(filePath,&fileSize);
 	if(data!=0)
 	{
-		Png png;
+		Png png(true);
 		png.load(data,fileSize);
 
 		Texture* texture = new Texture;
@@ -138,7 +138,7 @@ bool loadTextureAutoMipmap(const std::string filePath, Texture* tex)
 	unsigned char* data = FileManager::getFile(filePath,&fileSize);
 	if(data!=0)
 	{
-		Png png;
+		Png png(true);
 		png.load(data,fileSize);
 
 		Texture* texture = new Texture;
@@ -187,7 +187,7 @@ bool loadTextureAutoMipmapNative(const std::string filePath, GLuint* textureID)
 	unsigned char* data = FileManager::getFile(filePath,&fileSize);
 	if(data!=0)
 	{
-		Png png;
+		Png png(true);
 		png.load(data,fileSize);
 
 		Texture* texture = new Texture;
@@ -228,7 +228,7 @@ bool loadTextureAutoMipmapNative(const std::string filePath, Texture* texture)
 	unsigned char* data = FileManager::getFile(filePath,&fileSize);
 	if(data!=0)
 	{
-		Png png;
+		Png png(true);
 		png.load(data,fileSize);
 
 		//Texture* texture = new Texture;
@@ -262,7 +262,7 @@ bool loadTextureNearestNeighbour(const std::string filePath, GLuint* textureID)
 	unsigned char* data = FileManager::getFile(filePath,&fileSize);
 	if(data!=0)
 	{
-		Png png;
+		Png png(true);
 		png.load(data,fileSize);
 		Texture* texture = new Texture;
 		texture->create(png.nX,png.nY,1);
@@ -294,7 +294,7 @@ bool loadTextureNearestNeighbour(const std::string filePath, Texture* texture)
 		unsigned char* data = FileManager::getFile(filePath,&fileSize);
 		if(data!=0)
 		{
-			Png png;
+			Png png(true);
 			png.load(data,fileSize);
 			
 			//std::cout<<"Getting average colour.\n";
@@ -323,7 +323,7 @@ bool loadTextureRotate(const std::string filePath, Texture* tex0, Texture* tex90
 
 	if(data!=0)
 	{
-		Png png;
+		Png png(true);
 		png.load(data,fileSize);
 		png.getAverageColour();
 
@@ -333,7 +333,7 @@ bool loadTextureRotate(const std::string filePath, Texture* tex0, Texture* tex90
 		tex0->averageGreen = png.averageGreen;
 		tex0->averageBlue = png.averageBlue;
 		
-		Png png2;
+		Png png2(true);
 		png2.copy(&png);
 		png2.rotate90Clockwise();
 		tex90->create(png2.nX,png2.nY,1);
@@ -342,7 +342,7 @@ bool loadTextureRotate(const std::string filePath, Texture* tex0, Texture* tex90
 		tex90->averageGreen = png2.averageGreen;
 		tex90->averageBlue = png2.averageBlue;
 		
-		Png png3;
+		Png png3(true);
 		png3.copy(&png2);
 		png3.rotate90Clockwise();
 		tex180->create(png3.nX,png3.nY,1);
@@ -351,7 +351,7 @@ bool loadTextureRotate(const std::string filePath, Texture* tex0, Texture* tex90
 		tex180->averageGreen = png3.averageGreen;
 		tex180->averageBlue = png3.averageBlue;
 		
-		Png png4;
+		Png png4(true);
 		png4.copy(&png3);
 		png4.rotate90Clockwise();
 		tex270->create(png4.nX,png4.nY,1);
@@ -493,7 +493,7 @@ bool loadTextureCropCenter(std::string filePath, const int croppedX, const int c
 	if(data!=0)
 	{
 		std::cout<<"Data!=0\n";
-		Png png;
+		Png png(true);
 		std::cout<<"Loading png...\n";
 		png.load(data,fileSize);
 		std::cout<<"End loading png\n";
@@ -522,7 +522,7 @@ bool loadTexture(std::string filePath, GLuint* textureID)
 	int fileSize;
 	unsigned char* data = FileManager::getFile(filePath,&fileSize);
 
-	Png png;
+	Png png(true);
 	png.load(data,fileSize);
 
 	Texture* texture = new Texture;

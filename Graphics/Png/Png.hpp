@@ -28,6 +28,13 @@
   LCT_PALETTE = 3, palette: 1,2,4,8 bit
   LCT_GREY_ALPHA = 4, greyscale with alpha: 8,16 bit
   LCT_RGBA = 6 RGB with alpha: 8,16 bit
+  
+  Compression is currently disabled directly in the lodepng library.
+  That's not the proper way to do it but I haven't yet figured out
+  how to change encoding settings properly. Disabling compression
+  significantly increases performance. It's probably not necessary
+  to ever use compression anyway. Better to use a third party tool
+  like optipng.
 */
 
 
@@ -62,8 +69,14 @@ class Png
 	
 		// Averages for faster rendering for small textures.
 	unsigned char averageRed, averageGreen, averageBlue;
+  
+    //Flag to avoid deletion of PNG data array.
+    // Useful because PNG will often pass off the data to other objects.
+    // For example, loading textures.
+    // This is a new feature and likely to break many things.
+  bool preserveData;
 	
-	Png()
+	Png(bool _preserveData=false)
 	{
 		data=0;
 		useCompression=false;
@@ -71,11 +84,18 @@ class Png
 		averageRed = 0;
 		averageGreen = 0;
 		averageBlue = 0;
+    
+    preserveData = _preserveData;
 	}
 	
 	~Png()
 	{
-	//	delete [] data;
+    // Use a flag to prevent destructor deleting data.
+    if ( preserveData == false )
+    {
+      delete [] data;
+    }
+
 	}
 	
 	void getAverageColour()
@@ -98,11 +118,6 @@ class Png
 		averageRed = _averageRed;
 		averageGreen = _averageGreen;
 		averageBlue = _averageBlue;
-		
-		// for(int i=0;i<nValues;++i)
-		// { finalValue+=(data.at(i)/nValues); }
-
-		// return finalValue;
 	}
 	
 	void copy ( Png * png )
@@ -129,40 +144,23 @@ class Png
 				setPixel3D(_x,_y,3, png->getPixel3D(_x,_y,3) );
 
 			}
-			if ( _y < 10 )
-			{
-				//std::cout<<(int)getPixel3D(0,_y,0)<<"\n";
-			}
 		}
 	}
 	
 		// Rotate the image 90 degrees clockwise.
 	void rotate90Clockwise()
 	{
-		//std::cout<<"rotating png\n";
-		
 		Png temp;
 		temp.copy(this);
-		
-		
 		
 		for(int _y=0;_y<nY;++_y)
 		{
 			for(int _x=0;_x<nX;++_x)
 			{
-				//setPixel3D(_x,_y,0, temp.getPixel3D(_y,_x,0) );
-				//setPixel3D(_x,_y,1, temp.getPixel3D(_y,_x,1) );
-				//setPixel3D(_x,_y,2, temp.getPixel3D(_y,_x,2) );
-				//setPixel3D(_x,_y,3, temp.getPixel3D(_y,_x,3) );
-				
 				setPixel3D(nY-_y-1,_x,0,temp.getPixel3D(_x,_y,0));
 				setPixel3D(nY-_y-1,_x,1,temp.getPixel3D(_x,_y,1));
 				setPixel3D(nY-_y-1,_x,2,temp.getPixel3D(_x,_y,2));
 				setPixel3D(nY-_y-1,_x,3,temp.getPixel3D(_x,_y,3));
-			}
-			if ( _y < 10 )
-			{
-				//std::cout<<(int)getPixel3D(0,_y,0)<<"\n";
 			}
 		}
 	}
@@ -186,10 +184,6 @@ class Png
 	{
 		return std::tuple <unsigned char, unsigned char, unsigned char> (getPixel3D(_x,_y,0),getPixel3D(_x,_y,1),getPixel3D(_x,_y,2));
 	}
-	//unsigned char getPixel2D(const int _x, const int _y)
-	//{
-	//	return data[nX*_y+_x]; 
-	//}
 	
 	bool load (unsigned char* data2, int nData2)
 	{
@@ -202,7 +196,6 @@ class Png
 			
 			nX=decoder.infoPng.width;
 			nY=decoder.infoPng.height;
-			//std::cout<<"PNG dimensions are: "<<nX<<", "<<nY<<".\n";
 			
 			if(data==0)
 			{
@@ -229,12 +222,10 @@ class Png
 		// Doesn't seem to work in some cases, perhaps due to above condition. EncodeS3 is probably what should be used.
 	bool saveToFile (std::string strFilePath)
 	{
-		std::cout<<"Savetofile: "<<strFilePath<<"\n";
 	
 //unsigned LodePNG_encode(unsigned char** out, size_t* outsize, const unsigned char* image, unsigned w, unsigned h, unsigned colorType, unsigned bitDepth); /*return value is error*/
 //unsigned LodePNG_encode_file(const char* filename, const unsigned char* image, unsigned w, unsigned h, unsigned colorType, unsigned bitDepth);
 		LodePNG_encode_file(strFilePath.c_str(),data,nX,nY,6,8);
-		std::cout<<"done\n";
 		return false;
 	}
 	
@@ -244,67 +235,7 @@ class Png
 		return false;
 	}
 	static bool encodeS3 (std::string fileName, ArrayS3 <unsigned char> *mono)
-	{
-		//I'M USING THE BASIC FUNCTION WHICH DIRECTLY ENCODES THE DATA INTO A FILE. I HAVEN'T BEEN ABLE TO FIGURE OUT HOW TO GET THE ENCODER OBJECT WORKING, BUT I ONLY NEED IT TO TWEAK COMPRESSION SETTINGS ANYWAY. I JUST DISABLED COMPRESSION AND USE THE BASIC FUNCTION. I USE OPTIPNG TO COMPRESS PNGS WHEN I NEED TO. DISABLING THE COMPRESSION MAKES THE ENCODING MUCH FASTER, AND IT STILL USES THE PNG FORMAT SO IT CAN BE COMPRESSED EXTERNALLY AND STILL WORK IN MY GAMES.
-	
- // unsigned useLZ77; /*whether or not to use LZ77. Should be 1 for proper compression.*/
-  //unsigned windowSize; /*the maximum is 32768, higher gives more compression but is slower. Typical value: 2048.*/
-	//LodePNG::LodeZlib_CompressSettings.useLZ77=0;
-	//LodeZlib_CompressSettings settings;
-	//settings.useLZ77=0;
-	//LodeZlib_CompressSettings_init(&settings);
-	
-		//LodeZlib_CompressSettings_init(0,0,2048);
-		//LodeZlib_CompressSettings pngsettings(0,0,2048);
-		// LodeZlib_CompressSettings pngSettings;
-		// pngSettings.btype = 2;
-		// pngSettings.useLZ77 = 1;
-		// pngSettings.windowSize = 2048;
-		
-		// LodeZlib_CompressSettings_init(&pngSettings);
-		
-		// LodePNG::Encoder encoder;
-		// //LodePNG_Encoder_init(&encoder);
-		// //LodePNG_EncodeSettings encodeSettings;
-		// //encodeSettings.zlibsettings.btype=2;
-		// ///encodeSettings.zlibsettings.useLZ77=1;
-		// //encodeSettings.zlibsettings.windowSize=2048;
-		// //encoder.setSettings(encodeSettings);
-		
-		// std::vector <unsigned char> buffer;
-		// size_t buffersize;
-		
-		// //encoder.encode(buffer, mono->data,mono->nX,mono->nY);
-		// encoder.encode(buffer, mono->data, mono->nX,mono->nY);
-		// LodePNG::saveFile(buffer, "test.png");
-		
-		//unsigned error = LodePNG_encode(&buffer, &buffersize, mono->data,mono->nX,mono->nY,2,8);
-		//if(!error) error = LodePNG_saveFile(buffer, buffersize, fileName.c_str());
- // return error;
-		
-		//
-// unsigned LodePNG_encode(unsigned char** out, size_t* outsize, const unsigned char* image, unsigned w, unsigned h, unsigned colorType, unsigned bitDepth)
-// {
-  // unsigned error;
-  // LodePNG_Encoder encoder;
-  // LodePNG_Encoder_init(&encoder);
-  // encoder.infoRaw.color.colorType = colorType;
-  // encoder.infoRaw.color.bitDepth = bitDepth;
-  // encoder.infoPng.color.colorType = colorType;
-  // encoder.infoPng.color.bitDepth = bitDepth;
-  // LodePNG_Encoder_encode(&encoder, out, outsize, image, w, h);
-  // error = encoder.error;
-  // LodePNG_Encoder_cleanup(&encoder);
-  // return error;
-// }
-	
-		//LodePNG_encode_file(fileName.c_str(),mono->data,mono->nX,mono->nY,2,8);
-		std::cout<<"Encoding filez: "<<fileName<<".\n";
-		
-		//std::vector<unsigned char> buffer;
-		//encoder.encode(buffer, 0, mono->nX,mono->nY);
-		//LodePNG::saveFile(buffer, "test");
-		
+  {
 		LodePNG_encode_file(fileName.c_str(),mono->data,mono->nX,mono->nY,2,8);
 		return false;
 	}
