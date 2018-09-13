@@ -1,5 +1,5 @@
 # Wildcat
-The Wildcat library is my personal code library for game development. It contains code relating to the creation of videogames.
+The Wildcat library is my personal code library for game development. It contains code relating to the creation of videogames. I just add stuff as I think of it, so it is a mess right now.
 
 #### Audio
 Contains code for playing audio in wav format. Uses OpenAL.
