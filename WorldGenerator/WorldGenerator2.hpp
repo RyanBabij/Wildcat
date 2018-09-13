@@ -6,7 +6,7 @@
 
 #include <WorldGenerator/Biome.hpp>
 
-#include <Debug/RetCode.hpp> // FOR RETURN CODES.
+//#include <Debug/RetCode.hpp> // FOR RETURN CODES.
 
 #include <Math/Fractal/DiamondSquareAlgorithm.hpp>
 #include <Math/Fractal/DiamondSquareAlgorithmCustomRange.hpp>
@@ -496,7 +496,7 @@ class WorldGenerator2
 
 
 		// NEED TO IMPLEMENT FALSE RETURN IF WORLD CAN'T BE GENERATED.
-	char generate()
+	bool generate()
 	{
 		std::cout<<"WorldGenerator::generate(). Seed is "<<seed<<".\n";
 
@@ -699,7 +699,7 @@ class WorldGenerator2
 		//buildTopoMap();
 		
 
-		return WILDCAT_NOT_IMPLEMENTED;
+		return false;
 	}
 	
 		// This should be done externally.
