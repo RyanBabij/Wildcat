@@ -101,6 +101,9 @@ class WorldGenerator2_Tile
 		height=0;
 		nCaves=0;
 	}
+  ~WorldGenerator2_Tile()
+  {
+  }
 	
 	//Returns a string which contains all the tile data.
 	std::string getFullSeed()
@@ -202,7 +205,7 @@ class WorldGenerator2
 
 	ArrayS2 <int> aGoodEvilMap; // 0 = neutral, 1 = good, 2 = evil.
 
-	Vector <WorldGenerator2_Biome*> vBiome;
+	//Vector <WorldGenerator2_Biome*> vBiome;
 
 	//ArrayS2 <bool> aLand; // TRUE IF LAND, FALSE IS WATER.
 
@@ -461,9 +464,23 @@ class WorldGenerator2
 				{
 					break;
 				}
+        
+        
+        for (int i3=0;i3<vNeighbors->size();++i3)
+        {
+          delete (*vNeighbors)(i3);
+        }
+        vNeighbors->clear();
+        delete vNeighbors;
 			}
 		
 		}
+    
+    for ( int i=0;i<vMountainTiles.size();++i)
+    {
+      delete vMountainTiles(i);
+    }
+    vMountainTiles.clear();
 	}
 
 	
@@ -473,7 +490,7 @@ class WorldGenerator2
 	void addBiome(const std::string _name, const double _percentLand, const int _freeSteps, const int _smoothing, const int _seed=0)
 	{
 		//std::cout<<"Biome added: "<<_name<<".\n";
-		vBiome.push(new WorldGenerator2_Biome(_name, _percentLand, _freeSteps, _smoothing, _seed));
+		//vBiome.push(new WorldGenerator2_Biome(_name, _percentLand, _freeSteps, _smoothing, _seed));
 	}
 
 	void randomiseBiomes()
@@ -547,6 +564,7 @@ class WorldGenerator2
 		aTerrainType.init(mapSize,mapSize,OCEAN);
 		
 		WorldGenerator2_Tile nullTile;
+    delete [] aTile.data;
 		aTile.init(mapSize,mapSize,nullTile);
 		
 
