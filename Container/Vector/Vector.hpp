@@ -10,6 +10,7 @@ Class to store an expandable list of items. Currently just a wrapper of std::vec
 #include <vector>
 #include <algorithm> /* std::random_shuffle */
 #include <numeric> /* iota */
+#include <iterator> /* for std::iterator */
 
 #include <random> // for vector shuffle (only with seed).
 #include <Math/Random/GlobalRandom.hpp> // Used for getting random entries.
@@ -38,9 +39,9 @@ class Vector
 	int length() { return size(); }
 
 	inline T& operator() (const int i)
-	{ return data.at(i); }
+	{ return data[i]; }
 	inline T& at(const int i)
-	{ return data.at(i); }
+	{ return data[i]; }
 	inline void push(const T value)
 	{ data.push_back(value); }
 	inline void add(const T value)
@@ -120,9 +121,7 @@ class Vector
     /* To shuffle vector in a predictable way. */
 	void shuffle(std::mt19937 rng)
 	{
-    
 		std::shuffle(begin(),end(), rng);
-
 	}
   
   //Get a random entry. (must pass an rng)
@@ -611,16 +610,20 @@ class Vector
 	{
 		data.clear();
 	}
-	void clearPtr()
+
+	inline void clearPtr()
 	{
-		for(int i=data.size()-1;i>=0;--i)
-		{
-			delete data.at(i);
-		}
-		data.clear();
+    //Stolen from https://stackoverflow.com/questions/12795196/clearing-a-vector-of-pointers
+    for (unsigned int i=0; i<data.size(); ++i)
+    {
+      delete data[i];
+    }
+    data.clear();
 	}
-		inline void clearData()
-		{ clearPtr(); }
+  void deleteAll()
+  { clearPtr(); }
+  inline void clearData()
+  { clearPtr(); }
 		
 	void reserveSpace(const int nSpace)
 	{
