@@ -1,4 +1,6 @@
 #pragma once
+#ifndef WILDCAT_GRAPHICS_PNG_PNG_HPP
+#define WILDCAT_GRAPHICS_PNG_PNG_HPP
 
 /*
 	Png.hpp
@@ -245,3 +247,5 @@ class Png
 	unsigned int getObjectSize()
 	{ return 0; }
 };
+
+#endif
