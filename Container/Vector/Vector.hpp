@@ -484,9 +484,9 @@ class Vector
 	{
 		for(int i=0;i<data.size();++i)
 		{
-			if(&data.at(i)==item)
+			if(&data[i]==item)
 			{
-				return &data.at(i);
+				return &data[i];
 			}
 		}
 		return 0;
@@ -495,9 +495,9 @@ class Vector
 	{
 		for(int i=0;i<data.size();++i)
 		{
-			if(data.at(i)==item)
+			if(data[i]==item)
 			{
-				return data.at(i);
+				return data[i];
 			}
 		}
 		return 0;
@@ -508,13 +508,15 @@ class Vector
 	{
 		for(unsigned int i=0;i<data.size();++i)
 		{
-			if(data.at(i)==item)
+			if(data[i]==item)
 			{
 				return true;
 			}
 		}
 		return false;
 	}
+  
+
 
 	/* This function seems to be a pain with polymorphism. This is why T2 is used. */
 	/* NOTE: In the case of polymorphism, the general class must call the specialised class. The general class is returned. */
