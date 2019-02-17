@@ -241,6 +241,18 @@ template<class Function>
 		}
 		currentElement=&data[0];
 	}
+    // A simpler version of fillConditional. Replaces all of given value with new value.
+	void replaceFill(ARRAYS2_T comparisonValue, ARRAYS2_T fillValue)
+	{
+		currentElement=&data[0];
+		while(currentElement!=nullAddress)
+		{
+			if(*currentElement == comparisonValue )
+			{ *currentElement=fillValue; }
+			++currentElement;
+		}
+		currentElement=&data[0];
+	}
 
 // 0230233259
 // Old fillborder did not accept args, but filled the entire array border.
