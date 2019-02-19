@@ -190,6 +190,14 @@ class BasicMath
 		if (y2==y1||x2==x1) { return 0; }
 		return (double)(y2-y1)/(x2-x1);
 	}
+  
+	static double getSlopeULI (const unsigned long int x1, const unsigned long int y1, const unsigned long int x2, const unsigned long int y2)
+	{
+		// RETURNS 0 IF NESW.
+		if (y2==y1||x2==x1) { return 0; }
+		return ((double)y2-y1)/((double)x2-x1);
+	}
+  
 	static double getYIntercept (const double x1, const double y1, const double x2, const double y2)
 	{
 		double slope = getSlope ( x1, y1, x2, y2 );
