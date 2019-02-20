@@ -220,6 +220,17 @@ class Png
 		return true;
 	}
 	
+    // Load hex data. Useful if you want to embed in source code or whatever.
+  bool loadHex (std::string hexData)
+  {
+    for (unsigned int i=0;i<hexData.length();++i)
+    { (hexData[i]> 91) ? hexData[i]-=87 : hexData[i]-=48;  
+    (hexData[++i]> 91) ? hexData[i]-=87 : hexData[i]-=48;  
+    hexData[i/2] = (hexData[i-1]<<4)+(hexData[i]); }
+    
+    return load(hexData);
+  }
+  
 		// Save it internally. Note that this one expects 8 bit RGBA (colourType 6, bitDepth 8), which is how PNG loads the data internally.
 		// Doesn't seem to work in some cases, perhaps due to above condition. EncodeS3 is probably what should be used.
 	bool saveToFile (std::string strFilePath)

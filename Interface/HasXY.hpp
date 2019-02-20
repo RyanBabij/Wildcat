@@ -46,6 +46,8 @@ class HasXY
 
 	
 	// DISTANCE FUNCTION
+  
+  
 };
 
 // Temporary until I feel like converting all instances of HasXY to account for templates.
@@ -62,6 +64,29 @@ class HasXY2
 		x=_x;
 		y=_y;
 	}
+  
+  //OPERATORS
+  
+  inline bool operator==(const HasXY2& rhs)
+  {
+    return (x == rhs.x && y == rhs.y);
+  }
+  inline bool operator>(const HasXY2& rhs)
+  {
+    return (x+y > rhs.x+rhs.y);
+  }
+  inline bool operator>=(const HasXY2& rhs)
+  {
+    return (x+y >= rhs.x+rhs.y);
+  }
+  inline bool operator<(const HasXY2& rhs)
+  {
+    return (x+y < rhs.x+rhs.y);
+  }
+  inline bool operator<=(const HasXY2& rhs)
+  {
+    return (x+y <= rhs.x+rhs.y);
+  }
 	
 	void setCoordinates(const HASXY_T _x, const HASXY_T _y)
 	{

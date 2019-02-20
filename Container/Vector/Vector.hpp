@@ -503,12 +503,24 @@ class Vector
 		return 0;
 	}
 
-	/* 0221932820 - Added bool find. */
+	/* Added bool find. */
 	bool contains(T item)
 	{
 		for(unsigned int i=0;i<data.size();++i)
 		{
 			if(data[i]==item)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+  
+	bool containsPtr(T item)
+	{
+		for(unsigned int i=0;i<data.size();++i)
+		{
+			if(*data[i]==*item)
 			{
 				return true;
 			}
