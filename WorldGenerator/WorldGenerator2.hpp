@@ -22,9 +22,11 @@
 
 #include <File/FileManagerStatic.hpp> /* For saving the world data to file. */
 
-#include <thread>
-#include <mutex>
-#include <condition_variable> // std::condition_variable
+//#include <thread>
+//#include <mutex>
+//#include <condition_variable> // std::condition_variable
+
+#include <limits.h> /* For INT_MAX */
 
 #include <Time/Timer.hpp>
 
@@ -152,7 +154,7 @@ class WorldGenerator2
 		// Landform RNG.
 	//Random randomLandform;
 	
-	std::mutex mutexArrayAccess;
+	//std::mutex mutexArrayAccess;
 	
 	//std::condition_variable cvDesertFinished;
 
@@ -1384,7 +1386,7 @@ class WorldGenerator2
 		int nnn=0;
 
 		
-		std::lock_guard<std::mutex> guard(mutexArrayAccess);
+		//std::lock_guard<std::mutex> guard(mutexArrayAccess);
 		
 		//cvDesertFinished
 		

@@ -292,6 +292,7 @@ class FileManager
 		
 		/* New c++17 feature. */
 		namespace filesys = std::experimental::filesystem;
+		//namespace filesys = std::filesystem;
 		filesys::remove(_path);
 		
 		return false;	

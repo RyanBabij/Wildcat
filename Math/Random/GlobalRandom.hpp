@@ -22,6 +22,8 @@ C++11 introduced a lot of built-in functionality regarding random number generat
 #include <random>
 #include <functional>
 
+#include <time.h> /* Required to call time() */
+
 //std::mt19937 gen (123);
 		//std::uniform_real_distribution<double> rnd(0,255);
 		//int rand = dis(generator);
