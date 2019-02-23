@@ -19,6 +19,10 @@ class Mouse
 	
 	bool isWheelUp;
 	bool isWheelDown;
+  
+    // Special modifier keys
+  bool ctrlPressed;
+  bool shiftPressed;
 	
 	Mouse()
 	{
@@ -30,6 +34,9 @@ class Mouse
 		
 		isWheelUp=false;
 		isWheelDown=false;
+    
+    ctrlPressed=false;
+    shiftPressed=false;
 	}
 	
 	inline void move(int mouseX, int mouseY)
