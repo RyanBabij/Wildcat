@@ -1,8 +1,8 @@
 #pragma once
-#ifndef RENDER_RENDERER_HPP
-#define RENDER_RENDERER_HPP
+#ifndef WILDCAT_RENDER_RENDERER_HPP
+#define WILDCAT_RENDER_RENDERER_HPP
 
-/* #include <Render/Renderer.hpp> Created: 0221683187. Updated: 0221683187. Component of GaroSoft WildCat game engine.
+/* #include <Render/Renderer.hpp>
 	Static class to link generic rendering calls to either OpenGL or Direct3D API at compile time or runtime. Currently only OpenGL is supported.
 	Replaces <Device/Display/OpenGLTools.hpp>.
 */

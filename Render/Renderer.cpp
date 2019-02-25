@@ -1,8 +1,10 @@
 #pragma once
-#ifndef RENDER_RENDERER_CPP
-#define RENDER_RENDERER_CPP
+#ifndef WILDCAT_RENDER_RENDERER_CPP
+#define WILDCAT_RENDER_RENDERER_CPP
 
-/* Implementation of Renderer.hpp. */
+/* #include <Render/Renderer.hpp>
+	Implementation of Renderer.hpp
+*/
 
 #include "Renderer.hpp"
 

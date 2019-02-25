@@ -1,11 +1,12 @@
 #pragma once
+#ifndef WILDCAT_TEXTURE_TEXTURELOADER_HPP
+#define WILDCAT_TEXTURE_TEXTURELOADER_HPP
 
-/* 14 Feb 2012 - 0213282973
-#include <Graphics/Texture/TextureLoader.hpp>
+/* #include <Texture/TextureLoader.hpp>
 
-Library to load textures and handle mipmaps. Currently only does OpenGL.
+  Library to load textures and handle mipmaps. Currently only does OpenGL.
 
-NOTE: Due to the passing around of texture data, memory leaks can result from using this lib.
+  NOTE: Beware of memory management. Texture data needs to be manually deleted in some cases.
 */
 
 
@@ -570,3 +571,5 @@ bool loadTexture(std::string filePath, GLuint* textureID)
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, texture->nX, texture->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->data);
 	return true;
 }
+
+#endif
