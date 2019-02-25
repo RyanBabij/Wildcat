@@ -315,6 +315,44 @@ bool loadTextureNearestNeighbour(const std::string filePath, Texture* texture)
 	return false;
 }
 
+/* New implementation for Texture class. */
+/* NOTE: Try switching internal format from GL_RGBA8 to GL_RGBA4. Also try compression. */
+bool loadTextureLinear(const std::string filePath, Texture* texture)
+{
+
+	if(texture!=0)
+	{
+		//return loadTextureNearestNeighbour(filePath,&texture->textureID);
+		/* NOTE: It seems that the GLuint needs to be initialised (ie to 0) before being passed here, in some cases. */
+		glGenTextures(1,&texture->textureID);
+		glBindTexture(GL_TEXTURE_2D, texture->textureID);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+		int fileSize;
+		unsigned char* data = FileManager::getFile(filePath,&fileSize);
+		if(data!=0)
+		{
+			Png png(true);
+			png.load(data,fileSize);
+			
+			//std::cout<<"Getting average colour.\n";
+			png.getAverageColour();
+			//Texture* texture = new Texture;
+			texture->create(png.nX,png.nY,1);
+			texture->data=png.data;
+			texture->averageRed = png.averageRed;
+			texture->averageGreen = png.averageGreen;
+			texture->averageBlue = png.averageBlue;
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, texture->nX, texture->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->data);
+		}
+		else
+		{ return false; }
+		return true;
+
+	}
+	return false;
+}
+
 bool loadTextureRotate(const std::string filePath, Texture* tex0, Texture* tex90, Texture* tex180, Texture* tex270)
 { /* will rotate the image clockwise 90 degrees 4 times, and store each rotation as a texture */
 

@@ -75,6 +75,9 @@ class Renderer
 	static void placeColour4a (const unsigned char r, const unsigned char g, const unsigned char b, const unsigned char a, const int _x1, const int _y1, const int _x2, const int _y2);
 	
 	static void placeColour4 (Colour* colour, const int _x1, const int _y1, const int _x2, const int _y2);
+  
+    // Draws a rectangle using lines.
+  static void placeBorder4(const unsigned char r, const unsigned char g, const unsigned char b, const int _x1, const int _y1, const int _x2, const int _y2);
 /* End of class. */
 };
 

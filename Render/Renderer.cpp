@@ -328,4 +328,27 @@ void Renderer::placeColour4 (Colour* colour, const int _x1, const int _y1, const
 	#endif
 }
 
+//Stolen from https://stackoverflow.com/questions/13462209/opengl-draw-rectangle-outline
+void Renderer::placeBorder4(const unsigned char r, const unsigned char g, const unsigned char b, const int _x1, const int _y1, const int _x2, const int _y2)
+{
+	#ifdef WILDCAT_USE_OPENGL
+		setColourMode();
+		/* Set the colour of the shape. */
+		glColor3ub(r,g,b);
+		/* Draw the shape. */
+		 glBegin(GL_LINE_LOOP);
+      glVertex2f(_x1,_y1);
+      glVertex2f(_x1,_y2);
+      glVertex2f(_x2,_y2);
+      glVertex2f(_x2,_y1);
+      //glVertex2f(_x1,_y1);
+      
+
+		 glEnd();
+    
+	#elif defined WILDCAT_USE_DIRECT3D
+		/* Put Direct3D code here... */
+	#endif
+}
+
 #endif
