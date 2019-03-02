@@ -4,6 +4,10 @@
 
 #include <Render/Renderer.hpp>
 
+// #include <Graphics/Texture/TextureLoader.hpp>
+// #include <Graphics/Texture/Texture.hpp>
+
+
 // HERE BE DRAGONS
 
 namespace Wildcat
@@ -15,6 +19,7 @@ class Font
 	public:
 	GLuint characterMap;
 	GLuint character [256];
+  //Texture ch [256];
 	int nX, nY; /* Dimensions of a character. (Currently all characters must have the same dimensions.) */
 	
 	Font()
@@ -24,6 +29,13 @@ class Font
 	
 	bool loadData(unsigned char* data, const int _nX, const int _nY)
 	{
+    // loadTextureVerbose
+    
+    
+  // for (int i=0;i<5;++i)
+  // {
+    // loadTextureVerbose(PATH_TEX_OBJECT_CAMPFIRE[i],&TEX_OBJECT_CAMPFIRE[i]);
+  // }
 		//std::cout<<"Loaddata()\n";
 		nX=_nX;
 		nY=_nY;
@@ -118,8 +130,8 @@ class Font
 
 
 		Renderer::setTextureMode();
-//Renderer::setColour(_colourRed,_colourGreen,_colourBlue);
-//glColor3ub(_colourRed,_colourGreen,_colourBlue);
+    //Renderer::setColour(_colourRed,_colourGreen,_colourBlue);
+    glColor3ub(_colourRed,_colourGreen,_colourBlue);
 
 		const int charsPerLine = (x2-x1) / nX;
 		
@@ -170,7 +182,8 @@ class Font
 		
 				
 			// SET THE COLOUR
-			//glColor3ub(_colourRed,_colourGreen,_colourBlue);
+      // Protip: Changing colour doesn't work on black.
+        glColor3ub(_colourRed,_colourGreen,_colourBlue);
 				//glColor3ub(250,0,0);
 				//glEnable(GL_COLOR_MATERIAL);
 
@@ -179,16 +192,12 @@ class Font
 					glBindTexture(GL_TEXTURE_2D, character[(int)text[i]]);
 					glBegin(GL_QUADS);
 					glTexCoord2f(0,1);
-					//glColor3ub(255,255,0);
 					glVertex2f(currentX,currentY-nY);
 					glTexCoord2f(1,1);
-					//glColor3ub(255,255,0);
 					glVertex2f(currentX+nX,currentY-nY);
 					glTexCoord2f(1,0);
-					//glColor3ub(255,255,0);
 					glVertex2f(currentX+nX,currentY);
 					glTexCoord2f(0,0);
-					//glColor3ub(255,255,0);
 					glVertex2f(currentX,currentY);
 					glEnd();
 				}
@@ -249,18 +258,18 @@ class Font
 					}
 				}
 
-
 				/* If we are out of space, return. */
 				if (currentY-nY < y2)
-				{ return linesDrawn; }
+				{     glColor3ub(255,255,255); return linesDrawn; }
 		}
 		//glColor3ub(255,255,255);
-		//Renderer::resetColour();
+		    glColor3ub(255,255,255);
     return linesDrawn;
   }
 	
 	void drawText(const std::string text, int x1, int y1)
 	{
+    glColor3ub(0,0,0);
 		for(unsigned int i=0;i<text.size();++i)
 		{
 				Renderer::setTextureMode();
@@ -278,6 +287,7 @@ class Font
 				
 				x1+=nX;		
 		}
+    glColor3ub(255,255,255);
 	}
 	
 	
