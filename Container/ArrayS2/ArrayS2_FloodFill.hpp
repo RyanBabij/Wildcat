@@ -270,7 +270,7 @@ Vector <HasXY*> * floodFillVector ( const int _startX, const int _startY, const 
 
 ArrayS2 <short int> * floodFillUniqueID ( const bool includeDiagonals, int* lastID )
 {
-	ArrayS2 <short int>* aID = new ArrayS2 <int> (nX,nY,-1);
+	ArrayS2 <short int>* aID = new ArrayS2 <short int> (nX,nY,-1);
 	short int currentID=0;
 	
 	for (int _y=0;_y<nY;++_y)

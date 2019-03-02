@@ -182,22 +182,20 @@ class Keyboard
 
     Keyboard()
     {
-		lastKey=0;
-		numKeysDown=0;
-		keyWasPressed=false;
-		keyWasUnpressed=false;
-        for(int i=NUMBER_OF_KEYS-1;i>=0;--i)
-        { keyMap[i]=false; }
+      lastKey=0;
+      numKeysDown=0;
+      keyWasPressed=false;
+      keyWasUnpressed=false;
+      clearAll();
     }
 	void init()
-	{
-        for(int i=NUMBER_OF_KEYS-1;i>=0;--i)
-        { keyMap[i]=false; }
+  {
+    clearAll();
 	}
 	void clearAll()
 	{
-        for(int i=NUMBER_OF_KEYS-1;i>=0;--i)
-        { keyMap[i]=false; }
+    for(int index=NUMBER_OF_KEYS-1;index>=0;--index)
+    { keyMap[index]=false; }
 		numKeysDown=0;
 		keyWasPressed=false;
 		keyWasUnpressed=false;

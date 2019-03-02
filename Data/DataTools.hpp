@@ -312,12 +312,12 @@ namespace DataTools
 		/* Similar to above, but returns value rather than pointer. Usage: double d = fromCharArray2 <double> (bytes) */
 		return *(T3*)firstByte;
 	}
-	template <class T3>
-	T3 valFromCharArray(const char* firstByte)
-	{
-		/* Similar to above, but returns value rather than pointer. Usage: double d = fromCharArray2 <double> (bytes) */
-		return *(T3*)firstByte;
-	}
+	// template <class T3>
+	// T3 valFromCharArray(char* firstByte)
+	// {
+		// /* Similar to above, but returns value rather than pointer. Usage: double d = fromCharArray2 <double> (bytes) */
+		// return *(T3*)firstByte;
+	// }
 	template <class T4>
 	T4 valFromVector(Vector <char>* vByte, const int startIndex)
 	{

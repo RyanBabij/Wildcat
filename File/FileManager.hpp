@@ -9,7 +9,7 @@
 
 #include <Data/DataTools.hpp>
 
-#include <experimental/filesystem> /* New c++14 experimental support for filesystems. Should be standard in C++17 */
+//#include <experimental/filesystem> /* New c++14 experimental support for filesystems. Should be standard in C++17 */
 
 #include <windows.h> //CreateDirectory (will need to be ported)
 
@@ -264,7 +264,7 @@ class FileManager
 			file.write((char*)data3,data2.size());
 			file.close();
 		}
-		delete data3;
+		delete[] data3;
 	}
 
 	
@@ -291,9 +291,9 @@ class FileManager
 		//std::filesystem::remove_all("test");
 		
 		/* New c++17 feature. */
-		namespace filesys = std::experimental::filesystem;
+		//namespace filesys = std::experimental::filesystem;
 		//namespace filesys = std::filesystem;
-		filesys::remove(_path);
+		//filesys::remove(_path);
 		
 		return false;	
 		

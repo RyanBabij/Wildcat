@@ -269,6 +269,18 @@ class Table_Column_Int_Pointer: public Table_Column
 		//vData.push(DataTools::toInt(_data));
 		//++currentID;
 	}
+	//void push(int* _data)
+  
+  
+  // This is not good. We need to come up with better system
+  // for passing pointers
+  void push(int _data)
+  {
+    std::cout<<"ERROR:Table_Column_Int_Pointer: Pushed value to pointer class. Please fix this at some point.\n";
+    //vData.push(new int);
+  }
+  
+  
 	void push(int* _data)
 	{
 		//vID.push(currentID);
