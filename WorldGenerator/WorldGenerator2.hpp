@@ -22,7 +22,7 @@
 
 #include <File/FileManagerStatic.hpp> /* For saving the world data to file. */
 
-//#include <thread>
+#include <thread>
 //#include <mutex>
 //#include <condition_variable> // std::condition_variable
 
@@ -651,50 +651,42 @@ class WorldGenerator2
     // The main problem is that the biomes need to merge together in a predictable way.
 		
 		//#define THREADED_BIOMES
-		
-		#ifndef THREADED_BIOMES
-		
-		createBiome (JUNGLE, 0.33, 4, 0.78, "Jungle", 0, subSeed[1]);
-		createBiome (FOREST, 0.5, 8, 0.8, "Forest", 0, subSeed[2]);
-		createBiome (WETLAND, 0.05, 11, 0.79, "Wetland", 0, subSeed[3]);
-		createBiome (STEPPES, 0.05, 2, 0.77, "Steppes", 0, subSeed[4]);
-		createBiome (SNOW, 0.25, 2, 0.76, "Tundra", 0, subSeed[5]);
-		createBiome (DESERT, 0.11, 1, 0.8, "Desert", 0, subSeed[6]);
-		createBiome (HILLY, 0.05, 8, 0.8, "Hills", 0, subSeed[7]);
-		createBiome (MOUNTAIN, 0.07, 13, 0.78, "Mountains", 0, subSeed[8]);
-		
-		#else
-			
-		ArrayS2 <unsigned char> * const biomeMap2 = 0;
-		//ArrayS2 <unsigned char> * const biomeMap3 = 0;
-		
-		//int ss1 = subSeed[1];
-		//int ss2 = subSeed[2];
-		
-		
-		
-		std::thread t1 (WorldGenerator2::createBiome, this, JUNGLE, 0.33, 4, 0.78, "Jungle", biomeMap2, subSeed[1]);
-		std::thread t2 (WorldGenerator2::createBiome, this, FOREST, 0.5, 8, 0.8, "Forest", biomeMap2, subSeed[2]);
-		std::thread t3 (&WorldGenerator2::createBiome, this, WETLAND, 0.05, 11, 0.79, "Wetland", biomeMap2, subSeed[3]);
-		std::thread t4 (&WorldGenerator2::createBiome, this, STEPPES, 0.05, 2, 0.77, "Steppes", biomeMap2, subSeed[4]);
-		std::thread t5 (&WorldGenerator2::createBiome, this, SNOW, 0.25, 2, 0.76, "Tundra", biomeMap2, subSeed[5]);
-		std::thread t6 (&WorldGenerator2::createBiome, this, DESERT, 0.11, 1, 0.8, "Desert", biomeMap2, subSeed[6]);
-		std::thread t7 (&WorldGenerator2::createBiome, this, HILLY, 0.05, 8, 0.8, "Hills", biomeMap2, subSeed[7]);
-		std::thread t8 (&WorldGenerator2::createBiome, this, MOUNTAIN, 0.07, 13, 0.78, "Mountains", biomeMap2, subSeed[8]);
+    
+  //#define THREADED_BIOMES
+  #if defined THREAD_ALL || defined THREADED_BIOMES 
+  
+    std::thread t1( [this, subSeed] { createBiome(JUNGLE, 0.33, 4, 0.78, "Jungle", 0 ,subSeed[1]); });
+    std::thread t2( [this, subSeed] { createBiome(FOREST, 0.5, 8, 0.8, "Forest", 0 ,subSeed[2]); });
+    std::thread t3( [this, subSeed] { createBiome(WETLAND, 0.05, 11, 0.79, "Wetland", 0 ,subSeed[3]); });
+    std::thread t4( [this, subSeed] { createBiome(STEPPES, 0.05, 2, 0.77, "Steppes", 0 ,subSeed[4]); });
+    std::thread t5( [this, subSeed] { createBiome(SNOW, 0.25, 2, 0.76, "Tundra", 0 ,subSeed[5]); });
+    std::thread t6( [this, subSeed] { createBiome(DESERT, 0.11, 1, 0.8, "Desert", 0 ,subSeed[6]); });
+    std::thread t7( [this, subSeed] { createBiome(HILLY, 0.05, 8, 0.8, "Hills", 0 ,subSeed[7]); });
+    std::thread t8( [this, subSeed] { createBiome(MOUNTAIN, 0.07, 13, 0.78, "Mountains", 0 ,subSeed[8]); });
 
-		t1.join();
-		t2.join();
-		t3.join();
-		t4.join();
-		t5.join();
-		t6.join();
-		t7.join();
-		t8.join();
+    t1.join();
+    t2.join();
+    t3.join();
+    t4.join();
+    t5.join();
+    t6.join();
+    t7.join();
+    t8.join();
+		
+  #else
+    
+    createBiome (JUNGLE, 0.33, 4, 0.78, "Jungle", 0, subSeed[1]);
+    createBiome (FOREST, 0.5, 8, 0.8, "Forest", 0, subSeed[2]);
+    createBiome (WETLAND, 0.05, 11, 0.79, "Wetland", 0, subSeed[3]);
+    createBiome (STEPPES, 0.05, 2, 0.77, "Steppes", 0, subSeed[4]);
+    createBiome (SNOW, 0.25, 2, 0.76, "Tundra", 0, subSeed[5]);
+    createBiome (DESERT, 0.11, 1, 0.8, "Desert", 0, subSeed[6]);
+    createBiome (HILLY, 0.05, 8, 0.8, "Hills", 0, subSeed[7]);
+    createBiome (MOUNTAIN, 0.07, 13, 0.78, "Mountains", 0, subSeed[8]);
 			
-		#endif
+  #endif
 
 		timerBiome.update();
-		
 		std::cout<<"Biomes created in "<<timerBiome.fullSeconds<<" seconds.\n";
 
 			// Place caves. (somehow layer this over base biome)
@@ -703,7 +695,13 @@ class WorldGenerator2
 		//createBiome (CAVE, 0.01, 100, 0.86, "Cave");
 		//createBiomePrecise (RUIN, 0.0001, 100, 0.86, "Ruin");
 		
-		createRivers(20, subSeed[11]);	
+    
+		Timer timerRiver;
+		timerRiver.init();
+		timerRiver.start();
+		createRivers(20, subSeed[11]);
+		timerRiver.update();
+		std::cout<<"Rivers created in "<<timerRiver.fullSeconds<<" seconds.\n";
 
 		std::cout<<"Creating ice caps.\n";
 		createIceCaps(true, subSeed[10]);
