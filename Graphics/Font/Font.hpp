@@ -27,72 +27,61 @@ class Font
 		nX=0; nY=0;
 	}
 	
-	bool loadData(unsigned char* data, const int _nX, const int _nY)
+	bool loadData(Png* png, const int _nX, const int _nY)
 	{
-    // loadTextureVerbose
+    if (png==0) {return false;}
     
-    
-  // for (int i=0;i<5;++i)
-  // {
-    // loadTextureVerbose(PATH_TEX_OBJECT_CAMPFIRE[i],&TEX_OBJECT_CAMPFIRE[i]);
-  // }
-		//std::cout<<"Loaddata()\n";
+    std::cout<<"Loading font\n";
+    std::cout<<"NX, NY: "<<_nX*16<< ", "<<_nY*16<<".\n";
+
+
 		nX=_nX;
 		nY=_nY;
-		if(data!=0)
-		{
-			glGenTextures(1, &characterMap);
-			glBindTexture(GL_TEXTURE_2D, characterMap);
-			glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, _nX*16, _nY*16, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+    glGenTextures(1, &characterMap);
+    glBindTexture(GL_TEXTURE_2D, characterMap);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+    
+    glGenTextures(256,character);
+             
+    int i=0;
+    int currentX=0;
+    int currentY=0;
+
 			
-			glGenTextures(256,character);
+    while(i<256)
+    {
+      glBindTexture(GL_TEXTURE_2D, character[i]);
+      glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+      
+      ArrayS3 <unsigned char> sub;
+      sub.init(_nX,_nY,4,0);
+      for(int _y=0;_y<_nY;++_y)
+      {
+        for(int _x=0;_x<_nX;++_x)
+        {
+          sub(_x,_y,0)=png->getPixel3D(currentX*8+_x,currentY*8+_y,0);
+          sub(_x,_y,1)=png->getPixel3D(currentX*8+_x,currentY*8+_y,1);
+          sub(_x,_y,2)=png->getPixel3D(currentX*8+_x,currentY*8+_y,2);
+          sub(_x,_y,3)=png->getPixel3D(currentX*8+_x,currentY*8+_y,3);
+        }
+      }
+      
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, _nX, _nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, sub.data);
+    
+      ++currentX;
+      if(currentX==16)
+      {
+        currentX=0;
+        ++currentY;
+      }
+    
+      ++i;
+    }
+    return true;
 			
-			ArrayS3 <unsigned char> charMap;
-			charMap.init(_nX*16,_nY*16,4,0);
-			charMap.changeData(data);
-			
-			int i=0;
-			int currentX=0;
-			int currentY=0;
-			
-			while(i<256)
-			{
-				//std::cout<<".";
-			
-				glBindTexture(GL_TEXTURE_2D, character[i]);
-				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-				
-				ArrayS3 <unsigned char> sub;
-				sub.init(_nX,_nY,4,0);
-				for(int _y=0;_y<_nY;++_y)
-				{
-					for(int _x=0;_x<_nX;++_x)
-					{
-						sub(_x,_y,0)=charMap(currentX*8+_x,currentY*8+_y,0);
-						sub(_x,_y,1)=charMap(currentX*8+_x,currentY*8+_y,1);
-						sub(_x,_y,2)=charMap(currentX*8+_x,currentY*8+_y,2);
-						sub(_x,_y,3)=charMap(currentX*8+_x,currentY*8+_y,3);
-						//std::cout<<(int)charMap(currentX*8+_x,currentY*8+_y,0)<<",";
-					}
-				}
-				
-				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, _nX, _nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, sub.data);
-			
-				++currentX;
-				if(currentX==16)
-				{
-					currentX=0;
-					++currentY;
-				}
-			
-				++i;
-			}//std::cout<<"\nReturning true\n";
-			return true;
-			
-		}
 		std::cout<<"Font.hpp Font::loadData(), data* was 0\n";
 		return false;
 	}

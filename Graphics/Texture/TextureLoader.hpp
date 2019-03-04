@@ -9,6 +9,13 @@
   NOTE: Beware of memory management. Texture data needs to be manually deleted in some cases.
 */
 
+#if defined THREAD_ALL || defined THREADED_TEXTURE_LOADING
+  #include <thread>
+  #include <mutex>
+  
+  std::mutex MUTEX_TEXTURE_BIND;
+#endif
+
 
 #include <Debug/Verbose/Verbose.hpp>
 
@@ -282,39 +289,102 @@ bool loadTextureNearestNeighbour(const std::string filePath, GLuint* textureID)
 /* NOTE: Try switching internal format from GL_RGBA8 to GL_RGBA4. Also try compression. */
 bool loadTextureNearestNeighbour(const std::string filePath, Texture* texture)
 {
+	if(texture==0) {return false;}
+  
+  int fileSize;
+  FileManager fm;
+  
+  unsigned char* data = fm.getFile(filePath,&fileSize);
+  if(data!=0)
+  {
+    Png png(true);
+    png.load(data,fileSize);
+    
+    //std::cout<<"Getting average colour.\n";
+    png.getAverageColour();
+    //Texture* texture = new Texture;
+    texture->create(png.nX,png.nY,1);
+    texture->data=png.data;
+    texture->averageRed = png.averageRed;
+    texture->averageGreen = png.averageGreen;
+    texture->averageBlue = png.averageBlue;
 
-	if(texture!=0)
-	{
-		//return loadTextureNearestNeighbour(filePath,&texture->textureID);
-		/* NOTE: It seems that the GLuint needs to be initialised (ie to 0) before being passed here, in some cases. */
-		glGenTextures(1,&texture->textureID);
-		glBindTexture(GL_TEXTURE_2D, texture->textureID);
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-		int fileSize;
-		unsigned char* data = FileManager::getFile(filePath,&fileSize);
-		if(data!=0)
-		{
-			Png png(true);
-			png.load(data,fileSize);
-			
-			//std::cout<<"Getting average colour.\n";
-			png.getAverageColour();
-			//Texture* texture = new Texture;
-			texture->create(png.nX,png.nY,1);
-			texture->data=png.data;
-			texture->averageRed = png.averageRed;
-			texture->averageGreen = png.averageGreen;
-			texture->averageBlue = png.averageBlue;
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, texture->nX, texture->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->data);
-		}
-		else
-		{ return false; }
-		return true;
+  }
+  else
+  { return false; }
+  
+  
+// #if defined THREAD_ALL || defined THREADED_TEXTURE_LOADING
+  // //MUTEX_TEXTURE_BIND.lock();
+// #endif
 
-	}
-	return false;
+  //std::cout<<"BINDING\n";
+  //return loadTextureNearestNeighbour(filePath,&texture->textureID);
+  /* NOTE: It seems that the GLuint needs to be initialised (ie to 0) before being passed here, in some cases. */
+  glGenTextures(1,&texture->textureID);
+  glBindTexture(GL_TEXTURE_2D, texture->textureID);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, texture->nX, texture->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->data);
+
+// #if defined THREAD_ALL || defined THREADED_TEXTURE_LOADING
+  // //MUTEX_TEXTURE_BIND.unlock();
+// #endif
+
+	return true;
 }
+  // OpenGL doesn't like threads
+bool preloadTextureNearestNeighbour(const std::string filePath, Texture* texture)
+{
+	if(texture==0) {return false;}
+  
+  int fileSize;
+  FileManager fm;
+  
+  unsigned char* data = fm.getFile(filePath,&fileSize);
+  if(data!=0)
+  {
+    Png png(true);
+    png.load(data,fileSize);
+    
+    //std::cout<<"Getting average colour.\n";
+    png.getAverageColour();
+    //Texture* texture = new Texture;
+    texture->create(png.nX,png.nY,1);
+    texture->data=png.data;
+    texture->averageRed = png.averageRed;
+    texture->averageGreen = png.averageGreen;
+    texture->averageBlue = png.averageBlue;
+
+  }
+  else
+  { return false; }
+  
+  
+	return true;
+}
+
+/* New implementation for Texture class. */
+/* NOTE: Try switching internal format from GL_RGBA8 to GL_RGBA4. Also try compression. */
+bool bindNearestNeighbour(Texture* texture)
+{
+	if(texture==0) {return false;}
+  
+  int fileSize;
+  FileManager fm;
+  
+  //return loadTextureNearestNeighbour(filePath,&texture->textureID);
+  /* NOTE: It seems that the GLuint needs to be initialised (ie to 0) before being passed here, in some cases. */
+  glGenTextures(1,&texture->textureID);
+  glBindTexture(GL_TEXTURE_2D, texture->textureID);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, texture->nX, texture->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->data);
+
+
+	return true;
+}
+
 
 /* New implementation for Texture class. */
 /* NOTE: Try switching internal format from GL_RGBA8 to GL_RGBA4. Also try compression. */
