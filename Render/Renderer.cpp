@@ -136,6 +136,8 @@ void Renderer::placeTexture8(const int _x1, const int _y1, const int _x2, const 
 	#endif
 }
 
+#include <math.h>
+
 /* Render a square texture rotated about its center by a certain number of degrees. */
 void Renderer::placeTexture4RotatedDegrees(const int _x1, const int _y1, const int _x2, const int _y2, const Texture* _texture, const int rotationDegrees)
 {
@@ -143,7 +145,7 @@ void Renderer::placeTexture4RotatedDegrees(const int _x1, const int _y1, const i
 		setTextureMode();
 	
 		/* Turn the 2 points into a square object. */
-		Square <int> square (_x1,_y1,_x2,_y2);
+		Square <double> square (_x1,_y1,_x2,_y2);
 		/* Rotate the square object. */
 		square.rotateAboutCenterDegrees(rotationDegrees);
 
@@ -151,13 +153,13 @@ void Renderer::placeTexture4RotatedDegrees(const int _x1, const int _y1, const i
 		glBegin(GL_QUADS);
 		
 			glTexCoord2f(0,1);
-			glVertex2f(square.p1.x,square.p1.y);
+			glVertex2f(round(square.p1.x),round(square.p1.y));
 			glTexCoord2f(1,1);
-			glVertex2f(square.p2.x,square.p2.y);
+			glVertex2f(round(square.p2.x),round(square.p2.y));
 			glTexCoord2f(1,0);
-			glVertex2f(square.p3.x,square.p3.y);
+			glVertex2f(round(square.p3.x),round(square.p3.y));
 			glTexCoord2f(0,0);
-			glVertex2f(square.p4.x,square.p4.y);
+			glVertex2f(round(square.p4.x),round(square.p4.y));
 		glEnd();
 	#elif defined WILDCAT_USE_DIRECT3D
 		/* Put Direct3D code here... */

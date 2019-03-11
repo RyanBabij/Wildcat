@@ -634,7 +634,7 @@ class Vector
     }
     data.clear();
 	}
-  void deleteAll()
+  void deleteAll() /* Also clears vector */
   { clearPtr(); }
   inline void clearData()
   { clearPtr(); }
