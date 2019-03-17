@@ -15,7 +15,7 @@
 
 
 	// WHAT THE HELL IS 'INDEX'? I'LL PUT A HASXY IMPLEMENTATION HERE.
-Vector <HasXY*> * getNeighbors(const int _x, const int _y, const bool _includeSelf=false, const bool _shuffle = false)
+Vector <HasXY*> * getNeighbors(const int _x, const int _y, const bool _includeSelf=false, const bool _shuffle=false)
 {
 	Vector <HasXY*> * vectorIndex = new Vector <HasXY*>;
 

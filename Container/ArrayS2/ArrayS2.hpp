@@ -309,6 +309,7 @@ void setNeighbors(const int _x, const int _y, const ARRAYS2_T _value, const int 
 }
 
 	// RETURN A VECTOR OF INDEXES SURROUNDING (AND POSSIBLY INCLUDING) THE PASSED COORDINATES.
+  // Note that a request outside bounds will still provide any safe neighbors.
 Vector <HasXY*> * getNeighbors(const int _x, const int _y, const bool _includeSelf=false, const bool _shuffle=false)
 {
 	Vector <HasXY*> * vectorIndex = new Vector <HasXY*>;
@@ -340,6 +341,34 @@ Vector <HasXY*> * getNeighbors(const int _x, const int _y, const bool _includeSe
 }
 Vector <HasXY*> * getNeighbors( HasXY* _index, const bool _includeSelf=false, const bool _shuffle=false)
 { return getNeighbors(_index->x, _index->y, _includeSelf); }
+
+
+  // Get neighbours in only NESW directions. Useful for situations where you don't want diagonal movement.
+  // Note that a request outside bounds will still provide any safe neighbors.
+Vector <HasXY*> * getNeighborsOrthogonal(const int _x, const int _y, const bool _includeSelf=false, const bool _shuffle=false)
+{
+	Vector <HasXY*> * vectorIndex = new Vector <HasXY*>;
+
+	if (_includeSelf && isSafe(_x,_y))
+	{ vectorIndex->push(new HasXY(_x,_y)); }
+	
+	if(isSafe(_x-1,_y))
+	{ vectorIndex->push(new HasXY(_x-1,_y)); }
+	if(isSafe(_x,_y-1))
+	{ vectorIndex->push(new HasXY(_x,_y-1)); }
+	if(isSafe(_x,_y+1))
+	{ vectorIndex->push(new HasXY(_x,_y+1)); }
+	if(isSafe(_x+1,_y))
+	{ vectorIndex->push(new HasXY(_x+1,_y)); }
+
+  // Often we will want the vector of neighbors to be shuffled to prevent directional bias.
+  if (_shuffle) { vectorIndex->shuffle(); }
+
+	return vectorIndex;
+}
+
+
+
 
 	// 0241794590: APPARENTLY THIS NEVER EXISTED BEFORE NOW. MAYBE MAKE THIS THE NEW STANDARD FUNCTION.
 	// ALSO THIS LOOKS TO BE A HUGE MESS.
