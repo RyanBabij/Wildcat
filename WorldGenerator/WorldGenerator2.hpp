@@ -200,6 +200,8 @@ class WorldGenerator2
 	ArrayS3 <unsigned char> aTopoMap;
 	ArrayS2 <unsigned char> aHeightMap; /* This one is for landmasses. It should really be called aLandMassMap */
 	ArrayS2 <unsigned char> aHeightMap2; /* This one is for elevations */
+  
+  ArrayS2 <int> aRiverMap; /* Contains the river ID */
 	
 	ArrayS2 <unsigned char> aTectonicMap;
 	
@@ -372,9 +374,13 @@ class WorldGenerator2
 		// TODO: OPTION TO REMOVE DIAGONAL LAND/SEA CONNECTIONS FOR BETTER GAMEPLAY.
 	}
 		
-		// Rivers should eventually go on their own layer.
+		// Rivers flow from mountains and go downhill.
+    // Rivers can collect in areas to form freshwater lakes.
+    // Some rivers are major, and others are minor. Only major rivers should be shown on world view.
+    // Major rivers are basically those that can't be easily crossed.
 	void createRivers(int nRivers=1, int _seed=0)
 	{
+    return;
 		std::cout<<"Creating rivers.\n";
 		
     std::cout<<"River seed: "<<_seed<<".\n";
@@ -414,7 +420,8 @@ class WorldGenerator2
 		
 		for (int i=0;i<nRivers && i<vMountainTiles.size();++i)
 		{
-			aTerrainType(vMountainTiles(i)) = RIVER;
+			//aTerrainType(vMountainTiles(i)) = RIVER;
+      aRiverMap(vMountainTiles(i)) = i;
 			
 			int currentX = vMountainTiles(i)->x;
 			int currentY = vMountainTiles(i)->y;
@@ -424,7 +431,7 @@ class WorldGenerator2
 			{
 			
 				// Spread to lowest neighbor which isn't river. Abort when next to ocean.
-				Vector <HasXY*>* vNeighbors = aTerrainType.getNeighbors(currentX,currentY,false);
+				Vector <HasXY*>* vNeighbors = aTerrainType.getNeighborsOrthogonal(currentX,currentY,false);
         
 
           //Shuffle vectors to randomly resolve equal height neighbors.
@@ -440,17 +447,32 @@ class WorldGenerator2
 				//int i2=0;
 				int lowestHeight = 256;
 				HasXY* lowestTile = 0;
-				
+        
+        bool abortRiver = false;
+        
 				for (int i2=0;i2<vNeighbors->size();++i2)
 				{
 						// Abort when the river is touching an ocean.
 					if (aTerrainType((*vNeighbors)(i2)) == OCEAN )
 					{
-						lowestTile=0;
+						abortRiver=true;
 						break;
 					}
-					
-					else if ( aTerrainType((*vNeighbors)(i2)) != RIVER && aHeightMap((*vNeighbors)(i2)) < lowestHeight )
+          // Abort if touching another river. (River will flow into this one)
+          if ( aRiverMap((*vNeighbors)(i2)) != i && aRiverMap((*vNeighbors)(i2)) != -1)
+					{
+						abortRiver=true;
+						break;
+					}
+        }
+        if ( abortRiver )
+        {
+          break;
+        }
+				
+				for (int i2=0;i2<vNeighbors->size();++i2)
+				{
+					 if ( aRiverMap((*vNeighbors)(i2)) == -1 && aHeightMap((*vNeighbors)(i2)) < lowestHeight )
 					{
 						lowestTile = (*vNeighbors)(i2);
 						lowestHeight = aHeightMap((*vNeighbors)(i2));
@@ -458,7 +480,8 @@ class WorldGenerator2
 				}
 				if ( lowestTile != 0 )
 				{
-					aTerrainType(lowestTile) = RIVER;
+					//aTerrainType(lowestTile) = RIVER;
+					aRiverMap(lowestTile) = i;
 					currentX = lowestTile->x;
 					currentY = lowestTile->y;
 				}
@@ -564,6 +587,7 @@ class WorldGenerator2
 
 		// MAKE DEFAULT TILE OCEAN.
 		aTerrainType.init(mapSize,mapSize,OCEAN);
+		aRiverMap.init(mapSize,mapSize,-1);
 		
 		WorldGenerator2_Tile nullTile;
     delete [] aTile.data;
@@ -699,7 +723,7 @@ class WorldGenerator2
 		Timer timerRiver;
 		timerRiver.init();
 		timerRiver.start();
-		createRivers(20, subSeed[11]);
+		createRivers(50, subSeed[11]);
 		timerRiver.update();
 		std::cout<<"Rivers created in "<<timerRiver.fullSeconds<<" seconds.\n";
 
