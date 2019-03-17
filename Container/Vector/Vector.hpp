@@ -44,6 +44,8 @@ class Vector
 	{ return data[i]; }
 	inline void push(const T value)
 	{ data.push_back(value); }
+	inline void pushUnique(const T value)
+	{ if ( contains(value) == false ) {data.push_back(value); } }
 	inline void add(const T value)
 	{ data.push_back(value); }
 	
@@ -80,6 +82,10 @@ class Vector
 	{
 		return data.end();
 	}
+  auto back()
+  {
+    return data.back();
+  }
 	
 	
 	void copy (Vector <T> * _vector)
