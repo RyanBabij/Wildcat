@@ -380,7 +380,6 @@ class WorldGenerator2
     // Major rivers are basically those that can't be easily crossed.
 	void createRivers(int nRivers=1, int _seed=0)
 	{
-    return;
 		std::cout<<"Creating rivers.\n";
 		
     std::cout<<"River seed: "<<_seed<<".\n";
