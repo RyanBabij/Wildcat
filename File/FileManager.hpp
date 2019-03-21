@@ -287,7 +287,9 @@ class FileManager
 	{
 		
 		
-		
+    // std::uintmax_t n = fs::remove_all(dir / "abcdef");
+    // std::cout << "Deleted " << n << " files or directories\n";
+    
 		//std::filesystem::remove_all("test");
 		
 		/* New c++17 feature. */
@@ -301,7 +303,7 @@ class FileManager
 	}
 	//https://stackoverflow.com/questions/734717/how-to-delete-a-folder-in-c
 	
-static int DeleteDirectory(const std::string &refcstrRootDirectory, bool bDeleteSubdirectories = true)
+static int deleteDirectory(const std::string &refcstrRootDirectory, bool bDeleteSubdirectories = true)
 {
 	bool            bSubdirectory = false;       // Flag, indicating whether
 	// subdirectories have been found
@@ -327,7 +329,7 @@ static int DeleteDirectory(const std::string &refcstrRootDirectory, bool bDelete
 					if(bDeleteSubdirectories)
 					{
 						// Delete subdirectory
-						int iRC = DeleteDirectory(strFilePath, bDeleteSubdirectories);
+						int iRC = deleteDirectory(strFilePath, bDeleteSubdirectories);
 						if(iRC)
 							return iRC;
 					}
