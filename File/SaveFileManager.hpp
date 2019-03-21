@@ -36,7 +36,9 @@
   [TAG:ID:DATA]
   
   
-  The only invalid characters in these save files are square brackets. Anything else may be typed into the save files without causing problems.
+  The only invalid characters in these save files are square brackets (and probably some escape sequences).
+  Anything else may be typed into the save files without causing problems. This should allow easy commenting and
+  documentation.
   
   
   Pointer management:
@@ -46,6 +48,14 @@
   The real issue is how to store links between objects.
   
   The most obvious solution to me is to give every single saveable object in the world a unique ID.
+  
+  Another important thing should be the ability to group data into "chunks". For example if you have an array of 1000
+  small objects, you might want to have it all grouped into a single chunk of data without having 1000 sets of square
+  brackets and tag IDs.
+  
+  
+  Okay new plan. There are two types of savedata. There are individual pieces like objects. Then there are chunks which
+  are large collections of data. Breaking data into chunks will make searching faster if they have their own syntax.
   
 */
 
@@ -97,22 +107,36 @@ class SaveFileInterface
 };
 long long int SaveFileInterface::currentID = 0;
 
+// Basically a container designed for saving large collections of data, for example array contents.
+class SaveChunk
+{
+  public:
+  
+  Vector <std::string> vData;
+  std::string name;
+  
+  SaveChunk(std::string _name)
+  {
+    name=_name;
+  }
+  
+  // Push a piece of data into the chunk.
+  void add (std::string _data)
+  {
+    vData.push(_data);
+  }
+  
+};
+
 class SaveFileManager
 {
 	public:
+  
   std::string data;
-  //std::string savePath;
-  
-  //Vector <SaveFileInterface*> vSaveObjects;
-  
-	//FileManager::createFile(worldFilePath);
-  //FileManager::writeTag("LANDSEED",DataTools::toString(landmassSeed),worldFilePath);
-  
 
 	SaveFileManager()
   {
     data = "";
-    //savePath = "";
   }
   
 	~SaveFileManager() {}
@@ -121,7 +145,7 @@ class SaveFileManager
   // Load the savefile into RAM.
   void loadFile (std::string _file)
   {
-    std::cout<<"LOADING FILE: "<<_file<<".\n";
+    //std::cout<<"LOADING FILE: "<<_file<<".\n";
     data = FileManager::getFileAsString(_file);
     
   }
@@ -130,8 +154,27 @@ class SaveFileManager
   template <class T>
   void addVariable(std::string _tag, T _value)
   {
-    std::cout<<"ADD VARIABLE\n";
+    //std::cout<<"ADD VARIABLE\n";
     data+="["+_tag+":"+DataTools::toString(_value)+"]";
+  }
+  
+  
+  void addChunk (SaveChunk& _chonk)
+  {
+    // if (!_chonk) { return; }
+    
+    data+="{CHONK:"+_chonk.name+":";
+    
+    for (int i=0;i<_chonk.vData.size();++i)
+    {
+      data+=_chonk.vData(i);
+    }
+
+    data+="}";
+  }
+  SaveChunk* getChunk(std::string chunkName)
+  {
+    return 0;
   }
   
   // RETURN DATA THAT MATCHES TAG.
