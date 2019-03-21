@@ -86,6 +86,11 @@ class Vector
   {
     return data.back();
   }
+  
+  void popBack()
+  {
+    data.pop_back();
+  }
 	
 	
 	void copy (Vector <T> * _vector)
