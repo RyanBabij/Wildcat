@@ -102,7 +102,6 @@ class SaveFileInterface
   virtual void save()
   {
   }
-
   
 };
 long long int SaveFileInterface::currentID = 0;
@@ -114,16 +113,36 @@ class SaveChunk
   
   Vector <std::string> vData;
   std::string name;
+  char delimiter;
   
   SaveChunk(std::string _name)
   {
     name=_name;
+    delimiter=',';
+  }
+  
+  std::string operator() (const int _i)
+  {
+    if ( vData.isSafe(_i) ) { return vData(_i); }
+    
+    return "";
   }
   
   // Push a piece of data into the chunk.
   void add (std::string _data)
   {
     vData.push(_data);
+  }
+  
+  std::string toString()
+  {
+    std::string ret = "";
+    
+    for (int i=0;i<vData.size();++i)
+    {
+      ret+=vData(i);
+    }
+    return ret;
   }
   
 };
@@ -140,8 +159,7 @@ class SaveFileManager
   }
   
 	~SaveFileManager() {}
-  
-  
+
   // Load the savefile into RAM.
   void loadFile (std::string _file)
   {
@@ -161,20 +179,42 @@ class SaveFileManager
   
   void addChunk (SaveChunk& _chonk)
   {
-    // if (!_chonk) { return; }
-    
     data+="{CHONK:"+_chonk.name+":";
     
     for (int i=0;i<_chonk.vData.size();++i)
     {
       data+=_chonk.vData(i);
+      data+=_chonk.delimiter;
     }
-
     data+="}";
   }
-  SaveChunk* getChunk(std::string chunkName)
+  SaveChunk* getChunk(std::string _tag)
   {
-    return 0;
+    SaveChunk * chonk = new SaveChunk(_tag);
+    
+    const std::string searchTag = "{CHONK:"+_tag+":";
+    
+    std::size_t found = data.find(searchTag);
+    if (found!=std::string::npos)
+    {
+      found += searchTag.length()+1;
+      
+      std::string _saveData = "";
+      while (found != std::string::npos && data[found] != '}')
+      {
+        if (data[found] == ',')
+        {
+          chonk->add(_saveData);
+          _saveData="";
+        }
+        else
+        { _saveData+=data[found];
+        }
+        
+        ++found;
+      }
+    }
+    return chonk;
   }
   
   // RETURN DATA THAT MATCHES TAG.
