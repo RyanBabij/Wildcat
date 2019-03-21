@@ -1,122 +1,213 @@
 #pragma once
-#ifndef WILDCAT_TIME_CALENDAR_HPP
-#define WILDCAT_TIME_CALENDAR_HPP
+#ifndef WILDCAT_CALENDAR_HPP
+#define WILDCAT_CALENDAR_HPP
 
-#include <Data/DataTools.hpp>
+/* Wildcat: Calendar
+  #include "Time/Calendar.hpp"
 
-/* #include <Time/Calendar.hpp> Created: 022-171. Updated: 022-171. Component of GaroSoft WildCat game engine.
-	Class to create a simple calendar for games. No leap years or months of different length.
+    I'm going with the following simple approach:
+
+    60 seconds per minute.
+    60 minutes per hour.
+    24 hours per day.
+    30 days per month.
+    12 months per year.
+    
+    Some scaling can be implemented by lowering seconds per minute.
+    
+    You can pass the calendar which will basically represent a date.
 */
 
 class Calendar
 {
-	private:
-	int year, month, day, unit;
-	int daysPerMonth, monthsPerYear, unitsPerDay;
-	int dayNumberZeroes, monthNumberZeroes, unitNumberZeroes;
 	public:
-
+	
+	
+	int year, month, day, hour, minute, second;
+	Vector <std::string> vMonthName;
+  
+  int secondsPerMinute;
+	
 	Calendar()
 	{
 		year=0;
 		month=0;
 		day=0;
-		unit=0;
-		daysPerMonth=0;
-		monthsPerYear=0;
-		unitsPerDay=0;
+		hour=CALENDAR_INITIAL_HOUR;
+		minute=CALENDAR_INITIAL_MINUTE;
+		second=0;
+    
+    secondsPerMinute=CALENDAR_SECONDS_PER_MINUTE;
 	}
 	
-	
-	void setDaysPerMonth ( const int _daysPerMonth )
+	void set(const int _year, const int _month, const int _day, const int _hour, const int _minute, const int _second)
 	{
-		if(_daysPerMonth>0)
+		year=_year;
+		month=_month;
+		day=_day;
+		hour=_hour;
+		minute=_minute;
+		second=_second;
+	}
+  void set  ( Calendar* _calendar )
+  {
+    if ( !_calendar ) { return; }
+		year=_calendar->year;
+		month=_calendar->month;
+		day=_calendar->day;
+		hour=_calendar->hour;
+		minute=_calendar->minute;
+		second=_calendar->second;
+  }
+	
+	//void setMonthNames (const std::string _m1, const std::string
+	void addMonthName(const std::string _monthName)
+	{
+		vMonthName.push(_monthName);
+	}
+	
+	void advanceSeconds(const int _seconds)
+	{
+		second+=_seconds;
+		normalise();
+	}
+	void advanceSecond(const int _seconds) { advanceSeconds(_seconds); }
+	void advanceMinutes(const int _minutes)
+	{
+		minute+=_minutes;
+		normalise();
+	}
+	void advanceMinute(const int _minutes) { advanceMinutes(_minutes); }
+	void advanceHours(const int _hours)
+	{
+		hour+=_hours;
+		normalise();
+	}
+	void advanceHour(const int _hours) { advanceHours(_hours); }
+	void advanceDays(const int _days)
+	{
+		day+=_days;
+		normalise();
+	}
+	void advanceDay(const int _days) { advanceDays(_days); }
+	
+	void normalise()
+	{
+		/* Turn excess seconds into minutes. */
+		if(second>=secondsPerMinute)
 		{
-			daysPerMonth = _daysPerMonth;
-			dayNumberZeroes = DataTools::toString(daysPerMonth-1).length();
+			int nMinutes = second/secondsPerMinute;
+			minute+=nMinutes;
+			second-=(nMinutes*secondsPerMinute);
 		}
-		else
-		{ std::cout<<"Calendar.hpp. Error: Days per month must be greater than zero.\n"; }
-	}
-	
-	void setMonthsPerYear ( const int _monthsPerYear )
-	{
-		if(_monthsPerYear>0)
+		/* Turn excess minutes into hours. */
+		if(minute>=60)
 		{
-			monthsPerYear = _monthsPerYear;
-			monthNumberZeroes = DataTools::toString(monthsPerYear-1).length();
+			int nHours = minute/60;
+			hour+=nHours;
+			minute-=(nHours*60);
 		}
-		else
-		{ std::cout<<"Calendar.hpp. Error: Months per year must be greater than zero.\n"; }
-	}
-	
-	void setUnitsPerDay (const int _unitsPerDay )
-	{
-		if(_unitsPerDay>0)
+		/* Turn excess hours into days. */
+		if(hour>=24)
 		{
-			unitsPerDay=_unitsPerDay;
-			unitNumberZeroes = DataTools::toString(unitsPerDay-1).length();
-		}
-		else
-		{ std::cout<<"Calendar.hpp. Error: Units per day must be greater than zero.\n"; }
-	}
-
-	void advanceUnits(const int _units)
-	{
-		unit+=_units;
-		
-		if(unit>=unitsPerDay)
-		{
-			//std::cout<<"New day.\n";
-			
-			int nDays = unit/unitsPerDay;
-			//std::cout<<"Ndays: "<<nDays<<".\n";
-			//sleep(10);
-			
+			int nDays = hour/24;
 			day+=nDays;
-			unit-=(nDays*unitsPerDay);
-			
-			if(day>=daysPerMonth)
-			{
-			//	std::cout<<"New month.\n";
-				int nMonths = day/daysPerMonth;
-				
-				month+=nMonths;
-				day-=(nMonths*daysPerMonth);
-			
-				if(month>=monthsPerYear)
-				{
-					int nYears = month/monthsPerYear;
-					year+=nYears;
-					month-=(nYears*monthsPerYear);
-				}
-			}
-			
+			hour-=(nDays*24);
+		}
+		/* Turn excess days into months. */
+		if(day>=30)
+		{
+			int nMonths = day/30;
+			month+=nMonths;
+			day-=(nMonths*30);
+		}
+		/* Turn excess months into years. */
+		if(month>=12)
+		{
+			int nYears = month/12;
+			year+=nYears;
+			month-=(nYears*12);
+		}
+	}
+	
+	std::string toString()
+	{
+		normalise();
+		std::string output = "";
+		output+=DataTools::toString(day,2);
+		output+="/";
+		output+=DataTools::toString(month,2);
+		output+="/";
+		output+=DataTools::toString(year,4);
+		output+=" ";
+		output+=DataTools::toString(hour,2);
+		output+=":";
+		output+=DataTools::toString(minute,2);
+		output+=":";
+		output+=DataTools::toString(second,2);
+		return output;
+	}
+  
+	int getDistanceYears(Calendar *c)
+	{
+		int nYears = year - c->year;
+		if ( nYears<0 ) { nYears*=-1; }
+		return nYears;
+	}
+	bool operator < (Calendar * date)
+	{
+		//std::cout<<"<";
+		if(year<date->year)
+		{ return true; }
+		else if(year>date->year)
+		{ return false; }
+		else
+		{
+			// if (month<date->month)
+			// { return true; }
+			// else if(month>date->month)
+			// { return false; }
+			// else
+			// {
+				// if(day<date->day)
+				// { return true; }
+				// else if (day>date->day)
+				// { return false; }
+				// else
+				// {
+					// /* Increase resolution to hours and minutes and seconds later. */
+					// return false;
+				// }
+			// }
+		}
+		return false;
+	}
+	
+	int getDistanceDays(Calendar* c)
+	{
+		int nDays=0;
+		std::cout<<"Get distance days.\n";
+		
+		
+		Calendar counter;
+		counter.set(this);
+		
+	
+		//int currentYear = year;
+		while(counter < c)
+		{
+			++nDays;
+			counter.advanceDay(1);
 		}
 		
+		std::cout<<"\nReturning: "<<nDays<<".\n";
+		return nDays;
 	}
-	
-	std::string toString ( const std::string delimiter )
-	{
-		std::string strUnit = DataTools::toString(unit,unitNumberZeroes);
-		std::string strDay = DataTools::toString(day,dayNumberZeroes);
-		std::string strMonth = DataTools::toString(month,monthNumberZeroes);
-		std::string strYear = DataTools::toString(year);
-	
-	
-	
-		std::string strDate = strYear+delimiter+strMonth+delimiter+strDay+delimiter+strUnit;
-		return strDate;
-	}
-	
+	int distanceDays ( Calendar* c)
+	{ return getDistanceDays(c); }
+  
 };
 
 
-/* Date: Stores a particular date of the calendar. */
-
-class Date
-{
-	public:
-};
 
 #endif
