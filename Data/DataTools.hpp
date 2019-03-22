@@ -26,6 +26,42 @@
 
 namespace DataTools
 {
+  // Break string up into a vector of strings split by the passed delimiters.
+  // Don't forget to include \n and \r.
+  //  tokenize("test,1,2,,,3,", ",") will return "test", "1", "2", and "3".
+  Vector <std::string> * tokenize(const std::string _str, const std::string delim)
+  {
+    if ( _str.length() == 0 ) { return 0; }
+    auto result = new Vector <std::string>;
+    std::string temp = "";
+    
+    for (unsigned int i=0;i<_str.size();++i)
+    {
+      
+      if (delim.find(_str[i]) != std::string::npos)
+      {
+        if ( temp.size() >  0 )
+        {
+          result->push(temp);
+        }
+        temp="";
+      }
+      else
+      { temp+=_str[i];
+      }
+    }
+    if (temp.size() > 0 )
+    { result->push(temp); }
+    
+    if ( result->size() == 0 )
+    {
+      delete result;
+      return 0;
+    }
+    
+    return result;
+  }
+  
 	
 	bool isAlphaNumeric(std::string _s )
 	{
@@ -494,8 +530,35 @@ namespace DataTools
 	int toInt(std::string s)
 	{
 		/* NOTE: If the string is not a valid integer, zero will be returned. */
-		return(atoi(s.c_str()));
+    return stoi(s);
 	}
+	short int toShort(std::string s)
+	{
+		/* NOTE: If the string is not a valid integer, zero will be returned. */
+    return stoi(s);
+	}
+  long int toLong(std::string s)
+  {
+    return stol(s);
+  }
+  
+	int toUnsignedInt(std::string s)
+	{
+		/* NOTE: If the string is not a valid integer, zero will be returned. */
+    return stoul(s);
+	}
+	short int toUnsignedShort(std::string s)
+	{
+		/* NOTE: If the string is not a valid integer, zero will be returned. */
+    return stoul(s);
+	}
+  long int toUnsignedLong(std::string s)
+  {
+    return stoul(s);
+  }
+  
+  
+  
 	template <class T>
 	T fromArray(char* address, int numBytes)
 	{
