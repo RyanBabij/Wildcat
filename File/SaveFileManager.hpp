@@ -179,14 +179,14 @@ class SaveFileManager
   
   void addChunk (SaveChunk& _chonk)
   {
-    data+="{CHONK:"+_chonk.name+":";
+    data+="{CHONK:"+_chonk.name+":\n";
     
     for (int i=0;i<_chonk.vData.size();++i)
     {
       data+=_chonk.vData(i);
       data+=_chonk.delimiter;
     }
-    data+="}";
+    data+="}\n";
   }
   SaveChunk* getChunk(std::string _tag)
   {
@@ -197,7 +197,7 @@ class SaveFileManager
     std::size_t found = data.find(searchTag);
     if (found!=std::string::npos)
     {
-      found += searchTag.length()+1;
+      found += searchTag.length()+2;
       
       std::string _saveData = "";
       while (found != std::string::npos && data[found] != '}')
