@@ -31,7 +31,36 @@ class HasXY
 		x=_x;
 		y=_y;
 	}
+	HasXY(HasXY* xy)
+	{
+    if ( xy )
+    {
+      x=xy->x;
+      y=xy->y;
+    }
+	}
 	
+  //OPERATORS
+  inline bool operator==(const HasXY& rhs)
+  {
+    return (x == rhs.x && y == rhs.y);
+  }
+  inline bool operator>(const HasXY& rhs)
+  {
+    return (x+y > rhs.x+rhs.y);
+  }
+  inline bool operator>=(const HasXY& rhs)
+  {
+    return (x+y >= rhs.x+rhs.y);
+  }
+  inline bool operator<(const HasXY& rhs)
+  {
+    return (x+y < rhs.x+rhs.y);
+  }
+  inline bool operator<=(const HasXY& rhs)
+  {
+    return (x+y <= rhs.x+rhs.y);
+  }
 
 	void set(const int _x, const int _y)
 	{
@@ -74,7 +103,6 @@ class HasXY2
 	}
   
   //OPERATORS
-  
   inline bool operator==(const HasXY2& rhs)
   {
     return (x == rhs.x && y == rhs.y);
