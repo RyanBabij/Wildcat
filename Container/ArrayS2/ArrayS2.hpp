@@ -334,6 +334,8 @@ Vector <HasXY*> * getNeighbors(const int _x, const int _y, const bool _includeSe
 	if(isSafe(_x+1,_y+1))
 	{ vectorIndex->push(new HasXY(_x+1,_y+1)); }
 
+  if (vectorIndex->size() == 0 ) { delete vectorIndex; return 0; }
+
   // Often we will want the neighbor vector shuffled to prevent directional bias.
   if (_shuffle) { vectorIndex->shuffle(); }
 
@@ -360,6 +362,8 @@ Vector <HasXY*> * getNeighborsOrthogonal(const int _x, const int _y, const bool 
 	{ vectorIndex->push(new HasXY(_x,_y+1)); }
 	if(isSafe(_x+1,_y))
 	{ vectorIndex->push(new HasXY(_x+1,_y)); }
+
+if (vectorIndex->size() == 0 ) { delete vectorIndex; return 0; }
 
   // Often we will want the vector of neighbors to be shuffled to prevent directional bias.
   if (_shuffle) { vectorIndex->shuffle(); }
