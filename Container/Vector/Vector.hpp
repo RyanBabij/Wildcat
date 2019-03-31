@@ -46,6 +46,8 @@ class Vector
 	{ data.push_back(value); }
 	inline void pushUnique(const T value)
 	{ if ( contains(value) == false ) {data.push_back(value); } }
+	inline void pushUniquePtr(const T value)
+	{ if ( containsPtr(value) == false ) {data.push_back(value); } }
 	inline void add(const T value)
 	{ data.push_back(value); }
 	
@@ -307,7 +309,6 @@ class Vector
 			{
 				eraseSlot(i--);
 			}
-
 
 				// 0230747101: NOTE: THE BELOW CODE DOESN'T SEEM TO WORK.
 			//if(data[i]==_value)
