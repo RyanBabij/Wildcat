@@ -432,6 +432,8 @@ class WorldGenerator2
 				// Spread to lowest neighbor which isn't river. Abort when next to ocean.
 				Vector <HasXY*>* vNeighbors = aTerrainType.getNeighborsOrthogonal(currentX,currentY,false);
         
+        if ( vNeighbors == 0 ) { break; }
+        
 
           //Shuffle vectors to randomly resolve equal height neighbors.
         if ( _seed==0)
