@@ -592,6 +592,22 @@ namespace DataTools
 		memcpy(number,*startAddress,sizeof(T));
 		*startAddress+=sizeof(T);
 	}
+  
+  unsigned long int absoluteDifference( unsigned long int val1, unsigned long int val2)
+  {
+    if ( val1 == val2 ) { return 0; }
+    
+    if (val1 > val2)
+    {
+      return val1-val2;
+    }
+    return val2-val1;
+  }
 
+
+  unsigned long int manhattanDistance (unsigned long int x1, unsigned long int y1, unsigned long int x2, unsigned long int y2)
+  {
+    return DataTools::absoluteDifference(x1,x2)+DataTools::absoluteDifference(y1,y2);
+  }
 }
 
