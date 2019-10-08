@@ -63,7 +63,7 @@ namespace DataTools
   }
   
 	
-	bool isAlphaNumeric(std::string _s )
+	bool isAlphaNumeric(std::string _s, const bool allowSpaces=false )
 	{
 		for ( auto c : _s )
 		{
@@ -73,7 +73,9 @@ namespace DataTools
 			|| c=='s' || c=='t' || c=='u' || c=='v' || c=='w' || c=='x' || c=='y' || c=='z'
 			|| c=='A' || c=='B' || c=='C' || c=='D' || c=='E' || c=='F' || c=='G' || c=='H' || c=='I'
 			|| c=='J' || c=='K' || c=='L' || c=='M' || c=='N' || c=='O' || c=='P' || c=='Q' || c=='R'
-			|| c=='S' || c=='T' || c=='U' || c=='V' || c=='W' || c=='X' || c=='Y' || c=='Z')
+			|| c=='S' || c=='T' || c=='U' || c=='V' || c=='W' || c=='X' || c=='Y' || c=='Z'
+			|| (allowSpaces && c==' ')
+			)
 			{
 			}
 			else
@@ -608,6 +610,18 @@ namespace DataTools
   unsigned long int manhattanDistance (unsigned long int x1, unsigned long int y1, unsigned long int x2, unsigned long int y2)
   {
     return DataTools::absoluteDifference(x1,x2)+DataTools::absoluteDifference(y1,y2);
+  }
+  
+  // The distance from one tile to another in tiles, including diagonal movement (otherwise it's just manhattan distance)
+  // Known as Chebyshev distance.
+  // This works basically by just returning the longest x or y difference.
+  unsigned long int chebyshevDistance (unsigned long int x1, unsigned long int y1, unsigned long int x2, unsigned long int y2)
+  {
+    unsigned long int dist1 = DataTools::absoluteDifference(x1,x2);
+    unsigned long int dist2 = DataTools::absoluteDifference(y1,y2);
+    
+    if (dist1 > dist2 ) { return dist1; }
+    return dist2;
   }
 }
 

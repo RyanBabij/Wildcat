@@ -35,10 +35,10 @@ class Timer
 	
 	long int totalUSeconds;
 
-    Timer()
-    {
-		init();
-    }
+  Timer()
+  {
+    init();
+  }
 	void init()
 	{
 		uSeconds=0;
@@ -46,10 +46,10 @@ class Timer
 		fullSeconds=0;
 		totalUSeconds=0;
 	}
-    void start()
-    {
-		gettimeofday(&startTime,0);
-    }
+  void start()
+  {
+    gettimeofday(&startTime,0);
+  }
 	void update()
 	{
 		gettimeofday(&stopTime,0);

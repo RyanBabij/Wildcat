@@ -28,16 +28,56 @@ class Calendar
   
   int secondsPerMinute;
 	
-	Calendar()
+	Calendar(int _year=0, int _month=0, int _day=0, int _hour=0, int _minute=0, int _second=0)
 	{
-		year=0;
-		month=0;
-		day=0;
-		hour=CALENDAR_INITIAL_HOUR;
-		minute=CALENDAR_INITIAL_MINUTE;
-		second=0;
+		year=_year;
+		month=_month;
+		day=_day;
+		hour=_hour;
+		minute=_minute;
+		second=_second;
     
-    secondsPerMinute=CALENDAR_SECONDS_PER_MINUTE;
+    secondsPerMinute=60;
+	}
+  
+	bool operator < (Calendar * date)
+	{
+		//std::cout<<"<";
+		if(year<date->year)
+		{ return true; }
+		else if(year>date->year)
+		{ return false; }
+		else
+		{
+			// if (month<date->month)
+			// { return true; }
+			// else if(month>date->month)
+			// { return false; }
+			// else
+			// {
+				// if(day<date->day)
+				// { return true; }
+				// else if (day>date->day)
+				// { return false; }
+				// else
+				// {
+					// /* Increase resolution to hours and minutes and seconds later. */
+					// return false;
+				// }
+			// }
+		}
+		return false;
+	}
+
+	bool operator == (Calendar& date)
+	{
+    return (year==date.year && month==date.month && day==date.day
+      && hour==date.hour && second==date.second);
+	}
+	bool operator != (Calendar& date)
+	{
+    return (second!=date.second || year!=date.year || month!=date.month || day!=date.day
+      || hour!=date.hour);
 	}
 	
 	void set(const int _year, const int _month, const int _day, const int _hour, const int _minute, const int _second)
@@ -154,34 +194,7 @@ class Calendar
 		if ( nYears<0 ) { nYears*=-1; }
 		return nYears;
 	}
-	bool operator < (Calendar * date)
-	{
-		//std::cout<<"<";
-		if(year<date->year)
-		{ return true; }
-		else if(year>date->year)
-		{ return false; }
-		else
-		{
-			// if (month<date->month)
-			// { return true; }
-			// else if(month>date->month)
-			// { return false; }
-			// else
-			// {
-				// if(day<date->day)
-				// { return true; }
-				// else if (day>date->day)
-				// { return false; }
-				// else
-				// {
-					// /* Increase resolution to hours and minutes and seconds later. */
-					// return false;
-				// }
-			// }
-		}
-		return false;
-	}
+
 	
 	int getDistanceDays(Calendar* c)
 	{
@@ -206,6 +219,27 @@ class Calendar
 	int distanceDays ( Calendar* c)
 	{ return getDistanceDays(c); }
   
+  //note that this will return maximum of 31,536,000 seconds (1 year)
+	long long unsigned int distanceSeconds(Calendar* c)
+	{
+		int nSeconds=0;
+		std::cout<<"Get distance seconds.\n";
+		
+		
+		Calendar counter;
+		counter.set(this);
+    
+
+		while(counter < c)
+		{
+			++nSeconds;
+			counter.advanceSeconds(1);
+		}
+		
+		std::cout<<"\nReturning: "<<nSeconds<<".\n";
+		return nSeconds;
+	}
+
 };
 
 

@@ -10,14 +10,11 @@ RNG is global to save performance for game development. Also good for preserving
 
 0272407085 - Replaced external Mersenne Twister with built-in version. External one was causing random crashes with certain compiler optimisations. Took about 4 hours to track it down.
 
-C++11 introduced a lot of built-in functionality regarding random number generation (remember std::rand lol). Unfortunately it means that a lot of this code needs to be reworked. There also seems to be some kind of elusive bug caused by using the static Random class, not sure if it's thread-related or what. For now I'm sticking with the non-static class, but yeah it's a mess.
+C++11 introduced a lot of built-in functionality regarding random number generation (remember std::rand lol). Unfortunately it means that a lot of this code needs to be reworked.
 
 Oh man, I just noticed the same RNG is being used for both static and non-static instances. That was fun. Better to have a defined static function for global shared rng.
 */
 
-
-
-// Mersenne twister is now part of c++
 #include <random>
 #include <functional>
 
