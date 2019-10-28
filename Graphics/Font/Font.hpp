@@ -22,18 +22,39 @@ class Font
   //Texture ch [256];
 	int nX, nY; /* Dimensions of a character. (Currently all characters must have the same dimensions.) */
 	
+	int xSpacing, ySpacing; /* How much spacing you would like between glyphs. */
+	
+	bool loadSuccess;
+	
 	Font()
 	{
 		nX=0; nY=0;
+		loadSuccess=false;
+		xSpacing = 0;
+		ySpacing = 0;
 	}
 	
 	bool loadData(Png* png, const int _nX, const int _nY)
 	{
-    if (png==0) {return false;}
+    if (png==0)
+		{
+			std::cout<<"ERROR: Font PNG did not load.\n";
+			return false;
+		}
+	if ( png->nX == 0 || png->nY == 0 )
+	{
+		std::cout<<"Error: PNG dimensions are 0x0.\n";
+		return false;
+	}
+	
+	if ( _nX * 16 != png->nX || _nX *16 != png->nY )
+	{
+		std::cout<<"ERROR: Font PNG has unexpected dimensions for given font size: "<<_nX<<", "<<_nY<<".\n";
+		return false;
+	}
     
     std::cout<<"Loading font\n";
     std::cout<<"NX, NY: "<<_nX*16<< ", "<<_nY*16<<".\n";
-
 
 		nX=_nX;
 		nY=_nY;
@@ -62,10 +83,10 @@ class Font
       {
         for(int _x=0;_x<_nX;++_x)
         {
-          sub(_x,_y,0)=png->getPixel3D(currentX*8+_x,currentY*8+_y,0);
-          sub(_x,_y,1)=png->getPixel3D(currentX*8+_x,currentY*8+_y,1);
-          sub(_x,_y,2)=png->getPixel3D(currentX*8+_x,currentY*8+_y,2);
-          sub(_x,_y,3)=png->getPixel3D(currentX*8+_x,currentY*8+_y,3);
+          sub(_x,_y,0)=png->getPixel3D(currentX*_nX+_x,currentY*_nY+_y,0);
+          sub(_x,_y,1)=png->getPixel3D(currentX*_nX+_x,currentY*_nY+_y,1);
+          sub(_x,_y,2)=png->getPixel3D(currentX*_nX+_x,currentY*_nY+_y,2);
+          sub(_x,_y,3)=png->getPixel3D(currentX*_nX+_x,currentY*_nY+_y,3);
         }
       }
       
@@ -80,6 +101,8 @@ class Font
     
       ++i;
     }
+		std::cout<<"end loading font\n";
+		loadSuccess=true;
     return true;
 			
 		std::cout<<"Font.hpp Font::loadData(), data* was 0\n";
@@ -98,11 +121,20 @@ class Font
 		The whole thing needs to be cleaned up.
     
     Update: will return the number of lines it drew. (0 for error)
+		
+		Update: Add ability to simply render each character as it appears,
+		without trying to make it look neat.
 			
 	*/
-	int drawText(const std::string text, unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2, bool centeredX = false, bool centeredY=false,
+	int drawText(const std::string text, unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2, bool centeredX = false, bool centeredY=false, bool rawTextMode=false,
 				unsigned char _colourRed=0, unsigned char _colourGreen=0,unsigned char _colourBlue=0)
 	{
+		
+		if (loadSuccess == false )
+		{
+			return 0;
+		}
+		
 		/* Automatically sort the box coordinates here, so we don't need to input the coordinates in any particular order. */
 		if (y1<y2) { DataTools::swap(&y1,&y2); }
 		if (x1>x2) { DataTools::swap(&x1,&x2); }
@@ -148,7 +180,7 @@ class Font
 		if(centeredY==true)
 		{
 			int nLines = (text.size()/charsPerLine)+1;
-			int vSpace = nLines*(nY+2)-2;
+			int vSpace = nLines*(nY+ySpacing)-ySpacing;
 			
 			int sY = y1-y2;
 			currentY = y1 - ((sY-vSpace)/2);
@@ -163,7 +195,7 @@ class Font
 				// No spaces when going to newline.
 			if ( currentX==x1 )
 			{
-				if (text[i]==' ')
+				if (text[i]==' ' && rawTextMode == false)
 				{
 					++i;
 				}
@@ -200,7 +232,7 @@ class Font
 				if (currentX+nX > x2 || text[i]=='\n')
 				{
 					currentX=x1;
-					currentY-=(nY+2);
+					currentY-=(nY+ySpacing);
 					++linesDrawn;
 					
 					
@@ -223,8 +255,9 @@ class Font
 				}
 
 
+				// I think this breaks early if writing  a long word which will break
 
-				if ( text.size() > 16 && text[i]==' ' )
+				if ( rawTextMode == false && text.size() > 16 && text[i]==' ' )
 				{
 					int charsUntilSpace = 0;
 					for (unsigned int i2=1; i2<20&&i2+i<text.size();++i2)
@@ -258,6 +291,11 @@ class Font
 	
 	void drawText(const std::string text, int x1, int y1)
 	{
+		if (loadSuccess == false )
+		{
+			return;
+		}
+		
     glColor3ub(0,0,0);
 		for(unsigned int i=0;i<text.size();++i)
 		{
