@@ -29,6 +29,8 @@ class AudioPlayer_OpenAL: public AudioPlayer
 	
 	Vector <Sound*> vSound;
 	Vector <ALuint> vSource;
+	
+	bool closed; /* Prevent closing multiple times which can cause crash */
 #endif
 	
 	AudioPlayer_OpenAL()
@@ -37,10 +39,12 @@ class AudioPlayer_OpenAL: public AudioPlayer
 		alcDevice=0;
 		alcContext=0;
 		globalVolume=50;
+		closed = false;
 #endif
 	}
 	
-	/* ALC needs to be shut down properly or it seems to hang the system if audio is playing. */
+	/* ALC needs to be shut down properly or it seems to hang the system if audio is playing.
+		In some cases the audio player needs to be closed manually */
 	~AudioPlayer_OpenAL()
 	{
 #ifdef WILCAT_AUDIO
@@ -89,9 +93,13 @@ class AudioPlayer_OpenAL: public AudioPlayer
 	void close()
 	{
 #ifdef WILCAT_AUDIO
-		alcMakeContextCurrent(NULL); 
-		alcDestroyContext(alcContext); 
-		alcCloseDevice(alcDevice);
+		if (closed == false)
+		{
+			alcMakeContextCurrent(NULL); 
+			alcDestroyContext(alcContext); 
+			alcCloseDevice(alcDevice);
+			closed = true;
+		}
 #endif
 	}
 
