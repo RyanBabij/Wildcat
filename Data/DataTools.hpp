@@ -151,6 +151,7 @@ namespace DataTools
 		// return !s.empty() && it == s.end();
 		return true;
 	}
+		inline bool isNumber(std::string _s) {  return isNumeric(_s); }
 
 
 	// Swap 2 variables around. 0221152584

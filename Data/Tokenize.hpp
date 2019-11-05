@@ -42,6 +42,12 @@ class Tokenize
 				currentLine+=_data[i];
 			}
 		}
+		
+		// Push last token
+		if ( currentLine!="" )
+		{
+			vTokenized->push(currentLine);
+		}
 
 		return vTokenized;
 	}

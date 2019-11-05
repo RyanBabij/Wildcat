@@ -76,11 +76,20 @@ void Renderer::resizeViewPort(const int _x1, const int _y1, const int _x2, const
 void Renderer::resetColour()
 {
 	#ifdef WILDCAT_USE_OPENGL
-		// 0230181139 Added alpha.
 		glColor4ub(255,255,255,255);
 	#elif defined WILDCAT_USE_DIRECT3D
 		/* Put Direct3D code here... */
 	#endif
+}
+
+void Renderer::setColour(Colour colour)
+{
+	#ifdef WILDCAT_USE_OPENGL
+		glColor4ub(colour.red,colour.green,colour.blue,colour.alpha);
+	#elif defined WILDCAT_USE_DIRECT3D
+		/* Put Direct3D code here... */
+	#endif
+
 }
 
 void Renderer::setTextureMode()

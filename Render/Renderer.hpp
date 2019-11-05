@@ -40,6 +40,8 @@ class Renderer
 	static void resetColour();
 	static void resetColor() { resetColour(); }
 	
+	static void setColour(Colour);
+	
 	static void setTextureMode();
 	
 	static void setColourMode();
