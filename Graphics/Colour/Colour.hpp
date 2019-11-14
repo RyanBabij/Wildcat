@@ -10,7 +10,7 @@
 class Colour
 {
 	public:
-	unsigned char red, green, blue,alpha;
+	unsigned char red, green, blue, alpha;
 	
 	Colour (const unsigned char r, const unsigned char g, const unsigned char b, unsigned char a=255)
 	{
@@ -53,7 +53,7 @@ class Colour
 		alpha=colour.alpha;
 	}
 	
-	void setANSI(unsigned char _value)
+	void setANSI(unsigned char _value, bool _boldModifier=false)
 	{
 		/*
 			FOREGROUND_BLACK 30
@@ -65,31 +65,35 @@ class Colour
 			FOREGROUND_CYAN 36
 			FOREGROUND_WHITE 37
 		*/
+		
+		unsigned char _intensity;
+		_boldModifier? _intensity=255 : _intensity=128;
+		
 		switch(_value)
 		{
 			case 30: //FOREGROUND_BLACK
 				set(0,0,0,255);
 				break;
 			case 31: //FOREGROUND_RED
-				set(255,0,0,255);
+				set(_intensity,0,0,255);
 				break;
 			case 32: //FOREGROUND_GREEN
-				set(0,255,0,255);
+				set(0,_intensity,0,255);
 				break;
 			case 33: //FOREGROUND_YELLOW
-				set(255,255,0,255);
+				set(_intensity,_intensity,0,255);
 				break;
 			case 34: //FOREGROUND_BLUE
-				set(0,0,255,255);
+				set(0,0,_intensity,255);
 				break;
 			case 35: //FOREGROUND_MAGENTA
-				set(255,0,255,255);
+				set(_intensity,0,_intensity,255);
 				break;
 			case 36: //FOREGROUND_CYAN
-				set(0,255,255,255);
+				set(0,_intensity,_intensity,255);
 				break;
 			case 37: //FOREGROUND_WHITE
-				set(255,255,255,255);
+				set(_intensity,_intensity,_intensity,255);
 				break;
 				default: set(255,255,255,255);
 		}

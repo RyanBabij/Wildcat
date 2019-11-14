@@ -150,7 +150,7 @@ class ANSI_Code
 			{
 				if ( vParam(i) >= 30 && vParam(i) <= 37 )
 				{
-					c.setANSI(vParam(i));
+					c.setANSI(vParam(i),vParam.contains(1));
 					return c;
 				}
 			}
@@ -175,6 +175,7 @@ class ANSI_Code
 
 /*
 ANSII string class allows colour codes only.
+It's really bad tbqh, don't use it.
 */
 
 class ANSI
@@ -459,7 +460,6 @@ class ANSI_Grid
 			}
 
 		}
-
 	}
 };
 
