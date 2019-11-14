@@ -29,14 +29,19 @@
 	
 	ANSI Summary
 	
-	There are two bytes to indicate an ANSI excape sequence. The first is ESC / 27 / 0x1B.
+	There are two bytes to indicate an ANSI escape sequence (CSI). The first is ESC / 27 / 0x1B.
 	This is a standard ASCII escape code. Next ANSI is specified using  ESC [, 155, 0x9B.
 	
-	The code can then be followed by any number of "parameter bytes" in the range 0x40 - 0x7E.
+	The code can then be followed by any number of "parameter bytes" in the range 0x30–0x3F.
 	These correspond to ASCII characters: 0–9:;<=>?
 	The code can then be followed by any number of "intermediate bytes" in the range 0x20–0x2F/
 	These correspond to ASCII space, and also: !"#$%&'()*+,-./
-	The ANSI escape code is then finalised with a single "final byte" in the range 0x40–0x7E.
+	The ANSI escape code is then finalised with a single "final byte" in the range 0x40–0x7E. The final
+	byte indicates the actual operation.
+	
+	However for the sake of simplicity, we will assume that all codes will contain 0+ numbers separated by ;, and then a final byte.
+	
+	ANSII is designed to output text on grids, so ANSII processes the string and outputs the result onto an array.
 
 
 	ANSI TYPE LIST
@@ -58,7 +63,7 @@
 //#define FOREGROUND_BLACK 30
 //#define FOREGROUND_RED 31
 
-class ANSI_code
+class ANSI_Code
 {
 	public:
 	
@@ -70,33 +75,76 @@ class ANSI_code
 	int code1;
 	int code2;
 	
+	Vector <int> vParam; /* Vector of parameter bytes, converted to numbers */
+	unsigned char finalByte;
+	
+	int codeSize; // How far to skip ahead after reading code.
 
-	ANSI_code(std::string _code)
+	ANSI_Code(std::string _code, int pos=0) //assume we are being passed from the parameter bytes.
 	{
-		code1=0;
-		code2=0;
 		
-		if (_code.find("30") != std::string::npos)
+		//build vector of parameter bytes, separated by ;.
+		// terminate at value 0x40 or higher.
+		
+		std::string currentParam;
+		for (unsigned int i=pos;i<_code.size();++i)
 		{
-				code1=30;
-				code2=30;
-		}
-		else if (_code.find("31") != std::string::npos)
-		{
-				code1=31;
-				code2=31;
-		}
-		else if (_code.find("37") != std::string::npos)
-		{
-				code1=37;
-				code2=37;
-		}
-		else if (_code.find("0") != std::string::npos)
-		{
-				code1=0;
-				code2=0;
+			if ( _code[i] >= 64 ) // If we are at final byte
+			{
+				pushParam(currentParam);
+				currentParam="";
+				finalByte = _code[i];
+				codeSize=i-pos;
+				return;
+			}
+			else if (DataTools::isNumeric(_code[i]))
+			{
+				currentParam+=_code[i];
+			}
+			else if (_code[i] == ';') // Param delimiter
+			{
+				pushParam(currentParam);
+				currentParam="";
+			}
 		}
 		
+		
+		
+		
+		//we need a vector of numbers, and the final byte.
+		
+		// code1=0;
+		// code2=0;
+		
+		// if (_code.find("30") != std::string::npos)
+		// {
+				// code1=30;
+				// code2=30;
+		// }
+		// else if (_code.find("31") != std::string::npos)
+		// {
+				// code1=31;
+				// code2=31;
+		// }
+		// else if (_code.find("37") != std::string::npos)
+		// {
+				// code1=37;
+				// code2=37;
+		// }
+		// else if (_code.find("0") != std::string::npos)
+		// {
+				// code1=0;
+				// code2=0;
+		// }
+		
+	}
+	
+	void pushParam(std::string _param="")
+	{
+		if ( _param!="")
+		{
+			vParam.push(DataTools::toInt(_param));
+		}
 	}
 
 	// ANSI_code(std::string _type)
@@ -148,16 +196,14 @@ class ANSI_code
 };
 
 /*
-ANSI is a special string container that also stores the colour of each character
-which can be defined using ANSI escape codes.
-It will also support some other ANSI codes.
+ANSII string class allows colour codes only.
 */
 
 class ANSI
 {
 	public:
 	
-	Vector <ANSI_code*> vCode;
+	Vector <ANSI_Code*> vCode;
 	
 	std::string ansiString; /* STRIPPED ANSI STRING */
 	Vector <Colour> vForegroundColour; /* Colour of each character */
@@ -227,8 +273,6 @@ class ANSI
 	// returns a string with all commands stripped.
 	void read(std::string _str)
 	{
-		std::cout<<"Reading ansi\n"; 
-		
 		unsigned char escape1 = 27;
 		unsigned char escape2 = '[';
 		unsigned char finalByte = 'm';
@@ -237,10 +281,8 @@ class ANSI
 		
 		for (unsigned int i=0;i<_str.size()-1;++i)
 		{
-			std::cout<<(int)_str[i]<<",";
 			if ((unsigned char)_str[i]==escape1 && (unsigned char)_str[i+1] == escape2)
 			{
-				std::cout<<"SCSI\n";
 				for (unsigned int i2=i+2;i2<_str.size();++i2)
 				{
 					//escapeCode += _str[i2];
@@ -252,13 +294,11 @@ class ANSI
 						
 						//save the escape code and position it occurs.
 						//saveCode (escapeCode,i);
-						
-						std::cout<<"Readin escape code\n";
-						ANSI_code ansiCode (escapeCode);
+
+						ANSI_Code ansiCode (escapeCode);
 						
 						if (ansiCode.isForegroundColour())
 						{
-							std::cout<<"Foreground colour change\n";
 							currentForegroundColour = ansiCode.getForegroundColour();
 						}
 						else if (ansiCode.isReset())
@@ -303,6 +343,112 @@ class ANSI
 		//return _str;
 	}
 	
+};
+
+
+//Read ANSI string and output it to a grid, for use in Terminals.
+
+class ANSI_Grid
+{
+	
+	public:
+	
+	Vector <ANSI_Code*> vCode;
+	
+	std::string ansiString; /* STRIPPED ANSI STRING */
+	Vector <Colour> vForegroundColour; /* Colour of each character */
+	Vector <Colour> vBackgroundColour; /* Colour of each character */
+	
+	Colour defaultForegroundColour;
+	Colour defaultBackgroundColour;
+	
+	Colour currentForegroundColour;
+	Colour currentBackgroundColour;
+	
+	char aGlyph [48][64]; /* Final output goes here */
+	Colour aColour [48][64];
+	
+	int cursorX, cursorY;
+	
+	ANSI_Grid()
+	{
+		ansiString="";
+		cursorX=0;
+		cursorY=0;
+		
+		for (int _y=0;_y<48;++_y)
+		{
+			for (int _x=0;_x<64;++_x)
+			{
+					aGlyph[_y][_x] = ' ';
+					aColour[_y][_x].set(0,0,0);
+			}
+		}
+		
+		//setDefaultForeground(255,255,255,255);
+		//setDefaultBackground(0,0,0,0);
+	}
+	
+	bool isSafe(int _x, int _y)
+	{
+		return (_x >= 0 && _x < 64 && _y >= 0 && _y < 64);
+	}
+	
+	// Move cursor one space right, or to beginning of new line.
+	// Return false if at end of screen.
+	bool advanceCursor()
+	{
+			if (isSafe(cursorX+1,cursorY))
+			{
+				++cursorX;
+			}
+			else if (isSafe(0,cursorY+1))
+			{
+				cursorX=0;
+				++cursorY;
+			}
+			else
+			{
+				return false;
+			}
+			return true;
+	}
+	
+	void read(std::string _str)
+	{
+		for (unsigned int i=0;i<_str.size();++i)
+		{
+			// check for ANSI escape code.
+			if ( i < _str.size() -2 && _str[i] == 27 && _str[i+1] == '[')
+			{
+				// read in the code
+				ANSI_Code * _code = new ANSI_Code(_str,i+2);
+				
+				// for now just skip the code
+				if (_code != 0)
+				{
+					i += _code->codeSize+2;
+					delete _code;
+				}
+			}
+			else
+			{
+				aGlyph[cursorY][cursorX] = _str[i];
+				
+				if ( advanceCursor() == false )
+				{
+					return;
+				}
+			}
+			
+
+
+
+			
+		}
+		
+		
+	}
 };
 
 #endif
