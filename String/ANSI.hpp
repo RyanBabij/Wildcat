@@ -170,6 +170,24 @@ class ANSI_Code
 		// Colour c;
 		// return c;
 	// }
+	
+	bool isSetCursor()
+	{
+		if ( finalByte == 'H' || finalByte == 'f'  )
+		{
+			return (vParam.size() >= 2);
+		}
+		return false;
+	}
+	
+	void setCursor(int& _x, int& _y)
+	{
+		if (isSetCursor())
+		{
+			_x = vParam(1);
+			_y = vParam(0);
+		}
+	}
 
 };
 
@@ -433,8 +451,11 @@ class ANSI_Grid
 				{
 					resetColour();
 				}
-				
-				// for now just skip the code
+				else if (_code->isSetCursor())
+				{
+					_code->setCursor(cursorX,cursorY);
+				}
+				// position string iterator past the code
 				if (_code != 0)
 				{
 					i += _code->codeSize+2;
