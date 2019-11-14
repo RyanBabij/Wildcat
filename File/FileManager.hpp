@@ -11,7 +11,9 @@
 
 //#include <experimental/filesystem> /* New c++14 experimental support for filesystems. Should be standard in C++17 */
 
-#include <windows.h> //CreateDirectory (will need to be ported)
+#ifdef WILDCAT_WINDOWS
+  #include <windows.h> //CreateDirectory (will need to be ported)
+#endif
 
 /* File/FileManager.hpp
 Library to make file IO easier. Also allows easier object serialisation.
@@ -35,7 +37,7 @@ Library to make file IO easier. Also allows easier object serialisation.
 // class FileManager_File
 // {
 	// public:
-	// bool exists;
+	// bool exists;	
 	// int size;
 	// std::string fileName;
 
@@ -270,6 +272,7 @@ class FileManager
 	
 	static bool createDirectory(std::string _path)
 	{
+#ifdef WILDCAT_WINDOWS
 		if (CreateDirectory(_path.c_str(), NULL) ||
 			ERROR_ALREADY_EXISTS == GetLastError())
 		{
@@ -280,6 +283,11 @@ class FileManager
 			return false;
 		}
 		return true;
+#endif
+		
+#ifdef WILDCAT_LINUX
+		return false;
+#endif
 	}
 	
 	// for some reason I'm having permission issues with this. Wait for g++ update. For now use DeleteDirectory instead.
@@ -302,9 +310,11 @@ class FileManager
 
 	}
 	//https://stackoverflow.com/questions/734717/how-to-delete-a-folder-in-c
-	
+
+
 static int deleteDirectory(const std::string &refcstrRootDirectory, bool bDeleteSubdirectories = true)
 {
+ #ifdef WILDCAT_WINDOWS
 	bool            bSubdirectory = false;       // Flag, indicating whether
 	// subdirectories have been found
 	HANDLE          hFile;                       // Handle to directory
@@ -371,10 +381,17 @@ static int deleteDirectory(const std::string &refcstrRootDirectory, bool bDelete
 			}
 		}
 	}
-
+#endif
 	return 0;
 }
-	
+
+#ifdef WILDCAT_LINUX
+
+//system("mkdir -p /tmp/a/b/c")
+
+#endif
+
+#ifdef WILDCAT_WINDOWS
 	
 		// https://stackoverflow.com/questions/8233842/how-to-check-if-directory-exist-using-c-and-winapi
 	static bool directoryExists(std::string _dirName)
@@ -386,6 +403,7 @@ static int deleteDirectory(const std::string &refcstrRootDirectory, bool bDelete
 		}
 		return (attribs & FILE_ATTRIBUTE_DIRECTORY);
 	}
+#endif
   
 	// RETURN TRUE IF FILE EXISTS. RETURN FALSE IF FILE DOESN'T EXIST.
 	static bool fileExists(const std::string filePath)

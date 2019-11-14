@@ -16,12 +16,12 @@
 OpenAL implementation of AudioPlayer.
 */
 
-#define WILCAT_AUDIO
+//#define WILDCAT_AUDIO
 
 class AudioPlayer_OpenAL: public AudioPlayer
 {
 	public:
-#ifdef WILCAT_AUDIO
+#ifdef WILDCAT_AUDIO
 	ALCdevice* alcDevice;
 	ALCcontext* alcContext;
 	
@@ -35,7 +35,7 @@ class AudioPlayer_OpenAL: public AudioPlayer
 	
 	AudioPlayer_OpenAL()
 	{
-#ifdef WILCAT_AUDIO
+#ifdef WILDCAT_AUDIO
 		alcDevice=0;
 		alcContext=0;
 		globalVolume=50;
@@ -47,7 +47,7 @@ class AudioPlayer_OpenAL: public AudioPlayer
 		In some cases the audio player needs to be closed manually */
 	~AudioPlayer_OpenAL()
 	{
-#ifdef WILCAT_AUDIO
+#ifdef WILDCAT_AUDIO
 		close();
 #endif
 	}
@@ -56,7 +56,7 @@ class AudioPlayer_OpenAL: public AudioPlayer
 	/* Todo: Implement error handling. */
 	void init()
 	{
-#ifdef WILCAT_AUDIO
+#ifdef WILDCAT_AUDIO
 		// if (alcIsExtensionPresent(NULL, "ALC_ENUMERATION_EXT") == AL_TRUE)
 		// {
 			// std::cout<<"ALC devie enumeration extension found.\n";
@@ -92,7 +92,7 @@ class AudioPlayer_OpenAL: public AudioPlayer
 	
 	void close()
 	{
-#ifdef WILCAT_AUDIO
+#ifdef WILDCAT_AUDIO
 		if (closed == false)
 		{
 			alcMakeContextCurrent(NULL); 
@@ -106,7 +106,7 @@ class AudioPlayer_OpenAL: public AudioPlayer
 	/* Buffer the sound to reduce time taken to play it. All sound playing functions automatically check to see if the sound is preloaded. */
 	void preloadSound(Sound* sound)
 	{
-#ifdef WILCAT_AUDIO
+#ifdef WILDCAT_AUDIO
 
 #endif
 	}
@@ -114,7 +114,7 @@ class AudioPlayer_OpenAL: public AudioPlayer
 	/* Plays sound in a thread, and doesn't loop. */
 	void playSoundOnce(Sound* sound)
 	{
-#ifdef WILCAT_AUDIO
+#ifdef WILDCAT_AUDIO
 		ALuint soundBuffer;
 		alGenBuffers(1, &soundBuffer);
 		
@@ -164,7 +164,7 @@ class AudioPlayer_OpenAL: public AudioPlayer
 	
 	void playSoundOnce (Sound* sound, const int maxInstances)
 	{
-#ifdef WILCAT_AUDIO
+#ifdef WILDCAT_AUDIO
 		//std::cout<<"Playing sound with max "<<maxInstances<<" instances.\n";
 		
 #endif
@@ -172,7 +172,7 @@ class AudioPlayer_OpenAL: public AudioPlayer
 	
 	void playSoundLoop(Sound* sound)
 	{
-#ifdef WILCAT_AUDIO
+#ifdef WILDCAT_AUDIO
 		ALuint soundBuffer;
 		alGenBuffers(1, &soundBuffer);
 		
@@ -218,7 +218,7 @@ class AudioPlayer_OpenAL: public AudioPlayer
 	
 	void stopSound(Sound* sound)
 	{
-#ifdef WILCAT_AUDIO
+#ifdef WILDCAT_AUDIO
 		int nStops=0;
 		for(int i=0;i<vSound.size();++i)
 		{
@@ -233,7 +233,7 @@ class AudioPlayer_OpenAL: public AudioPlayer
 	}
 	void stopAllSounds()
 	{
-#ifdef WILCAT_AUDIO
+#ifdef WILDCAT_AUDIO
 		for(int i=0;i<vSound.size();++i)
 		{
 			//alSourcei(vSource(i), AL_LOOPING, AL_FALSE);

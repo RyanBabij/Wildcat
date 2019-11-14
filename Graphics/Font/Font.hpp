@@ -25,7 +25,7 @@
 
 #include <Container/ArrayS3/ArrayS3.hpp> // Storing PNG pixel data
 #include <Render/Renderer.hpp>
-#include <Graphics/Colour/Palette.hpp> // For basic font colours.
+//#include <Graphics/Colour/Palette.hpp> // For basic font colours.
 
 #include <String/ANSI.hpp> // For processing ANSI escape codes.
 
