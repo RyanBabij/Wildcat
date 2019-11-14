@@ -68,11 +68,30 @@ class Colour
 		switch(_value)
 		{
 			case 30: //FOREGROUND_BLACK
-				set(0,0,0);
+				set(0,0,0,255);
 				break;
 			case 31: //FOREGROUND_RED
-				set(255,0,0);
+				set(255,0,0,255);
 				break;
+			case 32: //FOREGROUND_GREEN
+				set(0,255,0,255);
+				break;
+			case 33: //FOREGROUND_YELLOW
+				set(255,255,0,255);
+				break;
+			case 34: //FOREGROUND_BLUE
+				set(0,0,255,255);
+				break;
+			case 35: //FOREGROUND_MAGENTA
+				set(255,0,255,255);
+				break;
+			case 36: //FOREGROUND_CYAN
+				set(0,255,255,255);
+				break;
+			case 37: //FOREGROUND_WHITE
+				set(255,255,255,255);
+				break;
+				default: set(255,255,255,255);
 		}
 		
 	}

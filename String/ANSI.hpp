@@ -72,8 +72,8 @@ class ANSI_Code
 		// BLACK, RED, ETC
 	std::string subType;
 	
-	int code1;
-	int code2;
+	//int code1;
+	//int code2;
 	
 	Vector <int> vParam; /* Vector of parameter bytes, converted to numbers */
 	unsigned char finalByte;
@@ -108,35 +108,6 @@ class ANSI_Code
 			}
 		}
 		
-		
-		
-		
-		//we need a vector of numbers, and the final byte.
-		
-		// code1=0;
-		// code2=0;
-		
-		// if (_code.find("30") != std::string::npos)
-		// {
-				// code1=30;
-				// code2=30;
-		// }
-		// else if (_code.find("31") != std::string::npos)
-		// {
-				// code1=31;
-				// code2=31;
-		// }
-		// else if (_code.find("37") != std::string::npos)
-		// {
-				// code1=37;
-				// code2=37;
-		// }
-		// else if (_code.find("0") != std::string::npos)
-		// {
-				// code1=0;
-				// code2=0;
-		// }
-		
 	}
 	
 	void pushParam(std::string _param="")
@@ -146,52 +117,59 @@ class ANSI_Code
 			vParam.push(DataTools::toInt(_param));
 		}
 	}
-
-	// ANSI_code(std::string _type)
-	// {
-		// type = _type;
-		
-		
-		// if (_type.find("30") != std::string::npos)
-		// {
-				// type = "FOREGROUND_COLOUR";
-				// subType = "BLACK";
-		// }
-		// else if (_type.find("31") != std::string::npos)
-		// {
-				// type = "FOREGROUND_COLOUR";
-				// subType = "RED";
-		// }
-		
-	// }
 	
 	bool isReset()
 	{
-		return (code1==0);
+		return (finalByte == 'm' && vParam.contains(0));
 	}
 	
 	bool isForegroundColour()
 	{
-		return (code1 >= 30 && code1 <= 37 );
+		if ( finalByte == 'm' )
+		{
+			for (int i=0;i<vParam.size();++i)
+			{
+				if ( vParam(i) >= 30 && vParam(i) <= 37 )
+				{
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 	
+	// Returns white if there is no colour specification.
 	Colour getForegroundColour()
 	{
+		
 		Colour c;
-		c.setANSI(code1);
+		
+		if ( finalByte == 'm' )
+		{
+			for (int i=0;i<vParam.size();++i)
+			{
+				if ( vParam(i) >= 30 && vParam(i) <= 37 )
+				{
+					c.setANSI(vParam(i));
+					return c;
+				}
+			}
+		}
+		c.set(255,255,255,255);
 		return c;
+
 	}
 	
-	bool isBackgroundColour()
-	{
-		return true;
-	}
+	// bool isBackgroundColour()
+	// {
+		// return true;
+	// }
 	
-	Colour getBackgroundcolour()
-	{
-		Colour c;
-		return c;
-	}
+	// Colour getBackgroundcolour()
+	// {
+		// Colour c;
+		// return c;
+	// }
 
 };
 
@@ -356,8 +334,8 @@ class ANSI_Grid
 	Vector <ANSI_Code*> vCode;
 	
 	std::string ansiString; /* STRIPPED ANSI STRING */
-	Vector <Colour> vForegroundColour; /* Colour of each character */
-	Vector <Colour> vBackgroundColour; /* Colour of each character */
+	//Vector <Colour> vForegroundColour; /* Colour of each character */
+	//Vector <Colour> vBackgroundColour; /* Colour of each character */
 	
 	Colour defaultForegroundColour;
 	Colour defaultBackgroundColour;
@@ -376,17 +354,22 @@ class ANSI_Grid
 		cursorX=0;
 		cursorY=0;
 		
+		defaultForegroundColour.set(255,255,255,255);
+		defaultBackgroundColour.set(0,0,0,0);
+		
+		currentForegroundColour = defaultForegroundColour;
+		currentBackgroundColour = defaultBackgroundColour;
+		
 		for (int _y=0;_y<48;++_y)
 		{
 			for (int _x=0;_x<64;++_x)
 			{
 					aGlyph[_y][_x] = ' ';
-					aColour[_y][_x].set(0,0,0);
+					aColour[_y][_x]=currentForegroundColour;
 			}
 		}
 		
-		//setDefaultForeground(255,255,255,255);
-		//setDefaultBackground(0,0,0,0);
+
 	}
 	
 	bool isSafe(int _x, int _y)
@@ -414,6 +397,23 @@ class ANSI_Grid
 			return true;
 	}
 	
+	bool newLine()
+	{
+			if (isSafe(0,cursorY+1))
+			{
+				cursorX=0;
+				++cursorY;
+				return true;
+			}
+			return false;
+	}
+	
+	void resetColour()
+	{
+		currentBackgroundColour = defaultBackgroundColour;
+		currentForegroundColour = defaultForegroundColour;
+	}
+	
 	void read(std::string _str)
 	{
 		for (unsigned int i=0;i<_str.size();++i)
@@ -424,6 +424,15 @@ class ANSI_Grid
 				// read in the code
 				ANSI_Code * _code = new ANSI_Code(_str,i+2);
 				
+				if (_code->isForegroundColour())
+				{
+					currentForegroundColour = _code->getForegroundColour();
+				}
+				else if (_code->isReset())
+				{
+					resetColour();
+				}
+				
 				// for now just skip the code
 				if (_code != 0)
 				{
@@ -431,23 +440,26 @@ class ANSI_Grid
 					delete _code;
 				}
 			}
+			else if (_str[i] == '\n')
+			{
+				if (newLine() == false)
+				{
+					return;
+				}
+			}
 			else
 			{
 				aGlyph[cursorY][cursorX] = _str[i];
+				aColour[cursorY][cursorX] = currentForegroundColour;
 				
 				if ( advanceCursor() == false )
 				{
 					return;
 				}
 			}
-			
 
-
-
-			
 		}
-		
-		
+
 	}
 };
 
