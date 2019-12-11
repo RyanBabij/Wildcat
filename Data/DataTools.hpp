@@ -152,6 +152,11 @@ namespace DataTools
 		return true;
 	}
 		inline bool isNumber(std::string _s) {  return isNumeric(_s); }
+      
+	bool isAlphaNumeric(const int key)
+	{
+		return ( (key>=65&&key<=90) || (key>=97&& key<=122) || (key>=48&& key<=57) );
+	}
 
 
 	// Swap 2 variables around. 0221152584
