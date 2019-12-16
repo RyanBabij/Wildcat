@@ -13,13 +13,13 @@
 
 class Keyboard
 {
-    static const int NUMBER_OF_KEYS=1000; //SET TO A SAFE VALUE FOR NOW, UNTIL THE CLASS IS COMPLETE.
-    static const int SPECIAL_KEY_MODIFIER =127;
+    static const short int NUMBER_OF_KEYS=1000; //SET TO A SAFE VALUE FOR NOW, UNTIL THE CLASS IS COMPLETE.
+    static const short int SPECIAL_KEY_MODIFIER =127;
     bool keyMap[NUMBER_OF_KEYS];
     public:
 	
-	char lastKey;
-	int numKeysDown;
+	short int lastKey;
+	short int numKeysDown;
 	
 	bool keyWasPressed;
 	bool keyWasUnpressed;
@@ -218,19 +218,21 @@ class Keyboard
       keyMap[keyVal]=false;
     }
   }
-  void unpress (const int keyVal) { keyUp(keyVal); }
-  void unPress (const int keyVal) { keyUp(keyVal); }
+  void unpress (const short int keyVal) { keyUp(keyVal); }
+  void unPress (const short int keyVal) { keyUp(keyVal); }
   
   
-  void specialKeyDown(const int keyVal)
+  void specialKeyDown(const short int keyVal)
   {
       keyMap[keyVal+SPECIAL_KEY_MODIFIER]=true;
+      lastKey=keyVal+SPECIAL_KEY_MODIFIER;
+      keyWasPressed=true;
   }
-  void specialKeyUp(const int keyVal)
+  void specialKeyUp(const short int keyVal)
   {
       keyMap[keyVal+SPECIAL_KEY_MODIFIER]=false;
   }
-  bool isPressed(const int keyVal)
+  bool isPressed(const short int keyVal)
   {
       return(keyMap[keyVal]);
   }
