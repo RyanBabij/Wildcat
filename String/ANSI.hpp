@@ -55,6 +55,8 @@
 	FOREGROUND_CYAN 36
 	FOREGROUND_WHITE 37
    
+   CURSOR MOVEMENT
+   
    ANSI_Grid now supports scrolling. A buffer should be implemented to prevent input strings being too long.
 */
 
@@ -181,6 +183,14 @@ class ANSI_Code
 		}
 		return false;
 	}
+	bool isMoveCursor()
+	{
+		if ( finalByte == 'A' || finalByte == 'B' || finalByte == 'C' || finalByte == 'D'  )
+		{
+			return (vParam.size() == 1);
+		}
+		return false;
+	}
 	
 	void setCursor(int& _x, int& _y)
 	{
@@ -190,6 +200,10 @@ class ANSI_Code
 			_y = vParam(0);
 		}
 	}
+   void moveCursor(int& _x, int& _y)
+   {
+      --_x;
+   }
 
 };
 
@@ -471,6 +485,10 @@ class ANSI_Grid
 				{
 					_code->setCursor(cursorX,cursorY);
 				}
+            else if (_code->isMoveCursor())
+            {
+               _code->moveCursor(cursorX,cursorY);
+            }
 				// position string iterator past the code
 				if (_code != 0)
 				{
