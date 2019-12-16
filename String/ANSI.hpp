@@ -54,6 +54,8 @@
 	FOREGROUND_MAGENTA 35
 	FOREGROUND_CYAN 36
 	FOREGROUND_WHITE 37
+   
+   ANSI_Grid now supports scrolling. A buffer should be implemented to prevent input strings being too long.
 */
 
 #include <iostream>
@@ -330,16 +332,7 @@ class ANSI
 				}
 			}
 		}
-
-	// std::cout<<"\nStripped codes:\n";
-	// for (int i=0;i<vCode.size();++i)
-	// {
-		// std::cout<<vCode(i)->type<<".\n";
-	// } std::cout<<"end\n";
-
-		//return _str;
 	}
-	
 };
 
 
@@ -393,12 +386,30 @@ class ANSI_Grid
 	
 	bool isSafe(int _x, int _y)
 	{
-		return (_x >= 0 && _x < 64 && _y >= 0 && _y < 64);
+		return (_x >= 0 && _x < 64 && _y >= 0 && _y < 48);
 	}
+   
+   void shiftUp()
+   {
+      //shift all lines up
+      for (int _x=0;_x<64;++_x)
+      {
+         for (int _y=0;_y<47;++_y)
+         {
+            aGlyph[_y][_x] = aGlyph[_y+1][_x];
+            aColour[_y][_x] = aColour[_y+1][_x];
+         }
+      }
+      //blank lowest line
+      for (int _x=0;_x<64;++_x)
+      {
+         aGlyph[47][_x] = ' ';
+         aColour[47][_x].set(255,255,255,255);
+      }
+   }
 	
 	// Move cursor one space right, or to beginning of new line.
-	// Return false if at end of screen.
-	bool advanceCursor()
+	void advanceCursor()
 	{
 			if (isSafe(cursorX+1,cursorY))
 			{
@@ -411,20 +422,24 @@ class ANSI_Grid
 			}
 			else
 			{
-				return false;
+            //shift everything up 1 row
+            shiftUp();
+            cursorX=0;
 			}
-			return true;
 	}
 	
-	bool newLine()
+	void newLine()
 	{
 			if (isSafe(0,cursorY+1))
 			{
 				cursorX=0;
 				++cursorY;
-				return true;
 			}
-			return false;
+         else
+         {
+            shiftUp();
+            cursorX=0;
+         }
 	}
 	
 	void resetColour()
@@ -435,6 +450,7 @@ class ANSI_Grid
 	
 	void read(std::string _str)
 	{
+      //_str="TEST1\nTEST2\nTEST3\n\n\n\n\\n\n\n\n\nn\n\n\n\n\n\n\n\n\n\n\n\ntest4\n\n\n\n\n\n\n\n\n\n\n\ntest5\n\n\n\n\n\n\n\n\nTEST^\nTEST7\n\n\nTEST8\ntest9\ntest10\n\n\n\n\n";
 		for (unsigned int i=0;i<_str.size();++i)
 		{
 			// check for ANSI escape code.
@@ -464,20 +480,14 @@ class ANSI_Grid
 			}
 			else if (_str[i] == '\n')
 			{
-				if (newLine() == false)
-				{
-					return;
-				}
+            newLine();
 			}
 			else
 			{
 				aGlyph[cursorY][cursorX] = _str[i];
 				aColour[cursorY][cursorX] = currentForegroundColour;
 				
-				if ( advanceCursor() == false )
-				{
-					return;
-				}
+				advanceCursor();
 			}
 
 		}
