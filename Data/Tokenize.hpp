@@ -85,8 +85,52 @@ class Tokenize
 				currentLine+=_data[i];
 			}
 		}
+      // Push final token
+      if ( currentLine.size()>0)
+      {
+         vTokenized->push(currentLine);
+      }
 		return vTokenized;
 	}
+   
+   static Vector <std::string> * tokenize ( std::string _data, std::string _strDelimiter)
+   {
+		Vector <std::string> * vTokenized = new  Vector <std::string>;
+
+		std::string currentLine="";
+		for ( unsigned int i=0;i<_data.size();++i)
+		{
+			bool delimFound=false;
+			for ( unsigned int i2=0;i2<_strDelimiter.size();++i2)
+			{
+				if ( _data[i] == _strDelimiter[i2] )
+				{
+					delimFound=true;
+					break;
+				}
+			}
+
+			if ( delimFound==true)
+			{
+				if ( currentLine.size() > 0 )
+				{
+					vTokenized->push(currentLine);
+				}
+				currentLine="";
+			}
+			else
+			{
+				currentLine+=_data[i];
+			}
+		}
+      // Push final token
+      if ( currentLine.size()>0)
+      {
+         vTokenized->push(currentLine);
+      }
+      
+		return vTokenized;
+   }
 
 };
 
