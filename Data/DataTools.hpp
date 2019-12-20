@@ -157,6 +157,30 @@ namespace DataTools
 	{
 		return ( (key>=65&&key<=90) || (key>=97&& key<=122) || (key>=48&& key<=57) );
 	}
+   bool isAlpha (unsigned char _c)
+   {
+      return ( (_c>=65&&_c<=90) || (_c>=97&& _c<=122) );
+   }
+   bool isAlpha(std::string _str)
+   {
+      if ( _str.size() == 0 )
+      { return false; }
+   
+      for (auto & c: _str)
+      {
+         if (DataTools::isAlpha(c) == false)
+         {
+            return false;
+         }
+      }
+      return true;
+   }
+   
+   std::string toUpper(std::string _str)
+   {
+      for (auto & c: _str) c = toupper(c);
+      return _str;
+   }
 
 
 	// Swap 2 variables around. 0221152584
