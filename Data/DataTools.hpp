@@ -62,6 +62,16 @@ namespace DataTools
     return result;
   }
   
+  // Remove all chars in strTokens from the passed string.
+  std::string strip(std::string _strInput, std::string _strTokens)
+  {
+     for (unsigned int i=0;i<_strTokens.size();++i)
+     {
+        _strInput.erase(std::remove(_strInput.begin(), _strInput.end(), _strTokens[i]), _strInput.end());
+     }
+     return _strInput;
+  }
+  
 	
 	bool isAlphaNumeric(std::string _s, const bool allowSpaces=false )
 	{
