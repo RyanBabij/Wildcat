@@ -192,6 +192,13 @@ namespace DataTools
       return _str;
    }
 
+   // Returns true if the passed char contains any char in the string.
+   bool containsAny(char _c, std::string _charList)
+   {
+      if (_charList.find(_c) != std::string::npos)
+      { return true; }
+      return false;
+   }
 
 	// Swap 2 variables around. 0221152584
 	template <class T>
