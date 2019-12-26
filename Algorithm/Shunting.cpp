@@ -125,6 +125,8 @@ class Shunting
                _strNumber="";
             }
             
+
+            
             //unsigned char _operator = expression[i];
             
             Shunting_Operator * currentOperator = getOperator(expression[i]);
@@ -134,69 +136,115 @@ class Shunting
                std::cout<<"ERROR\n";
                return "";
             }
+            std::cout<<"Current operator symbol: "<<currentOperator->symbol<<".\n";
             
-            // push operator
-            // If the token is operator, o1, then:
-            //const auto o1 = token;
-
-            // while there is an operator token,
-            while(!stack.empty())
+            //push left paren onto stack
+            if ( expression[i] == '(' )
             {
-               // o2, at the top of stack, and
-               const Shunting_Operator o2 = stack.back();
-
-               // either o1 is left-associative and its precedence is
-               // *less than or equal* to that of o2,
-               // or o1 if right associative, and has precedence
-               // *less than* that of o2,
-               if ( (! currentOperator->rightAssociative && currentOperator->precedence <= o2.precedence)
-               ||   (  currentOperator->rightAssociative && currentOperator->precedence <  o2.precedence) )
-               {
-                  // // then pop o2 off the stack,
-                  stack.pop_back();
-                  // // onto the output queue;
-                  //std::string strQ (1,o2.symbol);
-                  //std::string strQ = 'a';
-                  outputQueue.push_back(std::string(1,o2.symbol));
-
-                  continue;
-               }
-               //otherwise exit
-               break;
+               std::cout<<"Pushing left paren\n";
+               //Shunting_Operator sh ('(',5,false);
+               stack.push_back(*currentOperator);
             }
-            //push current operator onto stack
-            stack.push_back(*currentOperator);
+            else if (expression[i] == ')')
+            {
+               std::cout<<"Right paren\n";
+               
+                bool match = false;
 
-            // @@ otherwise, exit.
-            //break;
+                // Until the token at the top of the stack
+                // is a left parenthesis,
+                while(! stack.empty() && stack.back().symbol != '(')
+                {
+                    // pop operators off the stack
+                    // onto the output queue.
+                    outputQueue.push_back(std::string(1,stack.back().symbol));
+                    stack.pop_back();
+                    
+                }
+                if (!stack.empty() && stack.back().symbol == '(')
+                {
+                  match = true;
+                }
+
+                // Pop the left parenthesis from the stack,
+                // but not onto the output queue.
+                std::cout<<"Popping: "<<(unsigned char)stack.back().symbol<<".\n";
+                stack.pop_back();
+
+                if(!match && stack.empty())
+                {
+                    // If the stack runs out without finding a left parenthesis,
+                    // then there are mismatched parentheses.
+                    std::cout<<"ERROR: Too many right paren.\n";
+                    return "";
+                }
+               
+            }
+            else
+            {
+               
+               
+               // push operator
+               // If the token is operator, o1, then:
+               //const auto o1 = token;
+
+               // while there is an operator token,
+               while(!stack.empty())
+               {
+                  // o2, at the top of stack, and
+                  const Shunting_Operator o2 = stack.back();
+
+                  // either o1 is left-associative and its precedence is
+                  // *less than or equal* to that of o2,
+                  // or o1 if right associative, and has precedence
+                  // *less than* that of o2,
+                  if ( (! currentOperator->rightAssociative && currentOperator->precedence <= o2.precedence)
+                  ||   (  currentOperator->rightAssociative && currentOperator->precedence <  o2.precedence) )
+                  {
+                     // // then pop o2 off the stack,
+                     stack.pop_back();
+                     // // onto the output queue;
+                     //std::string strQ (1,o2.symbol);
+                     //std::string strQ = 'a';
+                     outputQueue.push_back(std::string(1,o2.symbol));
+
+                     continue;
+                  }
+                  //otherwise exit
+                  break;
+               }
+               //push current operator onto stack
+               stack.push_back(*currentOperator);
+               
+               
+            }
          }
          else
          {
             // invalid expression
          }
          
-         //final case: Push any remaining number
-         if (_strNumber.size() > 0)
-         {
-            outputQueue.push_back(_strNumber);
-            _strNumber="";
-         }
-         
-         
-
-         
+      }
+      
+      //final case: Push any remaining number
+      if (_strNumber.size() > 0)
+      {
+         outputQueue.push_back(_strNumber);
+         _strNumber="";
       }
       
          //final case: No more tokens to read, so push the remaining stack
     // When there are no more tokens to read:
     //   While there are still operator tokens in the stack:
-    while(! stack.empty()) {
+    while(! stack.empty())
+    {
         // If the operator token on the top of the stack is a parenthesis,
         // then there are mismatched parentheses.
-        // if(stack.back().type == Token::Type::LeftParen) {
-            // printf("Mismatched parentheses error\n");
-            // return {};
-        // }
+        if(stack.back().symbol == '(')
+        {
+            std::cout<<"ERROR: Parenthesis mismatch.\n";
+            return "";
+        }
 
         // Pop the operator onto the output queue.
         //outputQueue.push_back(stack.back().symbol);
@@ -223,6 +271,8 @@ class Shunting
       addOperator(Shunting_Operator('/',3,false));
       addOperator(Shunting_Operator('+',2,false));
       addOperator(Shunting_Operator('-',2,false));
+      addOperator(Shunting_Operator('(',0,false));
+      addOperator(Shunting_Operator(')',0,false));
    }
   
 };
