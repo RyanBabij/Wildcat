@@ -63,11 +63,14 @@ class Shunting_Token
       precedence = _precedence;
       rightAssociative = _rightAssociative;
    }
+   
+   virtual ~Shunting_Token()
+   { }
+   
    virtual Shunting_Token * operate(Shunting_Token * lv, Shunting_Token * rv) // custom operators can be defined here, for example an ABS function.
    {
-      std::cout<<"OPERATING SYMBOL: "<<symbol<<".\n";
-      Shunting_Token * ret = new Shunting_Token;
-      return ret;
+      //Shunting_Token * ret = new Shunting_Token;
+      return 0;
    }
    
    bool isToken()
@@ -94,10 +97,7 @@ class Shunting_Token_Add: public Shunting_Token
    public:
    
    Shunting_Token_Add(): Shunting_Token(0, '+', 2, false)
-   {
-      std::cout<<"ADD CONSTRUCTED\n";
-      
-   }
+   { }
    
    Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override // custom operators can be defined here, for example an ABS function.
    {
@@ -106,11 +106,9 @@ class Shunting_Token_Add: public Shunting_Token
          std::cout<<"Error: Add recieved null pointer.\n";
          return 0;
       }
-      
-      std::cout<<"OPERATING ADD\n";
-      std::cout<<"Adding: "<<lv->value<<" "<<rv->value<<"\n";
-      value = lv->value + rv->value;
-      return this;
+
+      lv->value = lv->value + rv->value;
+      return lv;
    }
 };
 
@@ -121,8 +119,17 @@ class Shunting_Token_Subtract: public Shunting_Token
    Shunting_Token_Subtract(): Shunting_Token(0, '-', 2, false)
    {}
    
-   // long int operate(long int lv, long int rv)
-   // { return lv-rv; }
+   Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override // custom operators can be defined here, for example an ABS function.
+   {
+      if (lv==0 || rv==0)
+      {
+         std::cout<<"Error: Subtract recieved null pointer.\n";
+         return 0;
+      }
+
+      lv->value = lv->value - rv->value;
+      return lv;
+   }
 };
 
 class Shunting_Token_Multiply: public Shunting_Token
@@ -132,8 +139,17 @@ class Shunting_Token_Multiply: public Shunting_Token
    Shunting_Token_Multiply(): Shunting_Token(0, '*', 3, false)
    {}
    
-   // long int operate(long int lv, long int rv)
-   // { return lv*rv; }
+   Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override // custom operators can be defined here, for example an ABS function.
+   {
+      if (lv==0 || rv==0)
+      {
+         std::cout<<"Error: Multiply recieved null pointer.\n";
+         return 0;
+      }
+
+      lv->value = lv->value * rv->value;
+      return lv;
+   }
 };
 
 class Shunting_Token_Divide: public Shunting_Token
@@ -143,8 +159,22 @@ class Shunting_Token_Divide: public Shunting_Token
    Shunting_Token_Divide(): Shunting_Token(0, '/', 3, false)
    {}
    
-   // long int operate(long int lv, long int rv)
-   // { return lv/rv; }
+   Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override // custom operators can be defined here, for example an ABS function.
+   {
+      if (lv==0 || rv==0)
+      {
+         std::cout<<"Error: Multiply recieved null pointer.\n";
+         return 0;
+      }
+      else if (rv->value==0)
+      {
+         std::cout<<"ERROR: Divide by 0.\n";
+         return 0;
+      }
+
+      lv->value = lv->value / rv->value;
+      return lv;
+   }
 };
 
 class Shunting_Token_Power: public Shunting_Token
@@ -218,7 +248,23 @@ class Shunting
       }
    }
    ~Shunting()
-   { }
+   {
+      clearMem();
+   }
+   
+   void clearMem()
+   {
+      for (unsigned int i=0;i<outputQueue2.size();++i)
+      {
+         // delete all values from output queue
+         if (outputQueue2.at(i)->symbol==0)
+         {
+            delete outputQueue2.at(i);
+         }
+      }
+      // delete all operators
+      vTokenList.deleteAll();
+   }
    
    // Add operator to reference list.
    // Don't add duplicate symbols.
@@ -233,6 +279,7 @@ class Shunting
          if ( vTokenList(i)->symbol == _toke->symbol )
          {
             // duplicate symbol, do not add it.
+            delete _toke;
             return;
          }
       }
@@ -271,8 +318,15 @@ class Shunting
          std::cout<<"Input: "<<expression<<"\n";
       #endif
 
+      for (unsigned int i=0;i<outputQueue2.size();++i)
+      {
+         // delete all values from output queue
+         if (outputQueue2.at(i)->symbol==0)
+         {
+            delete outputQueue2.at(i);
+         }
+      }
       outputQueue2.clear();
-      // free memory
       
       std::string _strNumber = "";
       std::string _strOperator = "";
@@ -448,7 +502,18 @@ class Shunting
                stack.pop();
                Shunting_Token* opLeft = stack.top();
                stack.pop();
-               stack.push(oper->operate(opLeft,opRight));
+               
+               std::cout<<"Evaluating: "<<opLeft->value<<" "<<oper->symbol<<" "<<opRight->value<<"\n";
+               
+               Shunting_Token* result = oper->operate(opLeft,opRight);
+               if ( result==0 )
+               {
+                  std::cout<<"Error: operation returned null ptr\n";
+                  return 0;
+               }
+               std::cout<<"Current result: "<<result->value<<"\n";
+               
+               stack.push(result);
             }
             else
             {
@@ -487,7 +552,7 @@ class Shunting
    {
       buildDefaults();
       
-      Vector <std::string> vTestCase = { "1+1", "3+4*2/(1-5)^2^3", "(2*3+3*4)", "20-30/3+4*2^3", "(-1+1+(-1*2))*(-2*1)" };
+      Vector <std::string> vTestCase = { "1/0", "1+1", "1+1+1", "2*2*2", "2-1", "12-2*5", "3+4*2/(1-5)^2^3", "(2*3+3*4)", "20-30/3+4*2^3", "(-1+1+(-1*2))*(-2*1)" };
 
       for (int i=0;i<vTestCase.size();++i)
       {
@@ -501,8 +566,6 @@ class Shunting
             std::cout<<vOutput.at(i2)->toString()<<" ";
             
          } std::cout<<"\n";
-         
-         std::cout<<"Evaluating\n";
          
          evaluate();
          
