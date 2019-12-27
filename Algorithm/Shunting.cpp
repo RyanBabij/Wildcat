@@ -99,13 +99,19 @@ class Shunting_Token_Add: public Shunting_Token
       
    }
    
-   // Shunting_Token operate(Shunting_Token lv, Shunting_Token rv) override // custom operators can be defined here, for example an ABS function.
-   // {
-      // std::cout<<"OPERATING ADD\n";
-      // std::cout<<"Adding: "<<lv.value<<" "<<rv.value<<"\n";
-      // value = lv.value + rv.value;
-      // return *this;
-   // }
+   Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override // custom operators can be defined here, for example an ABS function.
+   {
+      if (lv==0 || rv==0)
+      {
+         std::cout<<"Error: Add recieved null pointer.\n";
+         return 0;
+      }
+      
+      std::cout<<"OPERATING ADD\n";
+      std::cout<<"Adding: "<<lv->value<<" "<<rv->value<<"\n";
+      value = lv->value + rv->value;
+      return this;
+   }
 };
 
 class Shunting_Token_Subtract: public Shunting_Token
@@ -422,42 +428,43 @@ class Shunting
    // Todo: Add evaluation (maybe should be separate class).
    long int evaluate()
    {
-      // std::cout<<"Evaluating output queue.\n";
-      // std::stack <Shunting_Token> stack; // stack to store values from left to right.
+      std::cout<<"Evaluating output queue.\n";
+      std::stack <Shunting_Token*> stack; // stack to store values from left to right.
       
-      // for (unsigned int i=0;i<outputQueue2.size();++i)
-      // {
-         // if ( outputQueue2.at(i)->symbol == 0 )
-         // {
-            // //push value to stack
-            // stack.push(outputQueue2.at(i));
-         // }
-         // else
-         // {
-            // //evaluate this operator, and last 2 values in stack.
-            // if (stack.size() > 1)
-            // {
-               // Shunting_Token oper = outputQueue2.at(i);
-               // Shunting_Token opRight = stack.top();
-               // stack.pop();
-               // Shunting_Token opLeft = stack.top();
-               // stack.pop();
-               // stack.push(oper.operate(opLeft,opRight));
-            // }
-            // else
-            // {
-               // //error
-               // std::cout<<"SYNTAX ERROR\n";
-               // return 0;
-            // }
+      for (unsigned int i=0;i<outputQueue2.size();++i)
+      {
+         if ( outputQueue2.at(i)->symbol == 0 )
+         {
+            //push value to stack
+            stack.push(outputQueue2.at(i));
+         }
+         else
+         {
+            //evaluate this operator, and last 2 values in stack.
+            if (stack.size() > 1)
+            {
+               Shunting_Token* oper = outputQueue2.at(i);
+               Shunting_Token* opRight = stack.top();
+               stack.pop();
+               Shunting_Token* opLeft = stack.top();
+               stack.pop();
+               stack.push(oper->operate(opLeft,opRight));
+            }
+            else
+            {
+               //error
+               std::cout<<"SYNTAX ERROR\n";
+               return 0;
+            }
             
-         // }
-      // }
-      // if (stack.size() == 1)
-      // {
-         // std::cout<<"EVALUATION FINISHED.\n FINAL VALUE: "<<stack.top().value<<".\n";
-      // }
-      // std::cout<<"SYNTAX ERROR 2\n";
+         }
+      }
+      if (stack.size() == 1)
+      {
+         std::cout<<"EVALUATION FINISHED.\n FINAL VALUE: "<<stack.top()->value<<".\n";
+         return stack.top()->value;
+      }
+      std::cout<<"SYNTAX ERROR 2\n";
       return 0;
    }
    
