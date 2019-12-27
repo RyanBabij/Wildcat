@@ -18,6 +18,12 @@
    I'm not sure how negative numbers are handled in this system,
    but basic testing seems to be giving usable results.
    
+   Custom operators can be added, however left and right parentheses
+   are special cases which are always processed. Custom operators
+   only have a single non-digit char as a symbol, therefore system
+   operators like ABS() will need to be replaced with a single char
+   before processing.
+   
    Sample input:
    
    3+4*2/(1-5)^2^3      -> 2 3 * 3 4 * + 
@@ -30,7 +36,10 @@
    https://gist.github.com/t-mat/b9f681b7591cdae712f6 and
    https://ideone.com/DYX5CW
    
-   Todo: Test custom operator support.
+   Todo:
+   * Figure out how negative numbers work.
+   * Test custom operator support, for example ABS(-10).
+   * Create evaluation function.
 
 */
 
@@ -153,6 +162,20 @@ class Shunting_Token_RightParen: public Shunting_Token
    { return 0; }
 };
 
+   // example custom operator
+   // in this case only an rvalue is processed,
+   // a dummy lvalue should be provided like so: 0 A -10
+class Shunting_Token_Absolute: public Shunting_Token
+{
+   public:
+   
+   Shunting_Token_Absolute(): Shunting_Token(0, 'A', 7, false)
+   {}
+   
+   long int operate(long int lv, long int rv)
+   { return abs(lv); }
+};
+
 // Main driver class. Initialise and create operators, or call
 // buildDefaults() to use default set. Call shunt() and pass
 // infix string. It will return vector of tokens in postfix.
@@ -168,19 +191,36 @@ class Shunting
    std::vector<Shunting_Token> stack2; // operator stack
    
    
-   Shunting()
-   { }
+   // Class will build the default operator set unless asked
+   Shunting(bool bDefaults = true)
+   {
+      if (bDefaults)
+      {
+         buildDefaults();
+      }
+   }
    ~Shunting()
    { }
    
+   // Add operator to reference list.
+   // Don't add duplicate symbols.
    void addOperator2(Shunting_Token _toke)
    {
+      // check for duplicates
+      for (int i=0;i<vTokenList.size();++i)
+      {
+         if ( vTokenList(i).symbol == _toke.symbol )
+         {
+            // duplicate symbol, do not add it.
+            return;
+         }
+      }
+      
       vTokenList.push(_toke);
    }
    
    Shunting_Token * getToken(unsigned char _symbol)
    {
-      //Shunting_Operator* retOperator = 0;
       for (int i=0;i<vTokenList.size();++i)
       {
          if ( vTokenList(i).symbol == _symbol )
@@ -292,9 +332,9 @@ class Shunting
                   if ( (! currentToken->rightAssociative && currentToken->precedence <= o2.precedence)
                   ||   (  currentToken->rightAssociative && currentToken->precedence <  o2.precedence) )
                   {
-                     // // then pop o2 off the stack,
+                     // then pop o2 off the stack,
                      stack2.pop_back();
-                     // // onto the output queue;
+                     // onto the output queue;
                      outputQueue2.push_back(o2);
                      continue;
                   }
@@ -303,8 +343,6 @@ class Shunting
                }
                //push current operator onto stack
                stack2.push_back(*currentToken);
-               
-               
             }
          }
          else
@@ -324,8 +362,6 @@ class Shunting
       }
       
       //final case: No more tokens to read, so push the remaining stack
-      // When there are no more tokens to read:
-      //   While there are still operator tokens in the stack:
       while(! stack2.empty())
       {
          // If the operator token on the top of the stack is a parenthesis,
@@ -354,8 +390,14 @@ class Shunting
       return outputQueue2;
    }
    
-   // add the standard set of non-function operators:
-   // +-*/^()
+   // Todo: Add evaluation (maybe should be separate class).
+   long int evaluate()
+   {
+      return 0;
+   }
+   
+   // add the standard set of non-function operators: +-*/^()
+   // this runs by default in constructor
    void buildDefaults()
    {
       addOperator2(Shunting_Token_Add());
@@ -371,6 +413,8 @@ class Shunting
    // see documentation for expected output.
    void test()
    {
+      buildDefaults();
+      
       Vector <std::string> vTestCase = { "3+4*2/(1-5)^2^3", "(2*3+3*4)", "20-30/3+4*2^3", "(-1+1+(-1*2))*(-2*1)" };
 
       for (int i=0;i<vTestCase.size();++i)
