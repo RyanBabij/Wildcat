@@ -37,9 +37,9 @@
    https://ideone.com/DYX5CW
    
    Todo:
-   * Figure out how negative numbers work.
-   * Test custom operator support, for example ABS(-10).
-   * Create evaluation function.
+   * Add positive/negative prefix operator processing
+   * Add comparator operators
+   * Add other custom operators such as ABS, SIN, LOG, etc.
 
 */
 
@@ -487,7 +487,8 @@ class Shunting
       return retStr;
    }
    
-   // Todo: Add evaluation (maybe should be separate class).
+   // Evaluation function should be included otherwise we will need to pass
+   // all operator tokens anyways.
    long int evaluate()
    {
       std::cout<<"Evaluating output queue.\n";
@@ -539,6 +540,12 @@ class Shunting
       }
       std::cout<<"SYNTAX ERROR 2\n";
       return 0;
+   }
+   
+   std::string shuntEvaluate(std::string _input)
+   {
+      //automatically shunt and evaluate the string, and return string output.
+      return "";
    }
    
    // add the standard set of non-function operators: +-*/^()
