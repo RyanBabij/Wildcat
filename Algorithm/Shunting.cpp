@@ -184,8 +184,16 @@ class Shunting_Token_Power: public Shunting_Token
    Shunting_Token_Power(): Shunting_Token(0, '^', 4, true)
    {}
    
-   // long int operate(long int lv, long int rv)
-   // { return pow(lv,rv); }
+   Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override // custom operators can be defined here, for example an ABS function.
+   {
+      if (lv==0 || rv==0)
+      {
+         std::cout<<"Error: Multiply recieved null pointer.\n";
+         return 0;
+      }
+      lv->value = pow(lv->value, rv->value);
+      return lv;
+   }
 };
 
 class Shunting_Token_LeftParen: public Shunting_Token
@@ -552,7 +560,7 @@ class Shunting
    {
       buildDefaults();
       
-      Vector <std::string> vTestCase = { "1/0", "1+1", "1+1+1", "2*2*2", "2-1", "12-2*5", "3+4*2/(1-5)^2^3", "(2*3+3*4)", "20-30/3+4*2^3", "(-1+1+(-1*2))*(-2*1)" };
+      Vector <std::string> vTestCase = { "1/0", "1+1", "1+1+1", "2*2*2", "2-1", "12-2*5", "3+4*2/(1-5)^2^3", "(2*3+3*4)", "20-30/3+4*2^3", "(-1+1+(-1*2))*(-2*1)", "2^2^2", "1+1+2^2-1*2" };
 
       for (int i=0;i<vTestCase.size();++i)
       {
