@@ -363,6 +363,8 @@ class Shunting
       }
       outputQueue2.clear();
       
+      stack2.clear();
+      
       std::string _strNumber = "";
       std::string _strOperator = "";
       
