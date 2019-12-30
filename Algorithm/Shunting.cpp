@@ -218,6 +218,33 @@ class Shunting_Token_RightParen: public Shunting_Token
    // { return 0; }
 };
 
+class Shunting_Token_Equals: public Shunting_Token
+{
+   public:
+   
+   Shunting_Token_Equals(): Shunting_Token(0, '=', 5, false)
+   {}
+   
+   Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override
+   {
+      if (lv==0 || rv==0)
+      {
+         std::cout<<"Null ptr error\n";
+         return 0;
+      }
+      
+      if ( lv->value == rv->value )
+      {
+         lv->value = -1; // true
+      }
+      else
+      {
+         lv->value = 0; // false
+      }
+      return lv;
+   }
+};
+
    // example custom operator
    // in this case only an rvalue is processed,
    // a dummy lvalue should be provided like so: 0 A -10
@@ -320,7 +347,7 @@ class Shunting
    }
    
    
-   std::deque <Shunting_Token*> shunt(std::string expression)
+   void shunt(std::string expression)
    {
       #ifdef SHUNTING_ENABLE_OUTPUT
          std::cout<<"Input: "<<expression<<"\n";
@@ -362,7 +389,7 @@ class Shunting
             {
                //something bad happened, return an empty output vector.
                outputQueue2.clear();
-               return outputQueue2;
+               //return outputQueue2;
             }
 
             //push left paren onto stack
@@ -397,7 +424,7 @@ class Shunting
                 {
                   // too many right parentheses. Return empty output vector.
                     outputQueue2.clear();
-                    return outputQueue2;
+                    //return outputQueue2;
                 }
             }
             else
@@ -435,7 +462,7 @@ class Shunting
          {
             // invalid expression, return empty output vector
             outputQueue2.clear();
-            return outputQueue2;
+            //return outputQueue2;
          }
          
       }
@@ -456,7 +483,7 @@ class Shunting
          {
             // too many left parentheses, return empty output vector.
             outputQueue2.clear();
-            return outputQueue2;
+            //return outputQueue2;
          }
 
          // Pop the operator onto the output queue.
@@ -473,7 +500,7 @@ class Shunting
          } std::cout<<"\n";
       #endif
       
-      return outputQueue2;
+      //return outputQueue2;
    }
    
    std::string toString()
@@ -491,7 +518,7 @@ class Shunting
    // all operator tokens anyways.
    long int evaluate()
    {
-      std::cout<<"Evaluating output queue.\n";
+      //std::cout<<"Evaluating output queue.\n";
       std::stack <Shunting_Token*> stack; // stack to store values from left to right.
       
       for (unsigned int i=0;i<outputQueue2.size();++i)
@@ -512,22 +539,22 @@ class Shunting
                Shunting_Token* opLeft = stack.top();
                stack.pop();
                
-               std::cout<<"Evaluating: "<<opLeft->value<<" "<<oper->symbol<<" "<<opRight->value<<"\n";
+               //std::cout<<"Evaluating: "<<opLeft->value<<" "<<oper->symbol<<" "<<opRight->value<<"\n";
                
                Shunting_Token* result = oper->operate(opLeft,opRight);
                if ( result==0 )
                {
-                  std::cout<<"Error: operation returned null ptr\n";
+                  //std::cout<<"Error: operation returned null ptr\n";
                   return 0;
                }
-               std::cout<<"Current result: "<<result->value<<"\n";
+               //std::cout<<"Current result: "<<result->value<<"\n";
                
                stack.push(result);
             }
             else
             {
                //error
-               std::cout<<"SYNTAX ERROR\n";
+               //std::cout<<"SYNTAX ERROR\n";
                return 0;
             }
             
@@ -535,10 +562,10 @@ class Shunting
       }
       if (stack.size() == 1)
       {
-         std::cout<<"EVALUATION FINISHED.\n FINAL VALUE: "<<stack.top()->value<<".\n";
+         //std::cout<<"EVALUATION FINISHED.\n FINAL VALUE: "<<stack.top()->value<<".\n";
          return stack.top()->value;
       }
-      std::cout<<"SYNTAX ERROR 2\n";
+      //std::cout<<"SYNTAX ERROR 2\n";
       return 0;
    }
    
@@ -559,33 +586,35 @@ class Shunting
       addOperator2(new Shunting_Token_Power());
       addOperator2(new Shunting_Token_LeftParen());
       addOperator2(new Shunting_Token_RightParen());
+      addOperator2(new Shunting_Token_Equals());
    }
    
    // runs a bunch of test-cases to demonstrate it works.
    // see documentation for expected output.
-   void test()
-   {
-      buildDefaults();
+   // void test()
+   // {
+      // buildDefaults();
       
-      Vector <std::string> vTestCase = { "1/0", "1+1", "1+1+1", "2*2*2", "2-1", "12-2*5", "3+4*2/(1-5)^2^3", "(2*3+3*4)", "20-30/3+4*2^3", "(-1+1+(-1*2))*(-2*1)", "2^2^2", "1+1+2^2-1*2" };
+      // Vector <std::string> vTestCase = { "1/0", "1+1", "1+1+1", "2*2*2", "2-1", "12-2*5", "3+4*2/(1-5)^2^3", "(2*3+3*4)", "20-30/3+4*2^3", "(-1+1+(-1*2))*(-2*1)", "2^2^2", "1+1+2^2-1*2", "66" };
 
-      for (int i=0;i<vTestCase.size();++i)
-      {
-         std::deque <Shunting_Token*> vOutput = shunt(vTestCase(i));
+      // for (int i=0;i<vTestCase.size();++i)
+      // {
+         // //std::deque <Shunting_Token*> vOutput = shunt(vTestCase(i));
+         // shunt(vTestCase(i));
          
-         std::cout<<"Test input: "<<vTestCase(i)<<"\n";
+         // std::cout<<"Test input: "<<vTestCase(i)<<"\n";
          
-         std::cout<<"Output: ";
-         for (unsigned int i2=0;i2<vOutput.size();++i2)
-         {
-            std::cout<<vOutput.at(i2)->toString()<<" ";
+         // std::cout<<"Output: ";
+         // for (unsigned int i2=0;i2<vOutput.size();++i2)
+         // {
+            // std::cout<<vOutput.at(i2)->toString()<<" ";
             
-         } std::cout<<"\n";
+         // } std::cout<<"\n";
          
-         evaluate();
+         // evaluate();
          
-      }
-   }
+      // }
+   // }
   
 };
 
