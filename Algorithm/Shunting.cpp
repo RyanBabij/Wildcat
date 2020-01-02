@@ -245,6 +245,60 @@ class Shunting_Token_Equals: public Shunting_Token
    }
 };
 
+class Shunting_Token_LessThan: public Shunting_Token
+{
+   public:
+   
+   Shunting_Token_LessThan(): Shunting_Token(0, '<', 5, false)
+   {}
+   
+   Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override
+   {
+      if (lv==0 || rv==0)
+      {
+         std::cout<<"Null ptr error\n";
+         return 0;
+      }
+      
+      if ( lv->value < rv->value )
+      {
+         lv->value = -1; // true
+      }
+      else
+      {
+         lv->value = 0; // false
+      }
+      return lv;
+   }
+};
+
+class Shunting_Token_GreaterThan: public Shunting_Token
+{
+   public:
+   
+   Shunting_Token_GreaterThan(): Shunting_Token(0, '>', 5, false)
+   {}
+   
+   Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override
+   {
+      if (lv==0 || rv==0)
+      {
+         std::cout<<"Null ptr error\n";
+         return 0;
+      }
+      
+      if ( lv->value > rv->value )
+      {
+         lv->value = -1; // true
+      }
+      else
+      {
+         lv->value = 0; // false
+      }
+      return lv;
+   }
+};
+
    // example custom operator
    // in this case only an rvalue is processed,
    // a dummy lvalue should be provided like so: 0 A -10
@@ -589,6 +643,8 @@ class Shunting
       addOperator2(new Shunting_Token_LeftParen());
       addOperator2(new Shunting_Token_RightParen());
       addOperator2(new Shunting_Token_Equals());
+      addOperator2(new Shunting_Token_LessThan());
+      addOperator2(new Shunting_Token_GreaterThan());
    }
    
    // runs a bunch of test-cases to demonstrate it works.
