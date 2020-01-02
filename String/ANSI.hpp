@@ -500,6 +500,10 @@ class ANSI_Grid
 			{
             newLine();
 			}
+         else if (_str[i] == '\b')
+         {
+            backspace();
+         }
 			else
 			{
 				aGlyph[cursorY][cursorX] = _str[i];
@@ -510,6 +514,25 @@ class ANSI_Grid
 
 		}
 	}
+   
+   void backspace() // Could be \b or an ANSI code.
+   {
+      //move cursor back one space and erase whatever's there
+      
+      if (isSafe(cursorX-1,cursorY))
+      {
+         --cursorX;
+         aGlyph[cursorY][cursorX] = ' ';
+         aColour[cursorY][cursorX] = defaultForegroundColour;
+      }
+      else if (isSafe(0,cursorY-1))
+      { // backspacing up a row is considered erasing the \n.
+         cursorX=63; // this should be fixed, but we need to implement null chars.
+         --cursorY;
+         aGlyph[cursorY][cursorX] = ' ';
+         aColour[cursorY][cursorX] = defaultForegroundColour;
+      }
+   }
 };
 
 #endif
