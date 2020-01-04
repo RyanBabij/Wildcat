@@ -28,6 +28,7 @@
    (2*3+3*4)            -> 2 3 * 3 4 * +
    20-30/3+4*2^3        -> 20 30 3 / - 4 2 3 ^ * +
    (-1+1+(-1*2))*(-2*1) -> -1 1 + -1 2 * + -2 1 * *
+   -(1*2*-3)-(5+5)+-(2) -> 0 1 2 * -3 * - 5 5 + - 2 -
    
 
    Credit to Takayuki MATSUOKA's implementation at
@@ -40,7 +41,7 @@
 
 */
 
-//#define SHUNTING_ENABLE_OUTPUT //cout result
+#define SHUNTING_ENABLE_OUTPUT //cout result
 
 // can store either a value or an operator. Operators must be a single
 // non-digit char. virtual function operate() defines functionality
@@ -64,9 +65,9 @@ class Shunting_Token
    virtual ~Shunting_Token()
    { }
    
-   virtual Shunting_Token * operate(Shunting_Token * lv, Shunting_Token * rv) // custom operators can be defined here, for example an ABS function.
+   // overload this function for custom infix operators.
+   virtual Shunting_Token * operate(Shunting_Token * lv, Shunting_Token * rv)
    {
-      //Shunting_Token * ret = new Shunting_Token;
       return 0;
    }
    
@@ -83,12 +84,9 @@ class Shunting_Token
       }
       return DataTools::toString(value);
    }
-   
-   // add operator overloads here
 };
 
 //     DEFAULT OPERATOR SET
-
 class Shunting_Token_Add: public Shunting_Token
 {
    public:
@@ -96,7 +94,7 @@ class Shunting_Token_Add: public Shunting_Token
    Shunting_Token_Add(): Shunting_Token(0, '+', 2, false)
    { }
    
-   Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override // custom operators can be defined here, for example an ABS function.
+   Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override
    {
       if (lv==0 || rv==0)
       {
@@ -116,7 +114,7 @@ class Shunting_Token_Subtract: public Shunting_Token
    Shunting_Token_Subtract(): Shunting_Token(0, '-', 2, false)
    {}
    
-   Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override // custom operators can be defined here, for example an ABS function.
+   Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override
    {
       if (lv==0 || rv==0)
       {
@@ -136,7 +134,7 @@ class Shunting_Token_Multiply: public Shunting_Token
    Shunting_Token_Multiply(): Shunting_Token(0, '*', 3, false)
    {}
    
-   Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override // custom operators can be defined here, for example an ABS function.
+   Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override
    {
       if (lv==0 || rv==0)
       {
@@ -156,7 +154,7 @@ class Shunting_Token_Divide: public Shunting_Token
    Shunting_Token_Divide(): Shunting_Token(0, '/', 3, false)
    {}
    
-   Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override // custom operators can be defined here, for example an ABS function.
+   Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override
    {
       if (lv==0 || rv==0)
       {
@@ -181,7 +179,7 @@ class Shunting_Token_Power: public Shunting_Token
    Shunting_Token_Power(): Shunting_Token(0, '^', 4, true)
    {}
    
-   Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override // custom operators can be defined here, for example an ABS function.
+   Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override
    {
       if (lv==0 || rv==0)
       {
@@ -199,9 +197,6 @@ class Shunting_Token_LeftParen: public Shunting_Token
    
    Shunting_Token_LeftParen(): Shunting_Token(0, '(', 0, false)
    {}
-   
-   // long int operate(long int lv, long int rv)
-   // { return 0; }
 };
 
 class Shunting_Token_RightParen: public Shunting_Token
@@ -210,9 +205,6 @@ class Shunting_Token_RightParen: public Shunting_Token
    
    Shunting_Token_RightParen(): Shunting_Token(0, ')', 0, false)
    {}
-   
-   // long int operate(long int lv, long int rv)
-   // { return 0; }
 };
 
 class Shunting_Token_Equals: public Shunting_Token
@@ -305,9 +297,6 @@ class Shunting_Token_Absolute: public Shunting_Token
    
    Shunting_Token_Absolute(): Shunting_Token(0, 'A', 7, false)
    {}
-   
-   // long int operate(long int lv, long int rv)
-   // { return abs(lv); }
 };
 
 // Main driver class. Initialise and create operators, or call
@@ -471,6 +460,10 @@ class Shunting
       }
       expression=strCombinedSigns;
       
+      #ifdef SHUNTING_ENABLE_OUTPUT
+         std::cout<<"Combined signs: "<<expression<<"\n";
+      #endif
+      
       // insert a 0 at the start of a - expression
       if (expression[0] == '-')
       {
@@ -478,7 +471,7 @@ class Shunting
       }
       
       // remove + prefixes, and convert - prefixes into negative values.
-      // convert -() into -1*()
+      // convert -() into -1*(). However ()-() should be left alone.
       std::string fixedStr = "";
       fixedStr+=expression[0];
       for (unsigned int i=1;i<expression.size()-1;++i)
@@ -494,9 +487,11 @@ class Shunting
             {
                if ( expression[i+1] == '(')
                {
-                  // replace negative brackets with M1*()
-                  fixedStr+="M1*";
-                  continue;
+                  if ( expression[i-1] != ')' )
+                  { // () - () should be left as a minus.
+                     fixedStr+="M1*";
+                     continue;
+                  }
                }
                else
                {
@@ -512,6 +507,10 @@ class Shunting
       fixedStr+=expression[expression.size()-1];
       
       expression = fixedStr;
+      
+      #ifdef SHUNTING_ENABLE_OUTPUT
+         std::cout<<"Replaced signs: "<<expression<<"\n";
+      #endif
 
       for (unsigned int i=0;i<expression.size();++i)
       {
