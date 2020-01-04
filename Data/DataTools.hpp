@@ -145,11 +145,21 @@ namespace DataTools
 		
 	bool isNumeric (std::string _s)
 	{
+      // number may start with any number of - or + signs.
+      
+      bool canSign = true;
+      
 		for ( auto c : _s )
 		{
 			if ( c=='0'||c=='1'||c=='2'||c=='3'||c=='4'||c=='5'||c=='6'||c=='7'||c=='8'||c=='9' )
 			{
+            // from this point no more signs are allowed
+            canSign=false;
 			}
+         else if (canSign && (c=='+' || c=='-'))
+         {
+            // number may start with any number of + or - signs.
+         }
 			else
 			{
 				return false;
