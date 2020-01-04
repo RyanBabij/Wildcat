@@ -24,7 +24,7 @@
    
    Sample input:
    
-   3+4*2/(1-5)^2^3      -> 2 3 * 3 4 * + 
+   3+4*2/(1-5)^2^3      -> 3 4 2 * 1 5 - 2 3 ^ ^ / +
    (2*3+3*4)            -> 2 3 * 3 4 * +
    20-30/3+4*2^3        -> 20 30 3 / - 4 2 3 ^ * +
    (-1+1+(-1*2))*(-2*1) -> -1 1 + -1 2 * + -2 1 * *
@@ -702,6 +702,9 @@ class Shunting
       }
       if (stack.size() == 1)
       {
+         #ifdef SHUNTING_ENABLE_OUTPUT
+            std::cout<<"Value: "<<stack.top()->value<<"\n";
+         #endif
          return stack.top()->value;
       }
       std::cout<<"SYNTAX ERROR 2\n";
