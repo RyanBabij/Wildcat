@@ -15,8 +15,6 @@
    adjacent values.
    
    May have some bugs because I am not good at math.
-   I'm not sure how negative numbers are handled in this system,
-   but basic testing seems to be giving usable results.
    
    Custom operators can be added, however left and right parentheses
    are special cases which are always processed. Custom operators
@@ -29,7 +27,7 @@
    3+4*2/(1-5)^2^3      -> 2 3 * 3 4 * + 
    (2*3+3*4)            -> 2 3 * 3 4 * +
    20-30/3+4*2^3        -> 20 30 3 / - 4 2 3 ^ * +
-   (-1+1+(-1*2))*(-2*1) -> 1 - 1 + 1 2 * - + 2 1 * - *
+   (-1+1+(-1*2))*(-2*1) -> -1 1 + -1 2 * + -2 1 * *
    
 
    Credit to Takayuki MATSUOKA's implementation at
@@ -37,9 +35,8 @@
    https://ideone.com/DYX5CW
    
    Todo:
-   * Add positive/negative prefix operator processing
-   * Add comparator operators
-   * Add other custom operators such as ABS, SIN, LOG, etc.
+   * Add multi-char operators
+   * Add function support such as ABS, SIN, LOG, etc.
 
 */
 
@@ -406,6 +403,12 @@ class Shunting
       #ifdef SHUNTING_ENABLE_OUTPUT
          std::cout<<"Input: "<<expression<<"\n";
       #endif
+      
+      if (expression.size() == 0 )
+      {
+         //do nothing
+         return;
+      }
 
       for (unsigned int i=0;i<outputQueue2.size();++i)
       {
@@ -422,13 +425,104 @@ class Shunting
       std::string _strNumber = "";
       std::string _strOperator = "";
       
-      // mark +- prefixes here
+      // Handling +- signs makes life more difficult than it needs to be.
+      // BASIC allows combination of many sign operators, for example A=----1 is valid.
+      // For some reason basic allows -(1+1) but not 5(1+1).
+      // First we combine +- combinations into a single sign. For example --- becomes -.
+      // Then we add a 0 in front of an expression that starts with - as a special case.
+      // Then we scan for any negative numbers and mark them for pushing onto the token vector,
+      // and we remove + signs which aren't addition.
       
+      // In BASIC, A=--------1 is technically a valid expression.
+
+      // combine multiple signs eg --1 becomes +1.
+      int nSigns = 0;
+      int currentSign = 1;
+      std::string strCombinedSigns = "";
+      for (unsigned int i=0;i<expression.size();++i)
+      {
+         if ( expression[i] == '-' )
+         {
+            ++nSigns;
+            currentSign = currentSign * -1;
+         }
+         else if (expression[i] == '+')
+         {
+            ++nSigns;
+         }
+         else
+         {
+            if (nSigns>0)
+            {
+               if ( currentSign==1 )
+               {
+                  strCombinedSigns+='+';
+               }
+               else
+               {
+                  strCombinedSigns+='-';
+               }
+               // reset counter
+               nSigns=0;
+               currentSign=1;
+            }
+            strCombinedSigns+=expression[i];
+         }
+      }
+      expression=strCombinedSigns;
+      
+      // insert a 0 at the start of a - expression
+      if (expression[0] == '-')
+      {
+         expression.insert(expression.begin(),'0');
+      }
+      
+      // remove + prefixes, and convert - prefixes into negative values.
+      // convert -() into -1*()
+      std::string fixedStr = "";
+      fixedStr+=expression[0];
+      for (unsigned int i=1;i<expression.size()-1;++i)
+      {
+         if ( std::isdigit(expression[i-1]) == false )
+         {
+            if ( expression[i] == '+' && expression[i-1] != ')' && expression[i-1] != '(' )
+            {
+               // we can remove this positive sign, as it is not addition
+               continue;
+            }
+            else if (expression[i] == '-')
+            {
+               if ( expression[i+1] == '(')
+               {
+                  // replace negative brackets with M1*()
+                  fixedStr+="M1*";
+                  continue;
+               }
+               else
+               {
+                  // this is a negative value instead of a minus.
+                  // Put a M to signal for parsing as a negative value
+                  fixedStr+='M';
+                  continue;
+               }
+            }
+         }
+         fixedStr+=expression[i];
+      } // final case
+      fixedStr+=expression[expression.size()-1];
+      
+      expression = fixedStr;
+
       for (unsigned int i=0;i<expression.size();++i)
       {
          if ( std::isdigit(expression[i]) )
          {
             _strNumber+=expression[i];
+         }
+         else if (expression[i] == 'M')
+         {
+            // parse M as a negative value.
+            _strNumber+='-';
          }
          else if ( isOperator(expression[i]))
          {
@@ -436,7 +530,6 @@ class Shunting
             {
                // push a value token to the output queue
                outputQueue2.push_back(new Shunting_Token(DataTools::toInt(_strNumber)));
-               
                _strNumber="";
             }
             
@@ -445,7 +538,6 @@ class Shunting
             {
                //something bad happened, return an empty output vector.
                outputQueue2.clear();
-               //return outputQueue2;
             }
 
             //push left paren onto stack
@@ -518,7 +610,6 @@ class Shunting
          {
             // invalid expression, return empty output vector
             outputQueue2.clear();
-            //return outputQueue2;
          }
          
       }
@@ -552,11 +643,10 @@ class Shunting
          std::cout<<"Output: ";
          for (unsigned int i=0;i<outputQueue2.size();++i)
          {
-            std::cout<<outputQueue2.at(i).toString()<<" ";
+            std::cout<<outputQueue2.at(i)->toString()<<" ";
          } std::cout<<"\n";
       #endif
       
-      //return outputQueue2;
    }
    
    std::string toString()
@@ -574,7 +664,6 @@ class Shunting
    // all operator tokens anyways.
    long int evaluate()
    {
-      //std::cout<<"Evaluating output queue.\n";
       std::stack <Shunting_Token*> stack; // stack to store values from left to right.
       
       for (unsigned int i=0;i<outputQueue2.size();++i)
@@ -594,23 +683,18 @@ class Shunting
                stack.pop();
                Shunting_Token* opLeft = stack.top();
                stack.pop();
-               
-               //std::cout<<"Evaluating: "<<opLeft->value<<" "<<oper->symbol<<" "<<opRight->value<<"\n";
-               
+
                Shunting_Token* result = oper->operate(opLeft,opRight);
                if ( result==0 )
                {
-                  //std::cout<<"Error: operation returned null ptr\n";
+                  std::cout<<"Error: operation returned null ptr\n";
                   return 0;
                }
-               //std::cout<<"Current result: "<<result->value<<"\n";
-               
                stack.push(result);
             }
             else
             {
-               //error
-               //std::cout<<"SYNTAX ERROR\n";
+               std::cout<<"SYNTAX ERROR\n";
                return 0;
             }
             
@@ -618,10 +702,9 @@ class Shunting
       }
       if (stack.size() == 1)
       {
-         //std::cout<<"EVALUATION FINISHED.\n FINAL VALUE: "<<stack.top()->value<<".\n";
          return stack.top()->value;
       }
-      //std::cout<<"SYNTAX ERROR 2\n";
+      std::cout<<"SYNTAX ERROR 2\n";
       return 0;
    }
    
