@@ -211,7 +211,7 @@ class Shunting_Token_Equals: public Shunting_Token
 {
    public:
    
-   Shunting_Token_Equals(): Shunting_Token(0, "=", 5, false)
+   Shunting_Token_Equals(): Shunting_Token(0, "=", 1, false)
    {}
    
    Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override
@@ -238,7 +238,7 @@ class Shunting_Token_LessThan: public Shunting_Token
 {
    public:
    
-   Shunting_Token_LessThan(): Shunting_Token(0, "<", 5, false)
+   Shunting_Token_LessThan(): Shunting_Token(0, "<", 1, false)
    {}
    
    Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override
@@ -265,7 +265,7 @@ class Shunting_Token_LessThanEqual: public Shunting_Token
 {
    public:
    
-   Shunting_Token_LessThanEqual(): Shunting_Token(0, "<=", 5, false)
+   Shunting_Token_LessThanEqual(): Shunting_Token(0, "<=", 1, false)
    {}
    
    Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override
@@ -275,8 +275,35 @@ class Shunting_Token_LessThanEqual: public Shunting_Token
          std::cout<<"Null ptr error\n";
          return 0;
       }
-      
+
       if ( lv->value <= rv->value )
+      {
+         lv->value = -1; // true
+      }
+      else
+      {
+         lv->value = 0; // false
+      }
+      return lv;
+   }
+};
+
+class Shunting_Token_GreaterThanEqual: public Shunting_Token
+{
+   public:
+   
+   Shunting_Token_GreaterThanEqual(): Shunting_Token(0, ">=", 1, false)
+   {}
+   
+   Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override
+   {
+      if (lv==0 || rv==0)
+      {
+         std::cout<<"Null ptr error\n";
+         return 0;
+      }
+
+      if ( lv->value >= rv->value )
       {
          lv->value = -1; // true
       }
@@ -292,7 +319,7 @@ class Shunting_Token_GreaterThan: public Shunting_Token
 {
    public:
    
-   Shunting_Token_GreaterThan(): Shunting_Token(0, ">", 5, false)
+   Shunting_Token_GreaterThan(): Shunting_Token(0, ">", 1, false)
    {}
    
    Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override
@@ -370,6 +397,8 @@ class Shunting
    
    // Add operator to reference list.
    // Don't add duplicate symbols.
+   // Also, longer operators should be added first, otherwise
+   // shorter operators will be found before them.
    void addOperator2(Shunting_Token * _toke)
    {
       if ( _toke == 0 )
@@ -389,12 +418,11 @@ class Shunting
       vTokenList.push(_toke);
    }
    
-   Shunting_Token * getToken(std::string _symbol, int iStr)
+   Shunting_Token * getToken(std::string _op, unsigned int iStr)
    {
-      std::string strComp (1,_symbol[iStr]);
       for (int i=0;i<vTokenList.size();++i)
       {
-         if ( vTokenList(i)->symbol == strComp )
+         if(_op.find(vTokenList(i)->symbol,iStr) == iStr)
          {
             return vTokenList(i);
          }
@@ -402,12 +430,11 @@ class Shunting
       return 0;
    }
    
-   bool isOperator(std::string _op, int iStr)
+   bool isOperator(std::string _op, unsigned int iStr)
    {
-      std::string comp (1,_op[iStr]);
       for (int i=0;i<vTokenList.size();++i)
       {
-         if (vTokenList(i)->symbol == comp)
+         if(_op.find(vTokenList(i)->symbol,iStr) == iStr)
          {
             return true;
          }
@@ -539,8 +566,10 @@ class Shunting
          std::cout<<"Replaced signs: "<<expression<<"\n";
       #endif
 
-      for (unsigned int i=0;i<expression.size();++i)
+      int operatorSize = 1;
+      for (unsigned int i=0;i<expression.size();i+=operatorSize) // manually increment i for long operators
       {
+         operatorSize=1; // assume operator size of 1
          if ( std::isdigit(expression[i]) )
          {
             _strNumber+=expression[i];
@@ -564,7 +593,10 @@ class Shunting
             {
                //something bad happened, return an empty output vector.
                outputQueue2.clear();
+               return;
             }
+            // adjust loop to account for long operators
+            operatorSize = currentToken->symbol.size();
 
             //push left paren onto stack
             if ( expression[i] == '(' )
@@ -598,6 +630,7 @@ class Shunting
                 {
                   // too many right parentheses. Return empty output vector.
                     outputQueue2.clear();
+                    return;
                     //return outputQueue2;
                 }
             }
@@ -623,7 +656,6 @@ class Shunting
                      stack2.pop_back();
                      // onto the output queue;
                      outputQueue2.push_back(o2);
-                     continue;
                   }
                   //otherwise exit
                   break;
@@ -636,8 +668,8 @@ class Shunting
          {
             // invalid expression, return empty output vector
             outputQueue2.clear();
+            return;
          }
-         
       }
       
       //final case: Push any remaining number
@@ -672,7 +704,6 @@ class Shunting
             std::cout<<outputQueue2.at(i)->toString()<<" ";
          } std::cout<<"\n";
       #endif
-      
    }
    
    std::string toString()
@@ -747,6 +778,8 @@ class Shunting
    // this runs by default in constructor
    void buildDefaults()
    {
+      addOperator2(new Shunting_Token_LessThanEqual());
+      addOperator2(new Shunting_Token_GreaterThanEqual());
       addOperator2(new Shunting_Token_Add());
       addOperator2(new Shunting_Token_Subtract());
       addOperator2(new Shunting_Token_Multiply());
@@ -757,7 +790,6 @@ class Shunting
       addOperator2(new Shunting_Token_Equals());
       addOperator2(new Shunting_Token_LessThan());
       addOperator2(new Shunting_Token_GreaterThan());
-      addOperator2(new Shunting_Token_LessThanEqual());
    }
    
    // runs a bunch of test-cases to demonstrate it works.
