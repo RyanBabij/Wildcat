@@ -49,12 +49,12 @@ class Shunting_Token
 {
    public:
    
-   unsigned char symbol; // if set to 0, then token is a value.
+   std::string symbol; // if set to 0, then token is a value.
    bool rightAssociative;
    unsigned short int precedence; // higher = higher precedence
    long int value; // only used for non-operator token
    
-   Shunting_Token(int _value=0, unsigned char _symbol = 0, unsigned short int _precedence = 0, bool _rightAssociative = false)
+   Shunting_Token(int _value=0, std::string _symbol = "", unsigned short int _precedence = 0, bool _rightAssociative = false)
    {
       value = _value;
       symbol = _symbol;
@@ -73,14 +73,14 @@ class Shunting_Token
    
    bool isToken()
    {
-      return symbol != 0;
+      return symbol.size()>0;
    }
    
    std::string toString()
    {
-      if (symbol!=0)
+      if (symbol.size()>0)
       {
-         return std::string(1,symbol);
+         return symbol;
       }
       return DataTools::toString(value);
    }
@@ -91,7 +91,7 @@ class Shunting_Token_Add: public Shunting_Token
 {
    public:
    
-   Shunting_Token_Add(): Shunting_Token(0, '+', 2, false)
+   Shunting_Token_Add(): Shunting_Token(0, "+", 2, false)
    { }
    
    Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override
@@ -111,7 +111,7 @@ class Shunting_Token_Subtract: public Shunting_Token
 {
    public:
    
-   Shunting_Token_Subtract(): Shunting_Token(0, '-', 2, false)
+   Shunting_Token_Subtract(): Shunting_Token(0, "-", 2, false)
    {}
    
    Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override
@@ -131,7 +131,7 @@ class Shunting_Token_Multiply: public Shunting_Token
 {
    public:
    
-   Shunting_Token_Multiply(): Shunting_Token(0, '*', 3, false)
+   Shunting_Token_Multiply(): Shunting_Token(0, "*", 3, false)
    {}
    
    Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override
@@ -151,7 +151,7 @@ class Shunting_Token_Divide: public Shunting_Token
 {
    public:
    
-   Shunting_Token_Divide(): Shunting_Token(0, '/', 3, false)
+   Shunting_Token_Divide(): Shunting_Token(0, "/", 3, false)
    {}
    
    Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override
@@ -176,7 +176,7 @@ class Shunting_Token_Power: public Shunting_Token
 {
    public:
    
-   Shunting_Token_Power(): Shunting_Token(0, '^', 4, true)
+   Shunting_Token_Power(): Shunting_Token(0, "^", 4, true)
    {}
    
    Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override
@@ -195,7 +195,7 @@ class Shunting_Token_LeftParen: public Shunting_Token
 {
    public:
    
-   Shunting_Token_LeftParen(): Shunting_Token(0, '(', 0, false)
+   Shunting_Token_LeftParen(): Shunting_Token(0, "(", 0, false)
    {}
 };
 
@@ -203,7 +203,7 @@ class Shunting_Token_RightParen: public Shunting_Token
 {
    public:
    
-   Shunting_Token_RightParen(): Shunting_Token(0, ')', 0, false)
+   Shunting_Token_RightParen(): Shunting_Token(0, ")", 0, false)
    {}
 };
 
@@ -211,7 +211,7 @@ class Shunting_Token_Equals: public Shunting_Token
 {
    public:
    
-   Shunting_Token_Equals(): Shunting_Token(0, '=', 5, false)
+   Shunting_Token_Equals(): Shunting_Token(0, "=", 5, false)
    {}
    
    Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override
@@ -238,7 +238,7 @@ class Shunting_Token_LessThan: public Shunting_Token
 {
    public:
    
-   Shunting_Token_LessThan(): Shunting_Token(0, '<', 5, false)
+   Shunting_Token_LessThan(): Shunting_Token(0, "<", 5, false)
    {}
    
    Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override
@@ -261,11 +261,38 @@ class Shunting_Token_LessThan: public Shunting_Token
    }
 };
 
+class Shunting_Token_LessThanEqual: public Shunting_Token
+{
+   public:
+   
+   Shunting_Token_LessThanEqual(): Shunting_Token(0, "<=", 5, false)
+   {}
+   
+   Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override
+   {
+      if (lv==0 || rv==0)
+      {
+         std::cout<<"Null ptr error\n";
+         return 0;
+      }
+      
+      if ( lv->value <= rv->value )
+      {
+         lv->value = -1; // true
+      }
+      else
+      {
+         lv->value = 0; // false
+      }
+      return lv;
+   }
+};
+
 class Shunting_Token_GreaterThan: public Shunting_Token
 {
    public:
    
-   Shunting_Token_GreaterThan(): Shunting_Token(0, '>', 5, false)
+   Shunting_Token_GreaterThan(): Shunting_Token(0, ">", 5, false)
    {}
    
    Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override
@@ -295,7 +322,7 @@ class Shunting_Token_Absolute: public Shunting_Token
 {
    public:
    
-   Shunting_Token_Absolute(): Shunting_Token(0, 'A', 7, false)
+   Shunting_Token_Absolute(): Shunting_Token(0, "A", 7, false)
    {}
 };
 
@@ -332,7 +359,7 @@ class Shunting
       for (unsigned int i=0;i<outputQueue2.size();++i)
       {
          // delete all values from output queue
-         if (outputQueue2.at(i)->symbol==0)
+         if (outputQueue2.at(i)->symbol=="")
          {
             delete outputQueue2.at(i);
          }
@@ -362,11 +389,12 @@ class Shunting
       vTokenList.push(_toke);
    }
    
-   Shunting_Token * getToken(unsigned char _symbol)
+   Shunting_Token * getToken(std::string _symbol, int iStr)
    {
+      std::string strComp (1,_symbol[iStr]);
       for (int i=0;i<vTokenList.size();++i)
       {
-         if ( vTokenList(i)->symbol == _symbol )
+         if ( vTokenList(i)->symbol == strComp )
          {
             return vTokenList(i);
          }
@@ -374,11 +402,12 @@ class Shunting
       return 0;
    }
    
-   bool isOperator(unsigned char _op)
+   bool isOperator(std::string _op, int iStr)
    {
+      std::string comp (1,_op[iStr]);
       for (int i=0;i<vTokenList.size();++i)
       {
-         if (vTokenList(i)->symbol == _op)
+         if (vTokenList(i)->symbol == comp)
          {
             return true;
          }
@@ -402,7 +431,7 @@ class Shunting
       for (unsigned int i=0;i<outputQueue2.size();++i)
       {
          // delete all values from output queue
-         if (outputQueue2.at(i)->symbol==0)
+         if (outputQueue2.at(i)->symbol=="")
          {
             delete outputQueue2.at(i);
          }
@@ -421,10 +450,8 @@ class Shunting
       // Then we add a 0 in front of an expression that starts with - as a special case.
       // Then we scan for any negative numbers and mark them for pushing onto the token vector,
       // and we remove + signs which aren't addition.
-      
-      // In BASIC, A=--------1 is technically a valid expression.
 
-      // combine multiple signs eg --1 becomes +1.
+      // Combine multiple signs eg --1 becomes +1.
       int nSigns = 0;
       int currentSign = 1;
       std::string strCombinedSigns = "";
@@ -523,7 +550,7 @@ class Shunting
             // parse M as a negative value.
             _strNumber+='-';
          }
-         else if ( isOperator(expression[i]))
+         else if ( isOperator(expression,i))
          {
             if ( _strNumber.size() > 0 )
             {
@@ -532,7 +559,7 @@ class Shunting
                _strNumber="";
             }
             
-            Shunting_Token * currentToken = getToken(expression[i]);
+            Shunting_Token * currentToken = getToken(expression,i);
             if ( currentToken == 0 )
             {
                //something bad happened, return an empty output vector.
@@ -550,7 +577,7 @@ class Shunting
 
                 // Until the token at the top of the stack
                 // is a left parenthesis,
-                while(! stack2.empty() && stack2.back()->symbol != '(')
+                while(! stack2.empty() && stack2.back()->symbol != "(")
                 {
                     // pop operators off the stack
                     // onto the output queue.
@@ -558,7 +585,7 @@ class Shunting
                     stack2.pop_back();
                     
                 }
-                if (!stack2.empty() && stack2.back()->symbol == '(')
+                if (!stack2.empty() && stack2.back()->symbol == "(")
                 {
                   match = true;
                 }
@@ -625,7 +652,7 @@ class Shunting
       {
          // If the operator token on the top of the stack is a parenthesis,
          // then there are mismatched parentheses.
-         if(stack2.back()->symbol == '(')
+         if(stack2.back()->symbol == "(")
          {
             // too many left parentheses, return empty output vector.
             outputQueue2.clear();
@@ -667,7 +694,7 @@ class Shunting
       
       for (unsigned int i=0;i<outputQueue2.size();++i)
       {
-         if ( outputQueue2.at(i)->symbol == 0 )
+         if ( outputQueue2.at(i)->symbol == "" )
          {
             //push value to stack
             stack.push(outputQueue2.at(i));
@@ -730,6 +757,7 @@ class Shunting
       addOperator2(new Shunting_Token_Equals());
       addOperator2(new Shunting_Token_LessThan());
       addOperator2(new Shunting_Token_GreaterThan());
+      addOperator2(new Shunting_Token_LessThanEqual());
    }
    
    // runs a bunch of test-cases to demonstrate it works.
