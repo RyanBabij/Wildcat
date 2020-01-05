@@ -51,15 +51,17 @@ class Shunting_Token
    
    std::string symbol; // if set to 0, then token is a value.
    bool rightAssociative;
+   bool isPrefix;
    unsigned short int precedence; // higher = higher precedence
    long int value; // only used for non-operator token
    
-   Shunting_Token(int _value=0, std::string _symbol = "", unsigned short int _precedence = 0, bool _rightAssociative = false)
+   Shunting_Token(int _value=0, std::string _symbol = "", unsigned short int _precedence = 0, bool _rightAssociative = false, bool _isPrefix=false)
    {
       value = _value;
       symbol = _symbol;
       precedence = _precedence;
       rightAssociative = _rightAssociative;
+      isPrefix=_isPrefix;
    }
    
    virtual ~Shunting_Token()
@@ -349,8 +351,20 @@ class Shunting_Token_Absolute: public Shunting_Token
 {
    public:
    
-   Shunting_Token_Absolute(): Shunting_Token(0, "A", 7, false)
+   Shunting_Token_Absolute(): Shunting_Token(0, "ABS", 7, false, true)
    {}
+   
+   Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override
+   {
+      if (rv==0)
+      {
+         std::cout<<"Null ptr error\n";
+         return 0;
+      }
+      
+      rv->value = abs(rv->value);
+      return rv;
+   }
 };
 
 // Main driver class. Initialise and create operators, or call
@@ -518,6 +532,12 @@ class Shunting
          std::cout<<"Combined signs: "<<expression<<"\n";
       #endif
       
+      // remove any leading + from expressions.
+      while (expression.size()>0 && expression[0] == '+')
+      {
+         expression.erase(0,1);
+      }
+      
       // insert a 0 at the start of a - expression
       if (expression[0] == '-')
       {
@@ -546,6 +566,10 @@ class Shunting
                      fixedStr+="M1*";
                      continue;
                   }
+               }
+               else if (expression[i-1]==')') //update
+               {
+                  //ignore
                }
                else
                {
@@ -733,15 +757,38 @@ class Shunting
          else
          {
             //evaluate this operator, and last 2 values in stack.
-            if (stack.size() > 1)
+            if (stack.size() > 0)
             {
                Shunting_Token* oper = outputQueue2.at(i);
+               
+               // if the operator is a prefix operator (for example: ABS(-1))
+               // we only pop right token
+               
+               Shunting_Token* result = 0;
+               
                Shunting_Token* opRight = stack.top();
                stack.pop();
-               Shunting_Token* opLeft = stack.top();
-               stack.pop();
+               
+               if ( oper->isPrefix ) // process prefix operator
+               {
+                  result = oper->operate(0,opRight);
+               }
+               else if (stack.size()>0) // process infix operator
+               {
+                  Shunting_Token* opLeft = stack.top();
+                  stack.pop();
+                  result = oper->operate(opLeft,opRight);
+               }
+               else
+               {
+                  std::cout<<"Stack size error\n";
+                  return 0;
+               }
+               
 
-               Shunting_Token* result = oper->operate(opLeft,opRight);
+
+
+               
                if ( result==0 )
                {
                   std::cout<<"Error: operation returned null ptr\n";
@@ -790,6 +837,7 @@ class Shunting
       addOperator2(new Shunting_Token_Equals());
       addOperator2(new Shunting_Token_LessThan());
       addOperator2(new Shunting_Token_GreaterThan());
+      addOperator2(new Shunting_Token_Absolute());
    }
    
    // runs a bunch of test-cases to demonstrate it works.
