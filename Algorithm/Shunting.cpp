@@ -367,6 +367,25 @@ class Shunting_Token_Absolute: public Shunting_Token
    }
 };
 
+class Shunting_Token_Rand: public Shunting_Token
+{ // Returns random int from 0-rValue.
+   public:
+   
+   Shunting_Token_Rand(): Shunting_Token(0, "RND", 7, false, true)
+   {}
+   
+   Shunting_Token* operate(Shunting_Token * lv, Shunting_Token * rv) override
+   {
+      if (rv==0)
+      {
+         std::cout<<"Null ptr error\n";
+         return 0;
+      }
+      rv->value = Random::randomInt(rv->value);
+      return rv;
+   }
+};
+
 // Main driver class. Initialise and create operators, or call
 // buildDefaults() to use default set. Call shunt() and pass
 // infix string. It will return vector of tokens in postfix.
@@ -838,6 +857,7 @@ class Shunting
       addOperator2(new Shunting_Token_LessThan());
       addOperator2(new Shunting_Token_GreaterThan());
       addOperator2(new Shunting_Token_Absolute());
+      addOperator2(new Shunting_Token_Rand());
    }
    
    // runs a bunch of test-cases to demonstrate it works.
