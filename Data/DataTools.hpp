@@ -12,18 +12,13 @@
 */
 
 #include <sstream>
-#include <string>
+#include <string> // std::string, memcpy (need a better way of doing this.)
 #include <iostream> // std::cout
 #include <iomanip> // setprecision
-
+#include <locale>         // std::locale, std::isalnum
 #include <stdlib.h> // atoi
 
 #include <Container/Vector/Vector.hpp>
-
-#include <string.h> // std::string, memcpy (need a better way of doing this.)
-
-#include <string>         // std::string
-#include <locale>         // std::locale, std::isalnum
 
 
 namespace DataTools
@@ -84,9 +79,9 @@ namespace DataTools
    }
   
 	
-	bool isAlphaNumeric(std::string _s, const bool allowSpaces=false )
+   bool isAlphaNumeric (const std::string _s, const bool allowSpaces=false )
 	{ // basically just wraps the stl function.
-		for ( auto c : _s )
+		for ( const auto c : _s )
 		{
          if (std::isalnum(c) || (allowSpaces && c==' ') == false )
          {
@@ -97,7 +92,7 @@ namespace DataTools
 	}
 
 		// MODIFIES X AND Y COORDINATES BASED ON NUMERICAL INPUT, IE THE NUMPAD.
-	void numpadToCoords(int* x, int* y, const int numpadDirection)
+	void numpadToCoords(int* const x, int* const y, const int numpadDirection)
 	{
 		switch (numpadDirection)
 		{
@@ -147,7 +142,7 @@ namespace DataTools
       
       bool canSign = true;
       
-		for ( auto c : _s )
+		for ( const auto c : _s )
 		{
 			if ( std::isdigit(c) )
 			{
@@ -165,22 +160,21 @@ namespace DataTools
 		}
 		return true;
 	}
-   inline bool isNumber(const std::string _s) {  return isNumeric(_s); }
+   inline bool isNumber(const std::string _s)
+   {  return isNumeric(_s); }
       
 	inline bool isAlphaNumeric(const int key)
-	{
-      return std::isalnum(key);
-	}
+	{ return std::isalnum(key); }
+   
    inline bool isAlpha (const unsigned char _c)
-   {
-      return std::isalpha(_c);
-   }
+   { return std::isalpha(_c); }
+   
    inline bool isAlpha(const std::string _str)
    {
       if ( _str.size() == 0 )
       { return false; }
    
-      for (auto & c: _str)
+      for (const auto & c: _str)
       {
          if (DataTools::isAlpha(c) == false)
          {
@@ -197,7 +191,7 @@ namespace DataTools
    }
 
    // Returns true if the passed char contains any char in the string.
-   bool containsAny(char _c, std::string _charList)
+   inline bool containsAny(char _c, const std::string _charList)
    {
       if (_charList.find(_c) != std::string::npos)
       { return true; }
@@ -250,7 +244,7 @@ namespace DataTools
 	template <class T>
 	inline static std::string toString(const T n)
 	{
-		std::ostringstream oss;
+      std::ostringstream oss;
 		oss<<n;
 		return oss.str();
 	}
