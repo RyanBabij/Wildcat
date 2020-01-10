@@ -41,7 +41,7 @@
 
 */
 
-#define SHUNTING_ENABLE_OUTPUT //cout result
+//#define SHUNTING_ENABLE_OUTPUT //cout result
 
 // can store either a value or an operator. Operators must be a single
 // non-digit char. virtual function operate() defines functionality
@@ -562,7 +562,7 @@ class Shunting
       {
          expression.insert(expression.begin(),'0');
       }
-      
+
       // remove + prefixes, and convert - prefixes into negative values.
       // convert -() into -1*(). However ()-() should be left alone.
       std::string fixedStr = "";
@@ -601,7 +601,10 @@ class Shunting
          }
          fixedStr+=expression[i];
       } // final case
-      fixedStr+=expression[expression.size()-1];
+      if (expression.size() > 1)
+      {
+         fixedStr+=expression[expression.size()-1];
+      }
       
       expression = fixedStr;
       
