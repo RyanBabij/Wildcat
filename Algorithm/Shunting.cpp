@@ -769,6 +769,12 @@ class Shunting
    {
       std::stack <Shunting_Token*> stack; // stack to store values from left to right.
       
+      if ( outputQueue2.size()==0 )
+      {
+         std::cout<<"WARNING: Shunting null vector.\n";
+         return 0;
+      }
+      
       for (unsigned int i=0;i<outputQueue2.size();++i)
       {
          if ( outputQueue2.at(i)->symbol == "" )
