@@ -12,11 +12,11 @@
 */
 
 #include <sstream>
-#include <string> // std::string, memcpy (need a better way of doing this.)
-#include <iostream> // std::cout
-#include <iomanip> // setprecision
-#include <locale>         // std::locale, std::isalnum
-#include <stdlib.h> // atoi
+#include <string>     // std::string, memcpy (need a better way of doing this.)
+#include <iostream>   // std::cout
+#include <iomanip>    // setprecision
+#include <locale>     // std::isalnum
+#include <stdlib.h>   // atoi
 
 #include <Container/Vector/Vector.hpp>
 
@@ -83,7 +83,7 @@ namespace DataTools
 	{ // basically just wraps the stl function.
 		for ( const auto c : _s )
 		{
-         if (std::isalnum(c) || (allowSpaces && c==' ') == false )
+         if (std::isalnum(c) == false || (allowSpaces && c!=' ') )
          {
             return false;
          }
