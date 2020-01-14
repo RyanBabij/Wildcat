@@ -366,12 +366,13 @@ bool preloadTextureNearestNeighbour(const std::string filePath, Texture* texture
 
 /* New implementation for Texture class. */
 /* NOTE: Try switching internal format from GL_RGBA8 to GL_RGBA4. Also try compression. */
-bool bindNearestNeighbour(Texture* texture)
+// I'm switching to no compression, as it seems to cause FPS to halve on slower computers.
+bool bindNearestNeighbour(Texture* texture, const bool compress=false)
 {
 	if(texture==0) {return false;}
   
-  int fileSize;
-  FileManager fm;
+  //int fileSize;
+  //FileManager fm;
   
   //return loadTextureNearestNeighbour(filePath,&texture->textureID);
   /* NOTE: It seems that the GLuint needs to be initialised (ie to 0) before being passed here, in some cases. */
@@ -379,7 +380,16 @@ bool bindNearestNeighbour(Texture* texture)
   glBindTexture(GL_TEXTURE_2D, texture->textureID);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, texture->nX, texture->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->data);
+  
+  if (compress)
+  {
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, texture->nX, texture->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->data);
+  }
+  else
+  {
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture->nX, texture->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->data);
+  }
+
 
 
 	return true;
