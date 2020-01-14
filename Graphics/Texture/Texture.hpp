@@ -51,13 +51,21 @@ class Texture: public CanLoadSave, public HasTexture
 
 	Texture* currentTexture() { return this; }
 
-	void create(const int _nX, const int _nY, unsigned char _type)
+	void create(const int _nX, const int _nY, unsigned char _type, bool initialise=false)
 	{
 		nX=_nX;
 		nY=_nY;
 		type=_type;
 
-		data=new unsigned char[nX*nY*4];
+      if (initialise)
+      {
+         data=new unsigned char[nX*nY*4]();
+      }
+      else
+      {
+         data=new unsigned char[nX*nY*4];
+      }
+
 	}
 	bool load (unsigned char* data2)
 	{
