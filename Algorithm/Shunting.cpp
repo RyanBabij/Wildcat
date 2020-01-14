@@ -17,10 +17,11 @@
    May have some bugs because I am not good at math.
    
    Custom operators can be added, however left and right parentheses
-   are special cases which are always processed. Custom operators
-   only have a single non-digit char as a symbol, therefore system
-   operators like ABS() will need to be replaced with a single char
-   before processing.
+   and positive/negative prefixes are special cases which are always processed.
+   Beware that the algorithm will find the first operator in the list which matches,
+   so for example >= should be added before > and =.
+   
+   Current operator set uses BASIC conventions.
    
    Sample input:
    
@@ -43,8 +44,8 @@
 
 //#define SHUNTING_ENABLE_OUTPUT //cout result
 
-// can store either a value or an operator. Operators must be a single
-// non-digit char. virtual function operate() defines functionality
+// can store either a value or an operator string.
+// virtual function operate() defines functionality
 class Shunting_Token
 {
    public:
@@ -812,11 +813,7 @@ class Shunting
                   std::cout<<"Stack size error\n";
                   return 0;
                }
-               
-
-
-
-               
+                              
                if ( result==0 )
                {
                   std::cout<<"Error: operation returned null ptr\n";
@@ -868,33 +865,6 @@ class Shunting
       addOperator2(new Shunting_Token_Absolute());
       addOperator2(new Shunting_Token_Rand());
    }
-   
-   // runs a bunch of test-cases to demonstrate it works.
-   // see documentation for expected output.
-   // void test()
-   // {
-      // buildDefaults();
-      
-      // Vector <std::string> vTestCase = { "1/0", "1+1", "1+1+1", "2*2*2", "2-1", "12-2*5", "3+4*2/(1-5)^2^3", "(2*3+3*4)", "20-30/3+4*2^3", "(-1+1+(-1*2))*(-2*1)", "2^2^2", "1+1+2^2-1*2", "66" };
-
-      // for (int i=0;i<vTestCase.size();++i)
-      // {
-         // //std::deque <Shunting_Token*> vOutput = shunt(vTestCase(i));
-         // shunt(vTestCase(i));
-         
-         // std::cout<<"Test input: "<<vTestCase(i)<<"\n";
-         
-         // std::cout<<"Output: ";
-         // for (unsigned int i2=0;i2<vOutput.size();++i2)
-         // {
-            // std::cout<<vOutput.at(i2)->toString()<<" ";
-            
-         // } std::cout<<"\n";
-         
-         // evaluate();
-         
-      // }
-   // }
   
 };
 
