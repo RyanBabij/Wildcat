@@ -395,6 +395,11 @@ bool bindNearestNeighbour(Texture* texture, const bool compress=false)
 	return true;
 }
 
+void unbind(Texture * texture) // free up graphics RAM
+{
+   glDeleteTextures(1, &texture->textureID);
+}
+
 
 /* New implementation for Texture class. */
 /* NOTE: Try switching internal format from GL_RGBA8 to GL_RGBA4. Also try compression. */
