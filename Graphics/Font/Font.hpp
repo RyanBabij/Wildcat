@@ -38,6 +38,7 @@ class Font
 	public:
 	GLuint characterMap;
 	GLuint character [256];
+   Texture *aTexFont[256];
 
 	int nX, nY; /* Dimensions of a character. (Currently all characters must have the same dimensions.) */
 	
@@ -45,87 +46,94 @@ class Font
 	
 	bool loadSuccess;
 	
-	Font()
-	{
-		nX=0; nY=0;
-		loadSuccess=false;
-		xSpacing = 0;
-		ySpacing = 0;
-	}
-	
-	bool loadData(Png* png, const int _nX, const int _nY)
-	{
-    if (png==0)
-		{
-			std::cout<<"ERROR: Font PNG did not load.\n";
-			return false;
-		}
-	if ( png->nX == 0 || png->nY == 0 )
-	{
-		std::cout<<"Error: PNG dimensions are 0x0.\n";
-		return false;
-	}
-	
-	if ( _nX * 16 != png->nX || _nX *16 != png->nY )
-	{
-		std::cout<<"ERROR: Font PNG has unexpected dimensions for given font size: "<<_nX<<", "<<_nY<<".\n";
-		return false;
-	}
-    
-    std::cout<<"Loading font\n";
-    std::cout<<"NX, NY: "<<_nX*16<< ", "<<_nY*16<<".\n";
+   Font()
+   {
+      nX=0; nY=0;
+      loadSuccess=false;
+      xSpacing = 0;
+      ySpacing = 0;
+   }
 
-		nX=_nX;
-		nY=_nY;
+   bool loadData(Png* png, const int _nX, const int _nY)
+   {
+      if (png==0)
+      {
+         std::cout<<"ERROR: Font PNG did not load.\n";
+         return false;
+      }
+      if ( png->nX == 0 || png->nY == 0 )
+      {
+         std::cout<<"Error: PNG dimensions are 0x0.\n";
+         return false;
+      }
 
-    glGenTextures(1, &characterMap);
-    glBindTexture(GL_TEXTURE_2D, characterMap);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-    
-    glGenTextures(256,character);
-             
-    int i=0;
-    int currentX=0;
-    int currentY=0;
+      if ( _nX * 16 != png->nX || _nX *16 != png->nY )
+      {
+         std::cout<<"ERROR: Font PNG has unexpected dimensions for given font size: "<<_nX<<", "<<_nY<<".\n";
+         return false;
+      }
 
-			
-    while(i<256)
-    {
-      glBindTexture(GL_TEXTURE_2D, character[i]);
+      std::cout<<"Loading font\n";
+      std::cout<<"NX, NY: "<<_nX*16<< ", "<<_nY*16<<".\n";
+
+      nX=_nX;
+      nY=_nY;
+
+      glGenTextures(1, &characterMap);
+      glBindTexture(GL_TEXTURE_2D, characterMap);
       glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
       glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+
+      glGenTextures(256,character);
+
+      int i=0;
+      int currentX=0;
+      int currentY=0;
       
-      ArrayS3 <unsigned char> sub;
-      sub.init(_nX,_nY,4,0);
-      for(int _y=0;_y<_nY;++_y)
-      {
-        for(int _x=0;_x<_nX;++_x)
-        {
-          sub(_x,_y,0)=png->getPixel3D(currentX*_nX+_x,currentY*_nY+_y,0);
-          sub(_x,_y,1)=png->getPixel3D(currentX*_nX+_x,currentY*_nY+_y,1);
-          sub(_x,_y,2)=png->getPixel3D(currentX*_nX+_x,currentY*_nY+_y,2);
-          sub(_x,_y,3)=png->getPixel3D(currentX*_nX+_x,currentY*_nY+_y,3);
-        }
-      }
       
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, _nX, _nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, sub.data);
-    
-      ++currentX;
-      if(currentX==16)
-      {
-        currentX=0;
-        ++currentY;
-      }
-    
-      ++i;
-    }
-		std::cout<<"end loading font\n";
-		loadSuccess=true;
-    return true;
+
 			
-		std::cout<<"Font.hpp Font::loadData(), data* was 0\n";
-		return false;
+      while(i<256)
+      {
+         glBindTexture(GL_TEXTURE_2D, character[i]);
+         glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+         glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+
+         ArrayS3 <unsigned char> sub;
+         sub.init(_nX,_nY,4,0);
+         for(int _y=0;_y<_nY;++_y)
+         {
+            for(int _x=0;_x<_nX;++_x)
+            {
+               sub(_x,_y,0)=png->getPixel3D(currentX*_nX+_x,currentY*_nY+_y,0);
+               sub(_x,_y,1)=png->getPixel3D(currentX*_nX+_x,currentY*_nY+_y,1);
+               sub(_x,_y,2)=png->getPixel3D(currentX*_nX+_x,currentY*_nY+_y,2);
+               sub(_x,_y,3)=png->getPixel3D(currentX*_nX+_x,currentY*_nY+_y,3);
+            }
+         }
+
+         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, _nX, _nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, sub.data);
+         
+         // also build a texture object so we can do per-pixel stuff.
+         aTexFont[i] = new Texture;
+         aTexFont[i]->create(_nX,_nY,1,true);
+         //aTexFont[i]->data=sub.data;
+         
+         std::copy(sub.data, sub.data+_nX*_nY*4, aTexFont[i]->data);
+         //aTexFont[i]->loadArray(sub);
+         
+         ++currentX;
+         if(currentX==16)
+         {
+            currentX=0;
+            ++currentY;
+         }
+
+         ++i;
+      }
+      std::cout<<"end loading font\n";
+      loadSuccess=true;
+      return true;
 	}
 	
 
