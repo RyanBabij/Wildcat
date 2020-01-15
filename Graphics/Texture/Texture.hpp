@@ -73,7 +73,7 @@ class Texture: public CanLoadSave, public HasTexture
 		DataTools::mergeOutOfArray(&nY,&data2);
 		DataTools::mergeOutOfArray(&type,&data2);
 
-		delete[] data;
+		//delete[] data;
 		if(type==1)
 		{
 			const int _nData=nX*nY*4;
@@ -87,6 +87,12 @@ class Texture: public CanLoadSave, public HasTexture
 		}
 		return false;
 	}
+   
+   // bool loadArray(ArrayS3 <unsigned char> aTex)
+   // {
+      // //delete [] data;
+   // }
+   
 	unsigned char *save()
 	{
 		unsigned char* objectData=new unsigned char[9+(nX*nY*4)];
@@ -122,6 +128,7 @@ class Texture: public CanLoadSave, public HasTexture
 	{
 		data [((_y*nX)*4)+(_x*4)+_channel] = value;
 	}
+
 
 	Texture* createMipMap()
 	{	/* creates a texture that is exactly 1/2 x 1/2. Returns 0 if texture is 1x1. */
@@ -238,6 +245,38 @@ class Texture: public CanLoadSave, public HasTexture
 			}std::cout<<"\n";
 		}std::cout<<"\n\n";
 	}
+   
+   //copy the texture data from the given coordinates of this texture.
+   void copyDown ( Texture * _tex, const int startX, const int startY)
+   {
+      if ( _tex==0 )
+      {
+         std::cout<<"WARNING: Texture::copyDown nullptr.\n";
+         return;
+      }
+      int endX = startX+_tex->nX;
+      int endY = startY+_tex->nY;
+      
+      int x2 = 0;
+      int y2 = 0;
+      
+      for (int y=startY;y<endY;++y)
+      {
+         for (int x=startX;x<endX;++x)
+         {
+            
+            setPixel(x,y,0,_tex->uPixel(x2,y2,0));
+            setPixel(x,y,1,_tex->uPixel(x2,y2,1));
+            setPixel(x,y,2,_tex->uPixel(x2,y2,2));
+            setPixel(x,y,3,_tex->uPixel(x2,y2,3));
+            
+            ++x2;
+         }
+         
+         x2=0;
+         ++y2;
+      }
+   }
 };
 
 #endif
