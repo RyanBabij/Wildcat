@@ -364,4 +364,37 @@ void Renderer::placeBorder4(const unsigned char r, const unsigned char g, const 
 	#endif
 }
 
+void Renderer::placeLine(const unsigned char r, const unsigned char g, const unsigned char b, const int _x1, const int _y1, const int _x2, const int _y2)
+{
+	#ifdef WILDCAT_USE_OPENGL
+		setColourMode();
+		/* Set the colour of the shape. */
+		glColor3ub(r,g,b);
+		/* Draw the shape. */
+		 glBegin(GL_LINES);
+      glVertex2f(_x1,_y1);
+      glVertex2f(_x2,_y2);
+		 glEnd();
+    
+	#elif defined WILDCAT_USE_DIRECT3D
+		/* Put Direct3D code here... */
+	#endif
+}
+
+void Renderer::placeLineAlpha(const unsigned char r, const unsigned char g, const unsigned char b, const unsigned char a, const int _x1, const int _y1, const int _x2, const int _y2)
+{
+	#ifdef WILDCAT_USE_OPENGL
+		setColourMode();
+		/* Set the colour of the shape. */
+		glColor4ub(r,g,b,a);
+		/* Draw the shape. */
+		 glBegin(GL_LINES);
+      glVertex2f(_x1,_y1);
+      glVertex2f(_x2,_y2);
+		 glEnd();
+    
+	#elif defined WILDCAT_USE_DIRECT3D
+		/* Put Direct3D code here... */
+	#endif
+}
 #endif

@@ -80,6 +80,10 @@ class Renderer
   
     // Draws a rectangle using lines.
   static void placeBorder4(const unsigned char r, const unsigned char g, const unsigned char b, const int _x1, const int _y1, const int _x2, const int _y2);
+  
+   // Draw a line between points
+   static void placeLine(const unsigned char r, const unsigned char g, const unsigned char b, const int _x1, const int _y1, const int _x2, const int _y2);
+   static void placeLineAlpha(const unsigned char r, const unsigned char g, const unsigned char b, const unsigned char a, const int _x1, const int _y1, const int _x2, const int _y2);
 /* End of class. */
 };
 
