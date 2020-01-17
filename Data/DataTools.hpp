@@ -312,6 +312,38 @@ namespace DataTools
       return stoul(s);
    }
    
+   // NUMBER OPERATIONS ////////////////////////////////////////////////////////////////////////////
+   
+   unsigned char moveTo(unsigned char v1, unsigned char v2, unsigned char maxMove)
+   { // move v1 to v2 by maxMove amount. maxMove must be positive.
+   
+      //return v2;
+   
+      if(v1==v2) { return v1; }
+      
+      short int finalValue = v1;
+      
+      if ( v1 < v2 )
+      {
+         finalValue+=maxMove;
+         if ( finalValue > v2 )
+         {
+            return v2;
+         }
+         return (unsigned char)finalValue;
+      }
+      else
+      {
+         finalValue-=maxMove;
+         if ( finalValue < v2 )
+         {
+            return v2;
+         }
+         return (unsigned char)finalValue;
+      }
+   
+   }
+   
    // DISTANCES ////////////////////////////////////////////////////////////////////////////////////
    
    inline unsigned long int absoluteDifference
