@@ -277,6 +277,108 @@ class Texture: public CanLoadSave, public HasTexture
          ++y2;
       }
    }
+   // Similar to copydown, but only changes the pixel values by a certain amount.
+   void morphDown( Texture* _tex, const int startX, const int startY, const unsigned char morphAmount)
+   {
+      if ( _tex==0 )
+      {
+         std::cout<<"WARNING: Texture::copyDown nullptr.\n";
+         return;
+      }
+      int endX = startX+_tex->nX;
+      int endY = startY+_tex->nY;
+      
+      int x2 = 0;
+      int y2 = 0;
+      
+      for (int y=startY;y<endY;++y)
+      {
+         for (int x=startX;x<endX;++x)
+         {
+            
+            // setPixel(x,y,0,_tex->uPixel(x2,y2,0));
+            // setPixel(x,y,1,_tex->uPixel(x2,y2,1));
+            // setPixel(x,y,2,_tex->uPixel(x2,y2,2));
+            //setPixel(x,y,3,_tex->uPixel(x2,y2,3));
+            
+            //unsigned char moveVal = DataTools::moveTo(_tex->uPixel(x,y,0),uPixel(x,y,0),10);
+            
+            setPixel(x,y,0,DataTools::moveTo(uPixel(x,y,0),_tex->uPixel(x2,y2,0),morphAmount));
+            setPixel(x,y,1,DataTools::moveTo(uPixel(x,y,1),_tex->uPixel(x2,y2,1),morphAmount));
+            setPixel(x,y,2,DataTools::moveTo(uPixel(x,y,2),_tex->uPixel(x2,y2,2),morphAmount));
+            setPixel(x,y,3,DataTools::moveTo(uPixel(x,y,3),_tex->uPixel(x2,y2,3),morphAmount));
+
+            
+            ++x2;
+         }
+         
+         x2=0;
+         ++y2;
+      }
+   }
+   void bloom() // currently just provides a basic outline effect for demo
+   {
+      // add brightness to pixels next to other bright pixels
+      for (int y=1;y<nY-1;++y)
+      {
+         for (int x=1;x<nX-1;++x)
+         {
+            for (int channel=0;channel<4;++channel)
+            {
+               
+               unsigned char currentPixel = uPixel(x,y,channel);
+               if ( currentPixel<100 )
+               {
+                  // get brightest neighbor.
+                  unsigned char brightestNeighbor = 0;
+                  if ( uPixel(x-1,y-1,channel) > brightestNeighbor )
+                  {
+                     brightestNeighbor=uPixel(x-1,y-1,channel);
+                  }
+                  if ( uPixel(x-1,y,channel) > brightestNeighbor )
+                  {
+                     brightestNeighbor=uPixel(x-1,y,channel);
+                  }
+                  if ( uPixel(x-1,y+1,channel) > brightestNeighbor )
+                  {
+                     brightestNeighbor=uPixel(x-1,y+1,channel);
+                  }
+                  if ( uPixel(x+1,y,channel) > brightestNeighbor )
+                  {
+                     brightestNeighbor=uPixel(x+1,y,channel);
+                  }
+                  if ( uPixel(x+1,y-1,channel) > brightestNeighbor )
+                  {
+                     brightestNeighbor=uPixel(x+1,y-1,channel);
+                  }
+                  if ( uPixel(x+1,y+1,channel) > brightestNeighbor )
+                  {
+                     brightestNeighbor=uPixel(x+1,y+1,channel);
+                  }
+                  if ( uPixel(x,y+1,channel) > brightestNeighbor )
+                  {
+                     brightestNeighbor=uPixel(x,y+1,channel);
+                  }
+                  if ( uPixel(x,y-1,channel) > brightestNeighbor )
+                  {
+                     brightestNeighbor=uPixel(x,y-1,channel);
+                  }
+                  if (brightestNeighbor>=200)
+                  {
+                     setPixel(x,y,channel,100);
+                  }
+               }
+               
+               
+            }
+            
+
+            
+
+            
+         }
+      }
+   }
 };
 
 #endif
