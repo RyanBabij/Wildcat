@@ -58,6 +58,8 @@
    CURSOR MOVEMENT
    
    ANSI_Grid now supports scrolling. A buffer should be implemented to prevent input strings being too long.
+   
+   I made a big mistake and hardcoded this for 64x32 resolution, but now I realise I want to start out with 40x25 resolution. I'll fix it later but for now I just modified isSafe() for the new dimensions and that seems to be good enough for now.
 */
 
 #include <iostream>
@@ -374,7 +376,7 @@ class ANSI_Grid
 	
 	int cursorX, cursorY;
 	
-	ANSI_Grid()
+	ANSI_Grid(unsigned short int nX=0, unsigned short int nY=0)
 	{
 		ansiString="";
 		cursorX=0;
@@ -400,7 +402,8 @@ class ANSI_Grid
 	
 	bool isSafe(int _x, int _y)
 	{
-		return (_x >= 0 && _x < 64 && _y >= 0 && _y < 48);
+		return (_x >= 0 && _x < 40 && _y >= 0 && _y < 25);
+		//return (_x >= 0 && _x < 64 && _y >= 0 && _y < 48);
 	}
    
    void shiftUp()
