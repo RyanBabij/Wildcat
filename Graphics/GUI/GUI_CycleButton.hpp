@@ -8,7 +8,7 @@
 	A CycleButton is used to cycle through pre-set options. Some pixels to the left and right of the defined coordinates are used for the cycle buttons. They are square, so their width matches the height of the defined area. The text is displayed centered between the two cycle buttons. The control should be sized so that all options will fit in the text area.
 */
 
-#include <GUI/GUI_Interface.hpp>
+#include <Graphics/GUI/GUI_Interface.hpp>
 #include <Graphics/Region/Region.hpp>
 
 class GUI_CycleButton: public GUI_Interface

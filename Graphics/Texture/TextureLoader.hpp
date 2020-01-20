@@ -16,12 +16,8 @@
   std::mutex MUTEX_TEXTURE_BIND;
 #endif
 
-
-#include <Debug/Verbose/Verbose.hpp>
-
 #include <Graphics/Png/Png.hpp>
 #include <Graphics/Texture/Texture.hpp>
-
 #include <File/FileManager.hpp>
 
 bool loadTextureMipmapRotate(const std::string filePath, GLuint* tex0, GLuint* tex90, GLuint* tex180, GLuint* tex270)
@@ -117,9 +113,7 @@ bool loadTextureAutoMipmap(const std::string filePath, GLuint* textureID)
 
 		while(texture!=0)
 		{
-			//lockOpenGL.lock();
 			glTexImage2D(GL_TEXTURE_2D, i++, GL_RGBA8, texture->nX, texture->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->data);
-			//lockOpenGL.unlock();
 
 			Texture* temp=texture;
 			texture = texture->createMipMap();
@@ -128,7 +122,6 @@ bool loadTextureAutoMipmap(const std::string filePath, GLuint* textureID)
 	}
 	else
 	{
-		//Verbose("FAIL: "+filePath+". Data==0\n");
 		return false;
 	}
 	return true;
@@ -155,9 +148,7 @@ bool loadTextureAutoMipmap(const std::string filePath, Texture* tex)
 
 		while(texture!=0)
 		{
-			//lockOpenGL.lock();
 			glTexImage2D(GL_TEXTURE_2D, i++, GL_RGBA8, texture->nX, texture->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->data);
-			//lockOpenGL.unlock();
 
 			Texture* temp=texture;
 			texture = texture->createMipMap();
@@ -166,7 +157,6 @@ bool loadTextureAutoMipmap(const std::string filePath, Texture* tex)
 	}
 	else
 	{
-		//Verbose("FAIL: "+filePath+". Data==0\n");
 		return false;
 	}
 	return true;
@@ -182,15 +172,6 @@ bool loadTextureAutoMipmapNative(const std::string filePath, GLuint* textureID)
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR_MIPMAP_LINEAR);
 
-
-   //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-
- 	//glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-	//glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-
-
-	//int i=0;
 	int fileSize;
 	unsigned char* data = FileManager::getFile(filePath,&fileSize);
 	if(data!=0)
@@ -203,16 +184,11 @@ bool loadTextureAutoMipmapNative(const std::string filePath, GLuint* textureID)
 		texture->data=png.data;
 
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, texture->nX, texture->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->data);
-		//glGenerateMipmap( GL_TEXTURE_2D );
-
 	}
 	else
 	{
-		//Verbose("FAIL: "+filePath+". Data==0\n");
-		//std::cout<<"Fail: "<<filePath<<".\n";
 		return false;
 	}
-	//std::cout<<"Success: "<<filePath<<".\n";
 	return true;
 }
 bool loadTextureAutoMipmapNative(const std::string filePath, Texture* texture)
@@ -223,15 +199,6 @@ bool loadTextureAutoMipmapNative(const std::string filePath, Texture* texture)
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR_MIPMAP_LINEAR);
 
-
-   //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-
- 	//glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-	//glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-
-
-	//int i=0;
 	int fileSize;
 	unsigned char* data = FileManager::getFile(filePath,&fileSize);
 	if(data!=0)
@@ -239,21 +206,15 @@ bool loadTextureAutoMipmapNative(const std::string filePath, Texture* texture)
 		Png png(true);
 		png.load(data,fileSize);
 
-		//Texture* texture = new Texture;
 		texture->create(png.nX,png.nY,1);
 		texture->data=png.data;
 
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, texture->nX, texture->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->data);
-		//glGenerateMipmap( GL_TEXTURE_2D );
-
 	}
 	else
 	{
-		//Verbose("FAIL: "+filePath+". Data==0\n");
-		//std::cout<<"Fail: "<<filePath<<".\n";
 		return false;
 	}
-	//std::cout<<"Success: "<<filePath<<".\n";
 	return true;
 }
 
@@ -299,10 +260,8 @@ bool loadTextureNearestNeighbour(const std::string filePath, Texture* texture)
   {
     Png png(true);
     png.load(data,fileSize);
-    
-    //std::cout<<"Getting average colour.\n";
+
     png.getAverageColour();
-    //Texture* texture = new Texture;
     texture->create(png.nX,png.nY,1);
     texture->data=png.data;
     texture->averageRed = png.averageRed;
@@ -313,23 +272,13 @@ bool loadTextureNearestNeighbour(const std::string filePath, Texture* texture)
   else
   { return false; }
   
-  
-// #if defined THREAD_ALL || defined THREADED_TEXTURE_LOADING
-  // //MUTEX_TEXTURE_BIND.lock();
-// #endif
 
-  //std::cout<<"BINDING\n";
-  //return loadTextureNearestNeighbour(filePath,&texture->textureID);
   /* NOTE: It seems that the GLuint needs to be initialised (ie to 0) before being passed here, in some cases. */
   glGenTextures(1,&texture->textureID);
   glBindTexture(GL_TEXTURE_2D, texture->textureID);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, texture->nX, texture->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->data);
-
-// #if defined THREAD_ALL || defined THREADED_TEXTURE_LOADING
-  // //MUTEX_TEXTURE_BIND.unlock();
-// #endif
 
 	return true;
 }
@@ -346,10 +295,8 @@ bool preloadTextureNearestNeighbour(const std::string filePath, Texture* texture
   {
     Png png(true);
     png.load(data,fileSize);
-    
-    //std::cout<<"Getting average colour.\n";
+
     png.getAverageColour();
-    //Texture* texture = new Texture;
     texture->create(png.nX,png.nY,1);
     texture->data=png.data;
     texture->averageRed = png.averageRed;
@@ -370,11 +317,7 @@ bool preloadTextureNearestNeighbour(const std::string filePath, Texture* texture
 bool bindNearestNeighbour(Texture* texture, const bool compress=false)
 {
 	if(texture==0) {return false;}
-  
-  //int fileSize;
-  //FileManager fm;
-  
-  //return loadTextureNearestNeighbour(filePath,&texture->textureID);
+
   /* NOTE: It seems that the GLuint needs to be initialised (ie to 0) before being passed here, in some cases. */
   glGenTextures(1,&texture->textureID);
   glBindTexture(GL_TEXTURE_2D, texture->textureID);
@@ -389,9 +332,6 @@ bool bindNearestNeighbour(Texture* texture, const bool compress=false)
   {
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture->nX, texture->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->data);
   }
-
-
-
 	return true;
 }
 
@@ -408,7 +348,6 @@ bool loadTextureLinear(const std::string filePath, Texture* texture)
 
 	if(texture!=0)
 	{
-		//return loadTextureNearestNeighbour(filePath,&texture->textureID);
 		/* NOTE: It seems that the GLuint needs to be initialised (ie to 0) before being passed here, in some cases. */
 		glGenTextures(1,&texture->textureID);
 		glBindTexture(GL_TEXTURE_2D, texture->textureID);
@@ -420,10 +359,8 @@ bool loadTextureLinear(const std::string filePath, Texture* texture)
 		{
 			Png png(true);
 			png.load(data,fileSize);
-			
-			//std::cout<<"Getting average colour.\n";
+
 			png.getAverageColour();
-			//Texture* texture = new Texture;
 			texture->create(png.nX,png.nY,1);
 			texture->data=png.data;
 			texture->averageRed = png.averageRed;
@@ -519,46 +456,8 @@ bool loadTextureRotate(const std::string filePath, Texture* tex0, Texture* tex90
 	return false;
 }
 
-
-
-
-//bool loadTextureAutomipmap(ArrayS3 <unsigned char> * textureData)
-//{
-
-//}
-
-// class TexData
-// {
-	// public:
-	// std::string filePath;
-	// GLuint* texID;
-
-	// TexData(std::string _filePath, GLuint* _texID)
-	// {	filePath=_filePath;
-		// texID=_texID;
-	// }
-	// void* execute(void*)
-	// {
-		// loadTextureAutoMipmap(filePath,texID);
-	// }
-// };
-// void* executeHelper(void* instance)
-// {
-	// return ((TexData*)instance)->execute(0);
-// }
-
-// bool loadTextureAutoMipmap(Vector <TexData*>* vTexData)
-// {
-	// for(int i=vTexData->size()-1;i>=0;--i)
-	// {
-		// //threadGroup.add(&executeHelper,vTexData->at(i));
-		// vTexData->at(i)->execute(0);
-	// }
-// }
-
 bool loadTextureMipMapped(std::string basePath, int dimensions, GLuint* textureID) /* Deprecated */
 {
-	//Verbose("Loading texture: (" + basePath + ")... ");
 	glGenTextures( 1, textureID );
 	glBindTexture(GL_TEXTURE_2D, *textureID);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
@@ -574,17 +473,14 @@ bool loadTextureMipMapped(std::string basePath, int dimensions, GLuint* textureI
 			Texture texture;
 			if(texture.load(data))
 			{ glTexImage2D(GL_TEXTURE_2D, i++, GL_RGBA4, texture.nX, texture.nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture.data);
-			//{ glTexImage2D(GL_TEXTURE_2D, i++, 3, texture.nX, texture.nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture.data);
 			}
 			else
 			{
-				//Verbose("FAIL: "+basePath+"_"+DataTools::toString(dimensions)+"x"+DataTools::toString(dimensions) + "\n");
 				return false;
 			}
 		}
 		else
 		{
-			//Verbose("FAIL: "+basePath+"_"+DataTools::toString(dimensions)+"x"+DataTools::toString(dimensions) + "\n");
 			return false;
 		}
 
@@ -594,7 +490,6 @@ bool loadTextureMipMapped(std::string basePath, int dimensions, GLuint* textureI
 		}
 		else
 		{
-			//Verbose("OK\n");
 			return true;
 		}
 	}
@@ -603,24 +498,18 @@ bool loadTextureMipMapped(std::string basePath, int dimensions, GLuint* textureI
 
 bool loadTextureCropCenter(std::string filePath, const int croppedX, const int croppedY, GLuint* textureID)
 {
-	std::cout<<"loadTextureCropCenter()\n";
 	glGenTextures(1, textureID);
 	glBindTexture(GL_TEXTURE_2D, *textureID);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 
 	int fileSize;
-	std::cout<<"Getting file\n";
 	unsigned char* data = FileManager::getFile(filePath,&fileSize);
-	std::cout<<"End getting file\n";
 
 	if(data!=0)
 	{
-		std::cout<<"Data!=0\n";
 		Png png(true);
-		std::cout<<"Loading png...\n";
 		png.load(data,fileSize);
-		std::cout<<"End loading png\n";
 
 		Texture* texture = new Texture;
 		texture->create(png.nX,png.nY,1);
@@ -628,11 +517,10 @@ bool loadTextureCropCenter(std::string filePath, const int croppedX, const int c
 
 		Texture* texture2 = new Texture;
 		texture2=texture->cropCentered(croppedX,croppedY);
-		std::cout<<"Cropping done... size is: "<<texture2->nX<<", "<<texture2->nY<<"\n";
+
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, texture2->nX, texture2->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture2->data);
 
 	}
-	std::cout<<"Returning true\n";
 	return true;
 }
 bool loadTexture(std::string filePath, GLuint* textureID)

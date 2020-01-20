@@ -3,7 +3,7 @@
 #define WILDCAT_GUI_GUI_INTERFACE_HPP
 
 /* Wildcat: GUI_Interface
-	#include <GUI/GUI_Interface.hpp>
+	#include <Graphics/GUI/GUI_Interface.hpp>
   
 
   

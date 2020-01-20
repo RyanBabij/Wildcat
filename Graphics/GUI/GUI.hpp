@@ -14,14 +14,14 @@
   Some of these controls could be combined into one. For example a textbox and link.
 */
 
-#include <GUI/GUI_Link.hpp>
-#include <GUI/GUI_DropList.hpp>
-#include <GUI/GUI_Notification.hpp>
-#include <GUI/GUI_NumberInput.hpp>
-#include <GUI/GUI_TextBox.hpp>
-#include <GUI/GUI_CycleButton.hpp>
-#include <GUI/GUI_Button.hpp>
-#include <GUI/GUI_TextEntry.hpp>
+#include <Graphics/GUI/GUI_Link.hpp>
+#include <Graphics/GUI/GUI_DropList.hpp>
+#include <Graphics/GUI/GUI_Notification.hpp>
+#include <Graphics/GUI/GUI_NumberInput.hpp>
+#include <Graphics/GUI/GUI_TextBox.hpp>
+#include <Graphics/GUI/GUI_CycleButton.hpp>
+#include <Graphics/GUI/GUI_Button.hpp>
+#include <Graphics/GUI/GUI_TextEntry.hpp>
 
 /* REF: GUI, <GUI/GUI.hpp>
 	bool active: Whether the GUI should be rendering and taking input, or is just waiting in memory.

@@ -9,7 +9,7 @@
   There are options to center the text. It will also automatically wrap the text.
 */
 
-#include <GUI/GUI_Interface.hpp>
+#include <Graphics/GUI/GUI_Interface.hpp>
 
 /* Text Box. Displays text. */
 class GUI_TextBox: public GUI_Interface

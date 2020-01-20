@@ -8,8 +8,7 @@
 	A link is clickable text which can send you somewhere when you click it.
 */
 
-#include <GUI/GUI_Interface.hpp>
-
+#include <Graphics/GUI/GUI_Interface.hpp>
 #include <Graphics/Region/Region.hpp>
 
 /* Link. Clickable text. */

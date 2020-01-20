@@ -12,7 +12,7 @@
   keys to move through the options without using a mouse. 
 */
 
-#include <GUI/GUI_Interface.hpp>
+#include <Graphics/GUI/GUI_Interface.hpp>
 
 
 class GUI_DropList: public GUI_Interface

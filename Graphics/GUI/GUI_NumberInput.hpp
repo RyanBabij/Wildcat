@@ -10,7 +10,7 @@
   or to increase or decrease the number using buttons.
 */
 
-#include <GUI/GUI_Interface.hpp>
+#include <Graphics/GUI/GUI_Interface.hpp>
 
 #include <Graphics/Region/Region.hpp>
 #include <Graphics/Colour/Colour.hpp>

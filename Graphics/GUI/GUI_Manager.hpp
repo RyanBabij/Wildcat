@@ -3,7 +3,7 @@
 #define WILDCAT_GUI_MANAGER_HPP
 
 /*
-# include <GUI/GUI_Manager.hpp>
+#include <GUI/GUI_Manager.hpp>
 
 GUI Manager merges three basic device functionalities: Display, mouse and keyboard.
 Most projects will probably be better off just using GUI Manager than trying to
@@ -16,7 +16,7 @@ Notes:
 	keyboard input. Consider stealRender() and stealMouse() for the other two.
 */
 
-#include <GUI/GUI_Interface.hpp>
+#include <Graphics/GUI/GUI_Interface.hpp>
 #include <Device/Display/DisplayInterface.hpp>
 #include <Device/Mouse/MouseInterface.hpp>
 #include <Device/Keyboard/KeyboardInterface.hpp>

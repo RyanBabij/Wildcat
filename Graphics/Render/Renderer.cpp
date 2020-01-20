@@ -14,8 +14,6 @@
 #include <Math/Geometry/Geometry.hpp> /* For rotations and coordinates. */
 #include <Graphics/Colour/Colour.hpp> /* For rendering colours. */
 
-#include <Debug/DebugMacro.hpp>
-
 /* Initialise static variables. */
 #ifdef WILDCAT_USE_OPENGL
 	bool Renderer::textureMode=false;

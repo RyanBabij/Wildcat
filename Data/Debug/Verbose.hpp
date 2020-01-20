@@ -1,4 +1,6 @@
 #pragma once
+#ifndef WILDCAT_DATA_DEBUG_VERBOSE_CPP
+#define WILDCAT_DATA_DEBUG_VERBOSE_CPP
 // Path: #include <Debug/Verbose/Verbose.hpp>
 // Has documentation
 
@@ -60,4 +62,6 @@ inline void VerboseSimple2(const std::string, const int)
 {}
 inline void VerbosePrintDepth()
 {}
+#endif
+
 #endif

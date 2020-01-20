@@ -8,7 +8,7 @@
 	A notification is a popup with some text information, optionally a picture, and one or more buttons.
 */
 
-#include <GUI/GUI_Interface.hpp>
+#include <Graphics/GUI/GUI_Interface.hpp>
 
 class GUI_Notification: public GUI_Interface
 {

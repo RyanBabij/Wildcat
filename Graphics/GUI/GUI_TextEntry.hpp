@@ -13,7 +13,7 @@
   
 */
 
-#include <GUI/GUI_Interface.hpp>
+#include <Graphics/GUI/GUI_Interface.hpp>
 
 class GUI_TextEntry: public GUI_Interface
 {

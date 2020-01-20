@@ -8,7 +8,7 @@
 	A button is a control that can display text or a texture, and may be clicked.
 */
 
-#include <GUI/GUI_Interface.hpp>
+#include <Graphics/GUI/GUI_Interface.hpp>
 
 class GUI_Button: public GUI_Interface
 {
