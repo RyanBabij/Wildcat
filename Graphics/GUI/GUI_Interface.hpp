@@ -46,10 +46,10 @@ class GUI_Interface: public DisplayInterface, public MouseInterface, public Keyb
   virtual void init ()
   {
   }
-  
-	/* This is called to init the panel, but can also be called when the window is resized. */
-	/* Probably make this non-virtual, but throw an eventResize() virtual function. */
-	virtual void setPanel(const int _panelX1, const int _panelY1, const int _panelX2, const int _panelY2)
+
+   /* This is called anytime the window is resized. This handles the internals, and custom
+      resize stuff like calling sub-elements should be done in eventResize() */
+   void setPanel(const int _panelX1, const int _panelY1, const int _panelX2, const int _panelY2)
 	{
 		/* Sort the x and y coords. */
 		if(_panelX1<=_panelX2)
@@ -70,7 +70,9 @@ class GUI_Interface: public DisplayInterface, public MouseInterface, public Keyb
 		eventResize();
 	}
 	
-	/* Called when the GUI control or panel is resized, for example if the entire app window is resized. Controls should be resized and moved to appropriate relative positions. */
+	/* Called when the GUI panel is changed, typically when the window is resized, but
+   also due to resizing within the GUI itself. Controls should be resized and moved to
+   appropriate relative positions. */
 	virtual void eventResize()
 	{
 	}
