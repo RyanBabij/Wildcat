@@ -67,6 +67,18 @@ class Texture: public CanLoadSave, public HasTexture
       }
 
 	}
+   
+   void fillChannel(const unsigned char _channel, const unsigned char _val)
+   {
+		for(int y=0;y<nY;++y)
+		{
+			for(int x=0;x<nX;++x)
+			{
+            setPixel(x,y,_channel,_val);
+			}
+		}
+   }
+   
 	bool load (unsigned char* data2)
 	{
 		DataTools::mergeOutOfArray(&nX,&data2);
