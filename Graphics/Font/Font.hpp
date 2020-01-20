@@ -24,10 +24,10 @@
 */
 
 #include <Container/ArrayS3/ArrayS3.hpp> // Storing PNG pixel data
-#include <Render/Renderer.hpp>
+#include <Graphics/Render/Renderer.hpp>
 //#include <Graphics/Colour/Palette.hpp> // For basic font colours.
 
-#include <String/ANSI.hpp> // For processing ANSI escape codes.
+#include <Container/String/ANSI.hpp> // For processing ANSI escape codes.
 
 // Font conflicts with an X11 class, so we need to namespace this.
 namespace Wildcat
@@ -39,6 +39,7 @@ class Font
 	GLuint characterMap;
 	GLuint character [256];
    Texture *aTexFont[256];
+   ArrayS3 <unsigned char> aTexFont2[256]; // Using ArrayS3 for better compatibility with other function.
 
 	int nX, nY; /* Dimensions of a character. (Currently all characters must have the same dimensions.) */
 	
@@ -121,6 +122,10 @@ class Font
          
          std::copy(sub.data, sub.data+_nX*_nY*4, aTexFont[i]->data);
          //aTexFont[i]->loadArray(sub);
+         
+         // Switching to ArrayS3 for pixel operations.
+         aTexFont2[i].init(_nX,_nY,4,0);
+         std::copy(sub.data, sub.data+_nX*_nY*4, aTexFont2[i].data);
          
          ++currentX;
          if(currentX==16)
