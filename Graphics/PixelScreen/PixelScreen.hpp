@@ -38,7 +38,7 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
 {
    ArrayS3 <unsigned char> aScreenDataBuffer; // Desired state of screen
    ArrayS3 <unsigned char> aScreenDataReal; // Actual state of screen after effects
-   ArrayS2 <char> aCharMode; // Grid for drawing fonts onto screen.
+   ArrayS2 <unsigned char> aCharMode; // Grid for drawing fonts onto screen.
    
    
    Timer updateTimer;
@@ -68,14 +68,10 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
       font=0;
       aScreenDataBuffer.init(nX,nY,4,0); // RGBA
       aScreenDataReal.init(nX,nY,4,0); // RGBA
-      aCharMode.init(0,0,0);
+      aCharMode.init(0,0,' ');
       
       
       texScreen.create(nX,nY,1,true); // we might instead use this as render
-      texScreen.fillChannel(0,0);
-      texScreen.fillChannel(1,0);
-      texScreen.fillChannel(2,0);
-      texScreen.fillChannel(3,255);
       
       updateTimer.init();
       updateTimer.start();
@@ -84,7 +80,7 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
       
    }
    
-   void putChar (const int _x, const int _y, const unsigned char _char)
+   void putChar (const unsigned short int _x, const unsigned short int _y, const unsigned char _char)
    {
       aCharMode(_x,_y)=_char;
    }
@@ -117,7 +113,8 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
             for (int _x=0;_x<nCharX;++_x)
             {
                //texRuntime.morphDown(font8x8.aTexFont[(unsigned char)aGlyph[_y][_x]],8*_x,8*_y,22);
-               texScreen.morphDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],8*_x,8*_y,25);
+               texScreen.morphDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],font->nX*_x,font->nY*_y,100);
+               //texScreen.morphDown(font->aTexFont['A'],8*_x,8*_y,25);
             }
          }
                
@@ -181,14 +178,14 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
    {
       if ( _font == 0 )
       {
-         std::cout<<"Error: Null font ptr\n";
+         font=0;
          return;
       }
       font = _font;
       
       nCharX = nX / _font->nX;
       nCharY = nY / _font->nY;
-      aCharMode.init(nCharX,nCharY,0);
+      aCharMode.init(nCharX,nCharY,' ');
 
    }
 };
