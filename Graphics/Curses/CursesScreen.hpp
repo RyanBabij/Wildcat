@@ -1,9 +1,14 @@
-#ifndef CURSESSCREEN_H
-#define CURSESSCREEN_H
+#pragma once
+#ifndef WILDCAT_GRAPHICS_CURSES_CURSESSCREEN_HPP
+#define WILDCAT_GRAPHICS_CURSES_CURSESSCREEN_HPP
+
+/*
+   This is extremely old terrible code which doesn't work. I mean, it uses
+   glDrawPixels ffs. However I like the idea of a Curses emulator so I'll
+   keep this here as a placeholder.
+*/
 
 #include <Data/Font.hpp>
-//#include <ArrayStatic3D.h>
-//#include <String.h>
 
 class CursesScreen
 {
@@ -32,9 +37,6 @@ class CursesScreen
 		if(nY%2==1) { nY--; }
 		
 		screen.init(nX*(font->nX+padding),nY*(font->nY+padding),4,0);
-
-		std::cout<<"NUMX: " << nX << "\n";
-		std::cout<<"NUMY: " << nY << "\n";
 	}
 	void render(unsigned int startX, unsigned int startY)
 	{

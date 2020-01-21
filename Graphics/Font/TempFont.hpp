@@ -1,7 +1,12 @@
-#ifndef TEMPFONT_HPP
-#define TEMPFONT_HPP
+#pragma once
+#ifndef WILDCAT_GRAPHICS_FONT_TEMPFONT_HPP
+#define WILDCAT_GRAPHICS_FONT_TEMPFONT_HPP
 
-namespace TempFont
+/*
+   Hardcoded font if you don't want to load in a PNG for some reason
+*/
+
+namespace TempFont // Adding namespace just so it looks like a static class function.
 {
 	//just a temporary hack.
 	unsigned char * getFont()
