@@ -1,29 +1,14 @@
 # Wildcat
-The Wildcat library is my personal code library for game development. It contains code relating to the creation of videogames. I just add stuff as I think of it, so it is a mess right now.
+The Wildcat library is my personal code library for game development. It contains code relating to the creation of videogames. I just add functions as I need them.
 
 #### Audio
-Contains code for playing audio in wav format. Uses OpenAL.
-
-#### Board
-Code for manipulating "Boards" which are the containers for objects in a tile-based game.
-
-#### BoardViewer
-Code for rendering "Boards" which are the containers for objects in a tile-based game.
-
-#### Checksum
-Code for easily creating checksums of files and data. Uses md5.
-
-#### Collision
-Code for detecting and handling collisions between 2d shapes.
+Contains code for playing audio, using generic Sound object. Currently only supports WAV with OpenAL.
 
 #### Container
-Code for handling 2d arrays, 3d arrays and vectors.
+2D arrays, 3D arrays, vectors and strings.
 
 #### Data
-Code for bitwise operations, conversions between datatypes, miscellaneous operations, serialisation, tokenisation and strings.
-
-#### Debug
-Code to aid debugging.
+Code for operations which involve datatypes or standalone data, for example bitwise operations, conversions between datatypes, short mathematical operations, serialisation, tokenisation, checksum, debugging, etc.
 
 #### Device
 Code for handling display output, and keyboard and mouse input.
@@ -34,45 +19,20 @@ Probably should be in Debug.
 #### File
 Code for file operations. Allows easy creation, deletion, and modification of files. Also contains tools for savefiles.
 
-#### GL
-Current OpenGL code used for the projects.
+#### Game
+Any code which is mostly used for games. Name generators, Board object for 2D tile-based games, EASI programming language interpreter, World Generator.
 
 #### Graphics
-Code relating to textures, images and fonts. Contains lodepng and picopng.
-
-#### GUI
-Code relating to GUI controls, such as scrollbars, textboxes, buttons, etc.
+Code relating to textures, images and fonts. Uses OpenGL, FreeGLUT, GLEW, lodepng, picopng. Also contains code for OpenGL rendering, with option for DirectX support later. Includes ugly but functional code for rendering custom GUI elements. Also includes code for loading PNGs into Textures.
 
 #### Interface
-Code to aid abstraction. Guarantees various functions.
+Code for various interfaces, like handling Idle cycles or ticks. Objects which return Textures and Coordinates.
 
-#### LogicTick
-Code for handling logic ticks for gameplay.
+#### Lib
+Any libs I include go here, currently FreeGLUT and GLEW.
 
 #### Math
-Code for mathematical algorithms, includng random number generation.
+Code for mathematical algorithms, includng random number generation. Includes geometry, fractals, prime numbers, and expression evaluation.
 
-#### Misc
-Any self contained functions which I don't know where to put.
-
-#### NameGen
-Code for random name generation.
-
-#### Output
-
-#### Render
-
-#### Sleep
-Small cross-platform library for allowing sleep between Windows and Linux.
-
-#### String
-Wrapper for std::string, has some extra functions.
-
-#### Thread
-Code for threading.
-
-#### Time
-Code for timers and calendars.
-
-#### WorldGenerator
-Code for random world generation algorithms (pretty much diamond-square with a few twists).
+#### System
+Stuff which relies on OS functionality. Sleep, threads (not so much with C++17), time and timers. OS-specific defines.
