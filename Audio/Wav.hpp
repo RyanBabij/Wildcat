@@ -1,45 +1,68 @@
 #pragma once
-#ifndef AUDIO_WAV_HPP
-#define AUDIO_WAV_HPP
+#ifndef WILDCAT_AUDIO_WAV_HPP
+#define WILDCAT_AUDIO_WAV_HPP
+
+/* Wildcat: Wav
+   #include <Audio/Wav.hpp>
+   
+   Class to load wav audio files. It is currently very touchy
+   and generally only loads files saved in Audacity with metadata
+   stripped.
+   
+   The wav files are loaded into a generic internal Sound object.
+   
+   Honestly it'd probably be better to find some external library
+   for this kind of thing.
+   
+   Some code stolen from
+   http://www.codeguru.com/forum/archive/index.php/t-460547.html
+   
+   Note that WILDCAT_AUDIO must be defined in order for Wav files
+   to load properly.
+*/
 
 #include <fstream>
 
-/*
-#include <Audio/Wav.hpp>
-Class to load wav audio files. Some code copied from: http://www.codeguru.com/forum/archive/index.php/t-460547.html
-This library seems to have trouble with metadata. Stripping the metadata using Audacity can fix this problem, though I'd like to fix this bug later.
-*/
 class Wav
 {
-	public:
-	
-	double duration;
-	
-	int fileSize;
-	int nAudioBytes;
-	
-	char* data;
-	
-	char chunkID[4]; /* Must be 'RIFF'. */
-	char format[4]; /* Must be 'WAVE'. */
-	
-	
-		char Subchunk1ID[4],Subchunk2ID[4];
-		int ChunkSize,Subchunk1Size, SampleRate, ByteRate,Subchunk2Size;
-		short AudioFormat, NumChannels, BlockAlign, BitsPerSample;
-	
-	
-	Wav()
-	{}
-	
+   public:
 
-	// void readFileVerbose(const char* PATH)
-	// {
-	
-	// }
-	
+   double duration;
+
+   int fileSize;
+   int nAudioBytes;
+
+   char* data;
+
+   char chunkID[4]; /* Must be 'RIFF'. */
+   char format[4]; /* Must be 'WAVE'. */
+
+
+   char Subchunk1ID[4],Subchunk2ID[4];
+   int ChunkSize,Subchunk1Size, SampleRate, ByteRate,Subchunk2Size;
+   short AudioFormat, NumChannels, BlockAlign, BitsPerSample;
+
+   Wav()
+   {
+      duration=0;
+      fileSize=0;
+      nAudioBytes=0;
+      data=0;
+      ChunkSize=0;
+      Subchunk1Size=0;
+      SampleRate=0;
+      ByteRate=0;
+      Subchunk2Size=0;
+      AudioFormat=0;
+      NumChannels=0;
+      BlockAlign=0;
+      BitsPerSample=0;
+   }
+
 	void readFile(const char* PATH)
 	{
+#ifdef WILDCAT_AUDIO
+      
 		// Read the wave file
 		FILE *fhandle=fopen(PATH,"rb");
 		
@@ -91,19 +114,28 @@ class Wav
 		{
 			std::cout<<"Wav.hpp Error: chunkID is invalid.\n";
 		}
+      
+#else
+      std::cout<<"Wav loading disabled. Define WILDCAT_AUDIO to enable.\n";
+#endif
 	}
 	
 	/* Convert the current data in the Wav object to a Sound object. */
 	Sound* toSound()
 	{
-		Sound * sound = new Sound;
-	
+#ifdef WILDCAT_AUDIO
+      Sound * sound = new Sound;
 		sound->durationSeconds = duration;
 		sound->nChannels=NumChannels;
 		sound->bitsPerSample=BitsPerSample;
 		sound->byteRate=ByteRate;
 		sound->samplesPerSecond=SampleRate;
 		sound->loadRawData(data,nAudioBytes);
+      return sound;
+#else
+      return 0;
+#endif
+      
 		// else if (bitsPerSample==16)
 		// {
 			// sound->loadRawData16(data,nData2);
@@ -112,15 +144,8 @@ class Wav
 		// {
 			// std::cout<<"Wav.hpp error: Bad bit per sample.\n";
 		// }
-		
-	
-	
-		return sound;
 	}
 	
 };
-
-
-
 
 #endif /* #ifndef AUDIO_WAV_HPP */

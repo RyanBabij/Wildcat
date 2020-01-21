@@ -1,6 +1,14 @@
 #pragma once
-#ifndef AUDIO_PLAYER_OPENAL_HPP
-#define AUDIO_PLAYER_OPENAL_HPP
+#ifndef WILDCAT_AUDIO_AUDIO_PLAYER_OPENAL_HPP
+#define WILDCAT_AUDIO_AUDIO_PLAYER_OPENAL_HPP
+
+/* Wildcat: AudioPlayer_OpenAL
+   #include <Audio/AudioPlayer_OpenAL.hpp>
+   
+   OpenAL implementation of AudioPlayer.
+   
+   Note that WILDCAT_AUDIO must be defined in order for any audio to play.
+*/
 
 #include <Audio/OpenAL/al.h>
 #include <Audio/OpenAL/alc.h>
@@ -8,15 +16,6 @@
 
 #include <Audio/AudioPlayer.hpp>
 #include <Container/Vector/Vector.hpp>
-
-
-
-/*
-#include <Audio/AudioPlayer_OpenAL.hpp>
-OpenAL implementation of AudioPlayer.
-*/
-
-//#define WILDCAT_AUDIO
 
 class AudioPlayer_OpenAL: public AudioPlayer
 {
