@@ -33,6 +33,10 @@ void Terminal::init()
    putCursor(0,0);
 
    loadAudio();
+   
+   //pixel count is currently hardcoded.
+   nCharX=40;
+   nCharY=25;
 
    //load basic programs
    //vProgram.clearPtr();
@@ -52,12 +56,18 @@ void Terminal::clearScreen(bool forced) /* forced will instantly clear the scree
    // clear internals and pixelScreen
 }
 
-void Terminal::writeString(int _x, int _y, std::string _str, bool moveCursor, bool instant)
+void Terminal::write(const std::string _str, bool moveCursor=true, bool instant=false)
 {
+}
+void Terminal::write(const unsigned char _char, bool moveCursor=true, bool instant=false)
+{
+   pixelScreen.putChar(cursorX,cursorY,_char);
+   advanceCursor();
 }
 
 void Terminal::render()
-{  
+{
+   pixelScreen.render();
 }
 
 void Terminal::putCursor(unsigned short int _x, unsigned short int _y)
@@ -71,11 +81,57 @@ bool Terminal::isSafe(unsigned short int _x, unsigned short int _y)
 
 bool Terminal::keyboardEvent(Keyboard* _keyboard)
 {
+   if (_keyboard->keyWasPressed)
+   {
+      if (_keyboard->lastKey == 18) /* CTRL + R */
+      {
+         init();
+      }
+      else if (_keyboard->lastKey == 8 )
+      {
+         //backspace();
+      }
+      else if (_keyboard->lastKey == 3 ) /* CTRL+C */
+      {
+         shutDown();
+      }
+      // Get whatever the user typed.
+      else if (_keyboard->lastKey == Keyboard::ENTER )
+      {
+         newLine(1);
+      }
+      else
+      {
+         write(_keyboard->lastKey);
+      }
+      _keyboard->clearAll();
+      return true;
+   }
    return false;
 }
 
 void Terminal::shiftUp(short int amount)
 {
+}
+
+void Terminal::newLine(short int amount)
+{
+   cursorX=0;
+   ++cursorY;
+}
+
+void Terminal::advanceCursor(unsigned short int amount)
+{
+   if (font==0)
+   { return; }
+
+   ++cursorX;
+   if ( cursorX>nCharX )
+   {
+      cursorX=0;
+      ++cursorY;
+      
+   }
 }
 
 void Terminal::eventResize()

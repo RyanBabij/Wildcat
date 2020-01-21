@@ -86,7 +86,8 @@ class Terminal: public GUI_Interface, public LogicTickInterface, public IdleTick
    // Keep track of screen state... Probably combo of char grid and ArrayS3 pixelgrid.
    
    
-   int cursorX,cursorY;
+   unsigned short int cursorX,cursorY;
+   unsigned short int nCharX,nCharY; // Number of characters per column/row. Determined by screen and font size.
    int cursorBlink; /* counts up from zero */
    
    bool errorScreenActive; /* true if player broke it */
@@ -103,7 +104,10 @@ class Terminal: public GUI_Interface, public LogicTickInterface, public IdleTick
 
    // IO STUFF
    
-   void writeString(int _x, int _y, std::string _str, bool moveCursor, bool instant);
+      // Write string at current cursor position.
+   void write(std::string _str, bool moveCursor, bool instant);
+   void write(unsigned char _char, bool moveCursor, bool instant);
+
    void getInput(); // Wait for input terminated with newline.
    
    void clearScreen(bool /* forced */);
@@ -115,7 +119,11 @@ class Terminal: public GUI_Interface, public LogicTickInterface, public IdleTick
    
    bool isSafe (unsigned short int _x, unsigned short int _y);
    
+   void newLine(short int amount);
    void shiftUp(short int amount);
+   
+   // advance cursor by amount. Scroll the screen if necessary.
+   void advanceCursor(unsigned short int amount=1);
 
 
    // GUI STUFF
