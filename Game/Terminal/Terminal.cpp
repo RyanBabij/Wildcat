@@ -28,12 +28,16 @@ void Terminal::init()
    cursorBlink=0;
    errorScreenActive=false;
    cursorVisible=true;
+   cursorBlinkOn=true;
    bootScreen=true;
    
    strTyping="";
+   input="";
    
    timerTyping.init();
    timerTyping.start();
+   timerCursorBlink.init();
+   timerCursorBlink.start();
 
    putCursor(0,0);
 
@@ -52,6 +56,10 @@ void Terminal::init()
    //write any initial stuff here.
 }
 
+void Terminal::getInput()
+{
+}
+
 void Terminal::loadAudio()
 {
 }
@@ -59,6 +67,7 @@ void Terminal::loadAudio()
 void Terminal::clearScreen(bool forced) /* forced will instantly clear the screen, instead of using backlog */
 {
    // clear internals and pixelScreen
+   pixelScreen.clear();
 }
 
 void Terminal::write(const std::string _str, bool moveCursor, bool instant)
@@ -70,6 +79,14 @@ void Terminal::write(const std::string _str, bool moveCursor, bool instant)
 }
 void Terminal::write(const unsigned char _char, bool moveCursor, bool instant)
 {
+   timerCursorBlink.start(); // keep cursor on while typing
+   cursorBlinkOn=true;
+   
+   if ( _char == '\n' )
+   {
+      newLine(1);
+      return;
+   }
    pixelScreen.putChar(cursorX,cursorY,_char);
    advanceCursor();
 }
@@ -105,12 +122,14 @@ bool Terminal::keyboardEvent(Keyboard* _keyboard)
          shutDown();
       }
       // Get whatever the user typed.
-      else if (_keyboard->lastKey == Keyboard::ENTER )
+      else if (_keyboard->lastKey == Keyboard::ENTER && strTyping.size()==0 )
       {
          newLine(1);
+         std::cout<<"INPUT: "<<input<<"\n";
       }
-      else
+      else if (strTyping.size()==0)
       {
+         input+=_keyboard->lastKey;
          write(_keyboard->lastKey);
       }
       _keyboard->clearAll();
@@ -125,8 +144,16 @@ void Terminal::shiftUp(short int amount)
 
 void Terminal::newLine(short int amount)
 {
+   if ( cursorVisible )
+   {
+      pixelScreen.putChar(cursorX,cursorY,' ');
+   }
    cursorX=0;
    ++cursorY;
+   if ( cursorVisible )
+   {
+      pixelScreen.putChar(cursorX,cursorY,1);
+   }
 }
 
 void Terminal::advanceCursor(unsigned short int amount)
@@ -139,7 +166,11 @@ void Terminal::advanceCursor(unsigned short int amount)
    {
       cursorX=0;
       ++cursorY;
-      
+   }
+   
+   if (cursorVisible)
+   {
+      pixelScreen.putChar(cursorX,cursorY,1);
    }
 }
 
@@ -164,6 +195,26 @@ void Terminal::idleTick()
          write(strTyping[0]);
          strTyping.erase(0,1);
          timerTyping.start();
+      }
+   }
+   
+   if (cursorVisible)
+   {
+      timerCursorBlink.update();
+      if (timerCursorBlink.fullSeconds > 0.5 )
+      {
+         timerCursorBlink.start();
+         
+         cursorBlinkOn=!cursorBlinkOn;
+         
+         if (cursorBlinkOn)
+         {
+            pixelScreen.putChar(cursorX,cursorY,1);
+         }
+         else
+         {
+            pixelScreen.putChar(cursorX,cursorY,' ');
+         }
       }
    }
 

@@ -91,13 +91,17 @@ class Terminal: public GUI_Interface, public LogicTickInterface, public IdleTick
    int cursorBlink; /* counts up from zero */
    
    bool errorScreenActive; /* true if player broke it */
-   bool cursorVisible; /* regulate cursor blink */
+   bool cursorVisible; /* whether to render cursor */
+   bool cursorBlinkOn; /* regulate cursor blink */
    
    bool bootScreen; /* True if boot should play */
    
    std::string strTyping;
    
    Timer timerTyping;
+   Timer timerCursorBlink;
+   
+   std::string input;
 
    public:
    
@@ -123,7 +127,7 @@ class Terminal: public GUI_Interface, public LogicTickInterface, public IdleTick
    
    bool isSafe (unsigned short int _x, unsigned short int _y);
    
-   void newLine(short int amount);
+   void newLine(short int amount=1);
    void shiftUp(short int amount);
    
    void type(std::string _str); // print string with typing effect.
