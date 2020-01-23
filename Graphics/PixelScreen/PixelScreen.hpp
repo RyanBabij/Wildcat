@@ -39,6 +39,8 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
    ArrayS3 <unsigned char> aScreenDataBuffer; // Desired state of screen
    ArrayS3 <unsigned char> aScreenDataReal; // Actual state of screen after effects
    ArrayS2 <unsigned char> aCharMode; // Grid for drawing fonts onto screen.
+    
+   unsigned char rngPool [1000]; // for generating static
    
    
    Timer updateTimer;
@@ -77,7 +79,21 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
       updateTimer.start();
       
       updatesPerSecond=60;
-      
+   }
+   
+   void init()
+   {
+      for (int i=0;i<1000;++i)
+      {
+         rngPool[i]=Random::randomInt(255);
+      }
+   }
+   
+   void clear()
+   {
+      aScreenDataBuffer.fill(0); // RGBA
+      aScreenDataReal.fill(0); // RGBA
+      aCharMode.fill(' ');
    }
    
    void putChar (const unsigned short int _x, const unsigned short int _y, const unsigned char _char)
@@ -103,6 +119,8 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
       
       if ( updateTimer.totalUSeconds > uUPS)
       {
+         fillStatic(100);
+         
          // update screen state
          //texScreen.fillChannel(Random::randomInt(3),Random::randomInt(255));
          //texScreen.fillChannel(Random::randomInt(3),Random::randomInt(255));
@@ -134,7 +152,7 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
          
 
          
-
+         
          updateTimer.init();
          updateTimer.start();
       }
@@ -186,6 +204,30 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
       nCharX = nX / _font->nX;
       nCharY = nY / _font->nY;
       aCharMode.init(nCharX,nCharY,' ');
+
+   }
+   
+   void fillStatic(const unsigned char maxValue=255)
+   {
+      //aCharMode.fill(' ');
+      
+      int nPixels=nX*nY*4;
+      
+      int i2 = Random::randomInt(1000);
+      
+      for (int i=0;i<nPixels;++i)
+      {
+         aScreenDataBuffer.data[i]=rngPool[i2];
+         aScreenDataReal.data[i]=aScreenDataBuffer.data[i];
+         texScreen.data[i]=aScreenDataReal.data[i];
+         
+         ++i2;
+         if ( i2>=1000) { i2 = Random::randomInt(100); }
+      }
+   }
+   
+   void shiftCharUp(int amount)
+   {
 
    }
 };
