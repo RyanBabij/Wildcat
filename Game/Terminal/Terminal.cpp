@@ -29,6 +29,11 @@ void Terminal::init()
    errorScreenActive=false;
    cursorVisible=true;
    bootScreen=true;
+   
+   strTyping="";
+   
+   timerTyping.init();
+   timerTyping.start();
 
    putCursor(0,0);
 
@@ -56,10 +61,14 @@ void Terminal::clearScreen(bool forced) /* forced will instantly clear the scree
    // clear internals and pixelScreen
 }
 
-void Terminal::write(const std::string _str, bool moveCursor=true, bool instant=false)
+void Terminal::write(const std::string _str, bool moveCursor, bool instant)
 {
+   for (unsigned int i=0;i<_str.size();++i)
+   {
+      write(_str[i]);
+   }
 }
-void Terminal::write(const unsigned char _char, bool moveCursor=true, bool instant=false)
+void Terminal::write(const unsigned char _char, bool moveCursor, bool instant)
 {
    pixelScreen.putChar(cursorX,cursorY,_char);
    advanceCursor();
@@ -134,6 +143,11 @@ void Terminal::advanceCursor(unsigned short int amount)
    }
 }
 
+void Terminal::type(std::string _str)
+{
+   strTyping+=_str;
+}
+
 void Terminal::eventResize()
 {
    pixelScreen.setPanel(panelX1,panelY1,panelX2,panelY2);
@@ -141,6 +155,19 @@ void Terminal::eventResize()
 
 void Terminal::idleTick()
 {
+   if (strTyping.size() > 0 )
+   {
+      timerTyping.update();
+      
+      if (timerTyping.fullSeconds>0.08)
+      {
+         write(strTyping[0]);
+         strTyping.erase(0,1);
+         timerTyping.start();
+      }
+   }
+
+   
    pixelScreen.idleTick();
 }
 

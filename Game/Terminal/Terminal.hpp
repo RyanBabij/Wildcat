@@ -94,6 +94,10 @@ class Terminal: public GUI_Interface, public LogicTickInterface, public IdleTick
    bool cursorVisible; /* regulate cursor blink */
    
    bool bootScreen; /* True if boot should play */
+   
+   std::string strTyping;
+   
+   Timer timerTyping;
 
    public:
    
@@ -105,8 +109,8 @@ class Terminal: public GUI_Interface, public LogicTickInterface, public IdleTick
    // IO STUFF
    
       // Write string at current cursor position.
-   void write(std::string _str, bool moveCursor, bool instant);
-   void write(unsigned char _char, bool moveCursor, bool instant);
+   void write(std::string _str, bool moveCursor=true, bool instant=false);
+   void write(unsigned char _char, bool moveCursor=true, bool instant=false);
 
    void getInput(); // Wait for input terminated with newline.
    
@@ -121,6 +125,8 @@ class Terminal: public GUI_Interface, public LogicTickInterface, public IdleTick
    
    void newLine(short int amount);
    void shiftUp(short int amount);
+   
+   void type(std::string _str); // print string with typing effect.
    
    // advance cursor by amount. Scroll the screen if necessary.
    void advanceCursor(unsigned short int amount=1);
