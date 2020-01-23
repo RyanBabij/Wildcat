@@ -33,6 +33,7 @@ void Terminal::init()
    
    strTyping="";
    input="";
+   finalInput="";
    
    timerTyping.init();
    timerTyping.start();
@@ -54,10 +55,17 @@ void Terminal::init()
 
    clearScreen(true);
    //write any initial stuff here.
+   
+   pixelScreen.init();
 }
 
-void Terminal::getInput()
+std::string Terminal::getInput()
 {
+   if ( finalInput.size() == 0 )
+   { return ""; }
+   std::string retInput = finalInput;
+   finalInput="";
+   return retInput;
 }
 
 void Terminal::loadAudio()
@@ -105,6 +113,17 @@ bool Terminal::isSafe(unsigned short int _x, unsigned short int _y)
    return false;
 }
 
+void Terminal::backspace(int amount)
+{
+   if (cursorX == 0 )
+   {
+      return;
+   }
+   pixelScreen.putChar(cursorX,cursorY,' ');
+   --cursorX;
+   pixelScreen.putChar(cursorX,cursorY,1);
+}
+
 bool Terminal::keyboardEvent(Keyboard* _keyboard)
 {
    if (_keyboard->keyWasPressed)
@@ -115,7 +134,7 @@ bool Terminal::keyboardEvent(Keyboard* _keyboard)
       }
       else if (_keyboard->lastKey == 8 )
       {
-         //backspace();
+         backspace();
       }
       else if (_keyboard->lastKey == 3 ) /* CTRL+C */
       {
@@ -125,7 +144,8 @@ bool Terminal::keyboardEvent(Keyboard* _keyboard)
       else if (_keyboard->lastKey == Keyboard::ENTER && strTyping.size()==0 )
       {
          newLine(1);
-         std::cout<<"INPUT: "<<input<<"\n";
+         finalInput=input;
+         input="";
       }
       else if (strTyping.size()==0)
       {
@@ -140,6 +160,7 @@ bool Terminal::keyboardEvent(Keyboard* _keyboard)
 
 void Terminal::shiftUp(short int amount)
 {
+   pixelScreen.shiftCharUp(amount);
 }
 
 void Terminal::newLine(short int amount)
@@ -150,6 +171,13 @@ void Terminal::newLine(short int amount)
    }
    cursorX=0;
    ++cursorY;
+   
+   if (cursorY >= nCharY )
+   {
+      cursorY=nCharY-1;
+      shiftUp(1);
+   }
+   
    if ( cursorVisible )
    {
       pixelScreen.putChar(cursorX,cursorY,1);
@@ -162,10 +190,16 @@ void Terminal::advanceCursor(unsigned short int amount)
    { return; }
 
    ++cursorX;
-   if ( cursorX>nCharX )
+   if ( cursorX>=nCharX )
    {
       cursorX=0;
       ++cursorY;
+      
+      if ( cursorY >= nCharY )
+      {
+         cursorY=nCharY-1;
+         shiftUp(1);
+      }
    }
    
    if (cursorVisible)
@@ -190,7 +224,8 @@ void Terminal::idleTick()
    {
       timerTyping.update();
       
-      if (timerTyping.fullSeconds>0.08)
+      //if (timerTyping.fullSeconds>0.08)
+      if (timerTyping.fullSeconds>0.01)
       {
          write(strTyping[0]);
          strTyping.erase(0,1);

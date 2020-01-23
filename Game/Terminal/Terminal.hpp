@@ -102,6 +102,7 @@ class Terminal: public GUI_Interface, public LogicTickInterface, public IdleTick
    Timer timerCursorBlink;
    
    std::string input;
+   std::string finalInput;
 
    public:
    
@@ -116,7 +117,7 @@ class Terminal: public GUI_Interface, public LogicTickInterface, public IdleTick
    void write(std::string _str, bool moveCursor=true, bool instant=false);
    void write(unsigned char _char, bool moveCursor=true, bool instant=false);
 
-   void getInput(); // Wait for input terminated with newline.
+   std::string getInput(); // Wait for input terminated with newline.
    
    void clearScreen(bool /* forced */);
    void putCursor(unsigned short int _x, unsigned short int _y);
@@ -134,6 +135,8 @@ class Terminal: public GUI_Interface, public LogicTickInterface, public IdleTick
    
    // advance cursor by amount. Scroll the screen if necessary.
    void advanceCursor(unsigned short int amount=1);
+   
+   void backspace(int amount=1);
 
 
    // GUI STUFF
