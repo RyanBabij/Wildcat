@@ -26,6 +26,13 @@
    PixelScreen also has some effects it can do like basic glare effects
    and whatnot.
    
+   PixelScreen should have filters which can be customised and overlaid
+   in any order. PixelScreen_Filter class with an execute function.
+   
+   Filters can be blended, merged, or copied directly.
+   
+
+   
    Todo:
    
    * State updates should be decoupled from render calls.
@@ -41,6 +48,7 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
    ArrayS2 <unsigned char> aCharMode; // Grid for drawing fonts onto screen.
     
    unsigned char rngPool [1000]; // for generating static
+
    
    
    Timer updateTimer;
@@ -52,10 +60,14 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
    
    Texture texScreen; // dynamically generated texture
    
+   // EFFECTS
+   
    int fadeSpeed; // max rgb value change per frame
    double updatesPerSecond; // amount of times to update screen state per second
    // I might want to just link it with the global idleTick speed.
    // Or have a postRender() function which preps for the next render.
+   
+   unsigned char amountStatic; // maximum static val. 0 = disabled.
    
    PixelScreen(const unsigned short int _nX, const unsigned short int _nY) // define the size in pixels
    {
@@ -74,11 +86,14 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
       
       
       texScreen.create(nX,nY,1,true); // we might instead use this as render
+      texScreen.fill(0);
       
       updateTimer.init();
       updateTimer.start();
       
       updatesPerSecond=60;
+      
+      amountStatic=255;
    }
    
    void init()
@@ -119,7 +134,9 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
       
       if ( updateTimer.totalUSeconds > uUPS)
       {
-         fillStatic(100);
+         texScreen.fill(0);
+         fillStatic(amountStatic);
+         
          
          // update screen state
          //texScreen.fillChannel(Random::randomInt(3),Random::randomInt(255));
@@ -130,8 +147,12 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
          {
             for (int _x=0;_x<nCharX;++_x)
             {
+               if ( aCharMode(_x,_y) != ' ' )
+               {
+                  texScreen.copyDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],font->nX*_x,font->nY*_y);
+               }
                //texRuntime.morphDown(font8x8.aTexFont[(unsigned char)aGlyph[_y][_x]],8*_x,8*_y,22);
-               texScreen.morphDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],font->nX*_x,font->nY*_y,100);
+               
                //texScreen.morphDown(font->aTexFont['A'],8*_x,8*_y,25);
             }
          }
@@ -156,7 +177,6 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
          updateTimer.init();
          updateTimer.start();
       }
-      
    }
    
    void setPixel(const short int _x, const short int _y, const short int _z, const unsigned char _value)
@@ -209,17 +229,22 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
    
    void fillStatic(const unsigned char maxValue=255)
    {
+      if ( maxValue == 0 )
+      {
+         return;
+      }
       //aCharMode.fill(' ');
       
       int nPixels=nX*nY*4;
       
       int i2 = Random::randomInt(1000);
       
+      
       for (int i=0;i<nPixels;++i)
       {
-         aScreenDataBuffer.data[i]=rngPool[i2];
+         aScreenDataBuffer.data[i]=rngPool[i2]%maxValue;
          aScreenDataReal.data[i]=aScreenDataBuffer.data[i];
-         texScreen.data[i]=aScreenDataReal.data[i];
+         texScreen.data[i]=aScreenDataBuffer.data[i];
          
          ++i2;
          if ( i2>=1000) { i2 = Random::randomInt(100); }
@@ -230,6 +255,13 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
    {
 
    }
+};
+
+// Custom algorithms for filters and effects designed to be overlaid on the main screen
+class PixelScreen_Filter
+{
+   
+   
 };
 
 #endif
