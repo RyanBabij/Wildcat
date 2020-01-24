@@ -31,9 +31,13 @@ void Terminal::init()
    cursorBlinkOn=true;
    bootScreen=true;
    
+   allowInput=true;
+   
    strTyping="";
    input="";
    finalInput="";
+   
+   amountStatic=255;
    
    timerTyping.init();
    timerTyping.start();
@@ -78,6 +82,11 @@ void Terminal::clearScreen(bool forced) /* forced will instantly clear the scree
    pixelScreen.clear();
 }
 
+void Terminal::fill(const unsigned char r, const unsigned char g, const unsigned char b, const unsigned char a)
+{
+   // call terminal fill
+}
+
 void Terminal::write(const std::string _str, bool moveCursor, bool instant)
 {
    for (unsigned int i=0;i<_str.size();++i)
@@ -101,11 +110,14 @@ void Terminal::write(const unsigned char _char, bool moveCursor, bool instant)
 
 void Terminal::render()
 {
+   pixelScreen.amountStatic=amountStatic;
    pixelScreen.render();
 }
 
 void Terminal::putCursor(unsigned short int _x, unsigned short int _y)
 {
+   cursorX=_x;
+   cursorY=_y;
 }
 
 bool Terminal::isSafe(unsigned short int _x, unsigned short int _y)
@@ -140,17 +152,20 @@ bool Terminal::keyboardEvent(Keyboard* _keyboard)
       {
          shutDown();
       }
-      // Get whatever the user typed.
-      else if (_keyboard->lastKey == Keyboard::ENTER && strTyping.size()==0 )
+      else if (allowInput)
       {
-         newLine(1);
-         finalInput=input;
-         input="";
-      }
-      else if (strTyping.size()==0)
-      {
-         input+=_keyboard->lastKey;
-         write(_keyboard->lastKey);
+         // Get whatever the user typed.
+         if (_keyboard->lastKey == Keyboard::ENTER && strTyping.size()==0 )
+         {
+            newLine(1);
+            finalInput=input;
+            input="";
+         }
+         else if (strTyping.size()==0)
+         {
+            input+=_keyboard->lastKey;
+            write(_keyboard->lastKey);
+         }
       }
       _keyboard->clearAll();
       return true;
@@ -224,8 +239,8 @@ void Terminal::idleTick()
    {
       timerTyping.update();
       
-      //if (timerTyping.fullSeconds>0.08)
-      if (timerTyping.fullSeconds>0.01)
+      if (timerTyping.fullSeconds>0.07)
+      //if (timerTyping.fullSeconds>0.01)
       {
          write(strTyping[0]);
          strTyping.erase(0,1);

@@ -91,7 +91,6 @@ class Terminal: public GUI_Interface, public LogicTickInterface, public IdleTick
    int cursorBlink; /* counts up from zero */
    
    bool errorScreenActive; /* true if player broke it */
-   bool cursorVisible; /* whether to render cursor */
    bool cursorBlinkOn; /* regulate cursor blink */
    
    bool bootScreen; /* True if boot should play */
@@ -105,6 +104,11 @@ class Terminal: public GUI_Interface, public LogicTickInterface, public IdleTick
    std::string finalInput;
 
    public:
+   
+   unsigned char amountStatic; // amount of static to render
+   
+   bool allowInput;
+   bool cursorVisible; /* whether to render cursor */
    
    // INIT
    Terminal();
@@ -120,6 +124,8 @@ class Terminal: public GUI_Interface, public LogicTickInterface, public IdleTick
    std::string getInput(); // Wait for input terminated with newline.
    
    void clearScreen(bool /* forced */);
+   void fill(const unsigned char r, const unsigned char g, const unsigned char b, const unsigned char a);
+   
    void putCursor(unsigned short int _x, unsigned short int _y);
    
    void loadAudio(); // Load audio files and initialize audio player
