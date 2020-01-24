@@ -78,6 +78,14 @@ class Texture: public CanLoadSave, public HasTexture
 			}
 		}
    }
+   void fill(const unsigned char value)
+   {
+      int nPixels = nX*nY*4;
+      for (int i=0;i<nPixels;++i)
+      {
+         data[i]=value;
+      }
+   }
    
 	bool load (unsigned char* data2)
 	{
@@ -276,11 +284,51 @@ class Texture: public CanLoadSave, public HasTexture
       {
          for (int x=startX;x<endX;++x)
          {
+            if ( _tex->uPixel(x2,y2,3) != 0 )
+            {
+               setPixel(x,y,0,_tex->uPixel(x2,y2,0));
+               setPixel(x,y,1,_tex->uPixel(x2,y2,1));
+               setPixel(x,y,2,_tex->uPixel(x2,y2,2));
+               setPixel(x,y,3,_tex->uPixel(x2,y2,3));
+            }
             
-            setPixel(x,y,0,_tex->uPixel(x2,y2,0));
-            setPixel(x,y,1,_tex->uPixel(x2,y2,1));
-            setPixel(x,y,2,_tex->uPixel(x2,y2,2));
-            setPixel(x,y,3,_tex->uPixel(x2,y2,3));
+            ++x2;
+         }
+         
+         x2=0;
+         ++y2;
+      }
+   }
+   // same as copydown but average the source and target pixel. (need to account for alpha)
+   void blendDown ( Texture * _tex, const int startX, const int startY)
+   {
+      if ( _tex==0 )
+      {
+         std::cout<<"WARNING: Texture::copyDown nullptr.\n";
+         return;
+      }
+      int endX = startX+_tex->nX;
+      int endY = startY+_tex->nY;
+      
+      int x2 = 0;
+      int y2 = 0;
+      
+      for (int y=startY;y<endY;++y)
+      {
+         for (int x=startX;x<endX;++x)
+         {
+            if ( _tex->uPixel(x2,y2,3) != 0 )
+            {
+               const unsigned char r = (int)uPixel(x,y,0)+_tex->uPixel(x2,y2,0)/2;
+               const unsigned char g = (int)uPixel(x,y,1)+_tex->uPixel(x2,y2,1)/2;
+               const unsigned char b = (int)uPixel(x,y,2)+_tex->uPixel(x2,y2,2)/2;
+               const unsigned char a = (int)uPixel(x,y,3)+_tex->uPixel(x2,y2,3)/2;
+               
+               setPixel(x,y,0,r);
+               setPixel(x,y,1,g);
+               setPixel(x,y,2,b);
+               setPixel(x,y,3,a);
+            }
             
             ++x2;
          }
