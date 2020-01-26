@@ -44,7 +44,7 @@
 class PixelScreen: public GUI_Interface, public IdleTickInterface
 {
    ArrayS3 <unsigned char> aScreenDataBuffer; // Desired state of screen
-   ArrayS3 <unsigned char> aScreenDataReal; // Actual state of screen after effects
+   //ArrayS3 <unsigned char> aScreenDataReal; // Actual state of screen after effects
    ArrayS2 <unsigned char> aCharMode; // Grid for drawing fonts onto screen.
     
    unsigned char rngPool [1000]; // for generating static
@@ -59,6 +59,8 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
    public:
    
    Texture texScreen; // dynamically generated texture
+   
+   double scalingFactor; // how many times the standard resolution to scale up
    
    // EFFECTS
    
@@ -81,7 +83,7 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
       panelX1=0; panelY1=0; panelX2=0; panelY2=0;
       font=0;
       aScreenDataBuffer.init(nX,nY,4,0); // RGBA
-      aScreenDataReal.init(nX,nY,4,0); // RGBA
+      //aScreenDataReal.init(nX,nY,4,0); // RGBA
       aCharMode.init(0,0,' ');
       
       
@@ -107,7 +109,7 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
    void clear()
    {
       aScreenDataBuffer.fill(0); // RGBA
-      aScreenDataReal.fill(0); // RGBA
+      //aScreenDataReal.fill(0); // RGBA
       aCharMode.fill(' ');
    }
    
@@ -132,11 +134,20 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
       
       int uUPS = 1000000/updatesPerSecond;
       
+      //we should be using a filter system to determine the order to draw things.
+      //but for now it's hardcoded
+      
       if ( updateTimer.totalUSeconds > uUPS)
       {
          texScreen.fill(0);
          fillStatic(amountStatic);
          
+         //merge down the pixel buffer
+         const int nPixel = nX*nY*4;
+         for (int i=0;i<nPixel;++i)
+         {
+            //texScreen.data[i]=aScreenDataBuffer.data[i];
+         }
          
          // update screen state
          //texScreen.fillChannel(Random::randomInt(3),Random::randomInt(255));
@@ -150,6 +161,7 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
                if ( aCharMode(_x,_y) != ' ' )
                {
                   texScreen.copyDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],font->nX*_x,font->nY*_y);
+                  //texScreen.morphDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],font->nX*_x,font->nY*_y,100);
                }
                //texRuntime.morphDown(font8x8.aTexFont[(unsigned char)aGlyph[_y][_x]],8*_x,8*_y,22);
                
@@ -157,19 +169,20 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
             }
          }
                
-         //draw scanlines
-         for (int y=0;y<nY;y+=3)
-         {
-            for(int x=0;x<nX;++x)
-            {
-               //texScreen.setPixel(x,y,0,texScreen.uPixel(x,y,0)/2);
-               //texScreen.setPixel(x,y,1,texScreen.uPixel(x,y,1)/2);
-               //texScreen.setPixel(x,y,2,texScreen.uPixel(x,y,2)/2);
-               // texScreen.setPixel(x,y,1,0);
-               // texScreen.setPixel(x,y,2,0);
-               // texScreen.setPixel(x,y,3,10);
-            }
-         }
+         // scanlines use OpenGL lines, so it's handled by Terminal
+         // //draw scanlines
+         // for (int y=0;y<nY;y+=3)
+         // {
+            // for(int x=0;x<nX;++x)
+            // {
+               // //texScreen.setPixel(x,y,0,texScreen.uPixel(x,y,0)/2);
+               // //texScreen.setPixel(x,y,1,texScreen.uPixel(x,y,1)/2);
+               // //texScreen.setPixel(x,y,2,texScreen.uPixel(x,y,2)/2);
+               // // texScreen.setPixel(x,y,1,0);
+               // // texScreen.setPixel(x,y,2,0);
+               // // texScreen.setPixel(x,y,3,10);
+            // }
+         // }
          
 
          
@@ -193,7 +206,7 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
       return false;
    }
    
-   void render() override
+   void render() override 
    {
       // render state
       texScreen.bloom();
@@ -202,9 +215,11 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
       Renderer::placeTexture4(panelX1,panelY1,panelX2,panelY2,&texScreen,false);
       unbind(&texScreen);
       
-      for (int _y=panelY1;_y<panelY2;_y+=2)
+      // this looks quite bad with non-integer scaling factors. I reckon a
+      // texture overlay will probably look better.
+      for (double _y=panelY2-(scalingFactor);_y>=panelY1;_y-=scalingFactor)
       {
-         Renderer::placeLineAlpha(0,0,0,200,panelX1,_y,panelX2,_y);
+         Renderer::placeLineAlpha(0,0,0,100,panelX1,_y,panelX2,_y,scalingFactor/1.5);
       }
    // for (int _x=panelX1;_x<panelX1+320*scalingFactor;_x+=scalingFactor)
    // {
@@ -239,12 +254,12 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
       
       int i2 = Random::randomInt(1000);
       
-      
+      //Static only draws direct to texture, not to buffer.
       for (int i=0;i<nPixels;++i)
       {
-         aScreenDataBuffer.data[i]=rngPool[i2]%maxValue;
-         aScreenDataReal.data[i]=aScreenDataBuffer.data[i];
-         texScreen.data[i]=aScreenDataBuffer.data[i];
+         //aScreenDataBuffer.data[i]=rngPool[i2]%maxValue;
+         //aScreenDataReal.data[i]=aScreenDataBuffer.data[i];
+         texScreen.data[i]=rngPool[i2]%maxValue;
          
          ++i2;
          if ( i2>=1000) { i2 = Random::randomInt(100); }
