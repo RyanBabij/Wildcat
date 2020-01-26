@@ -230,7 +230,28 @@ void Terminal::type(std::string _str)
 
 void Terminal::eventResize()
 {
-   pixelScreen.setPanel(panelX1,panelY1,panelX2,panelY2);
+   //determine the best scaling factor we can fit in the screenspace.
+   
+   // determine largest scaling multiples which fit into the panel area.
+   
+   int scalingFactorX=panelNX/320;
+   int scalingFactorY=panelNY/200;
+   
+   int scalingFactor = scalingFactorX;
+   if ( scalingFactorY < scalingFactor )
+   {
+      scalingFactor = scalingFactorY;
+   }
+   
+   //int panelCenterX = (panelNX/2)+panelX1;
+   //int panelCenterY = (panelNY/2)+panelY1;
+   
+   
+   
+   
+   //while ( scalingFactor
+   
+   pixelScreen.setPanel(panelCenterX - (160*scalingFactor),panelCenterY - (100*scalingFactor),panelCenterX + (160*scalingFactor),panelCenterY + (100*scalingFactor));
 }
 
 void Terminal::idleTick()
