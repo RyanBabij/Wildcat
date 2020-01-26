@@ -37,6 +37,8 @@ void Terminal::init()
    input="";
    finalInput="";
    
+   subpixelScaling=false;
+   
    amountStatic=255;
    
    timerTyping.init();
@@ -233,24 +235,24 @@ void Terminal::eventResize()
    //determine the best scaling factor we can fit in the screenspace.
    
    // determine largest scaling multiples which fit into the panel area.
+   // I also want to add support for subpixel scaling, although it might
+   // make the screen look a bit funny.
    
-   int scalingFactorX=panelNX/320;
-   int scalingFactorY=panelNY/200;
+   double scalingFactorX=(double)panelNX/320;
+   double scalingFactorY=(double)panelNY/200;
    
-   int scalingFactor = scalingFactorX;
+   double scalingFactor = scalingFactorX;
    if ( scalingFactorY < scalingFactor )
+   { scalingFactor = scalingFactorY; }
+
+   if ( subpixelScaling == false )
    {
-      scalingFactor = scalingFactorY;
+      scalingFactor = floor(scalingFactor);
    }
    
-   //int panelCenterX = (panelNX/2)+panelX1;
-   //int panelCenterY = (panelNY/2)+panelY1;
+   pixelScreen.scalingFactor = scalingFactor;
    
-   
-   
-   
-   //while ( scalingFactor
-   
+
    pixelScreen.setPanel(panelCenterX - (160*scalingFactor),panelCenterY - (100*scalingFactor),panelCenterX + (160*scalingFactor),panelCenterY + (100*scalingFactor));
 }
 

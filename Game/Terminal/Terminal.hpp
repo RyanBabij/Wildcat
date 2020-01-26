@@ -110,6 +110,8 @@ class Terminal: public GUI_Interface, public LogicTickInterface, public IdleTick
    bool allowInput;
    bool cursorVisible; /* whether to render cursor */
    
+   bool subpixelScaling; // Scale up by whole pixels or just fill entire space.
+   
    // INIT
    Terminal();
    ~Terminal();
