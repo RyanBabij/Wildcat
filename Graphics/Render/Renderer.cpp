@@ -379,9 +379,11 @@ void Renderer::placeLine(const unsigned char r, const unsigned char g, const uns
 	#endif
 }
 
-void Renderer::placeLineAlpha(const unsigned char r, const unsigned char g, const unsigned char b, const unsigned char a, const int _x1, const int _y1, const int _x2, const int _y2)
+void Renderer::placeLineAlpha(const unsigned char r, const unsigned char g, const unsigned char b, const unsigned char a, const float _x1, const float _y1, const float _x2, const float _y2, const float lineThickness)
 {
 	#ifdef WILDCAT_USE_OPENGL
+      glLineWidth(lineThickness);
+   
 		setColourMode();
 		/* Set the colour of the shape. */
 		glColor4ub(r,g,b,a);
@@ -391,6 +393,8 @@ void Renderer::placeLineAlpha(const unsigned char r, const unsigned char g, cons
       glVertex2f(_x2,_y2);
 		 glEnd();
     
+      // reset line width to default
+      glLineWidth(1);
 	#elif defined WILDCAT_USE_DIRECT3D
 		/* Put Direct3D code here... */
 	#endif

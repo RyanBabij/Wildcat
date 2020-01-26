@@ -83,7 +83,7 @@ class Renderer
   
    // Draw a line between points
    static void placeLine(const unsigned char r, const unsigned char g, const unsigned char b, const int _x1, const int _y1, const int _x2, const int _y2);
-   static void placeLineAlpha(const unsigned char r, const unsigned char g, const unsigned char b, const unsigned char a, const int _x1, const int _y1, const int _x2, const int _y2);
+   static void placeLineAlpha(const unsigned char r, const unsigned char g, const unsigned char b, const unsigned char a, const float _x1, const float _y1, const float _x2, const float _y2, const float lineThickness=1);
 /* End of class. */
 };
 
