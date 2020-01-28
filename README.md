@@ -13,9 +13,6 @@ Code for operations which involve datatypes or standalone data, for example bitw
 #### Device
 Code for handling display output, and keyboard and mouse input.
 
-#### ErrorHandling
-Probably should be in Debug.
-
 #### File
 Code for file operations. Allows easy creation, deletion, and modification of files. Also contains tools for savefiles.
 
