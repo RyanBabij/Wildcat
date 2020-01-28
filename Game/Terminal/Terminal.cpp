@@ -9,6 +9,7 @@
 */
 
 #include "Terminal.hpp"
+#include "Terminal_Program.cpp"
 
 Terminal::Terminal(): pixelScreen(320,200)
 {

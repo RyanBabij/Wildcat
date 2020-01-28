@@ -78,6 +78,8 @@ for readability but is not required. */
 
 #include <Graphics/PixelScreen/PixelScreen.cpp>
 
+class Terminal_Program;
+
 class Terminal: public GUI_Interface, public LogicTickInterface, public IdleTickInterface
 {
    // Renders per-pixel output
@@ -102,6 +104,8 @@ class Terminal: public GUI_Interface, public LogicTickInterface, public IdleTick
    
    std::string input;
    std::string finalInput;
+   
+   Vector <Terminal_Program*> vProgram;
 
    public:
    
