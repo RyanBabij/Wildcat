@@ -226,6 +226,17 @@ class ArrayS3: public CanLoadSave
 			ArrayS3::operator () (_x,_y,_z)=value;
 		}
 	}
+   
+   void fillLayer(const unsigned int _z, const T _value)
+   {
+      for (unsigned int _y=0;_y<nY;++_y)
+      {
+         for (unsigned int _x=0;_x<nX;++_x)
+         {
+            ArrayS3::operator () (_x,_y,_z)=_value;
+         }
+      }
+   }
 	
 	
 	void init(unsigned int x, unsigned int y, unsigned int z, T _nullValue)
