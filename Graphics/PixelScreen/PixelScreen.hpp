@@ -43,6 +43,39 @@
 
 #include <Math/Random/RandomLehmer.hpp>
 
+#include <Interface/HasTexture.hpp>
+// Sprite is an object which has a texture which is drawn to the screen.
+// We don't bother blitting it or whatever, just render it with OpenGL.
+// This means you should make sure the pixels match up
+class Sprite: public HasTexture
+{
+   public:
+   
+   int x1,y1,x2,y2; // PixelScreen coords
+   Texture * texture;
+   
+   Sprite()
+   {
+      x1=0;
+      y1=0;
+      x2=0;
+      y2=0;
+      texture=0;
+   }
+   
+   void setCoord(const int _x1, const int _y1, const int _x2, const int _y2)
+   {
+      x1=_x1;
+      y1=_y1;
+      x2=_x2;
+      y2=_y2;
+   }
+   
+   virtual Texture* currentTexture()
+   {
+      return texture;
+   }
+};
 
 class PixelScreen: public GUI_Interface, public IdleTickInterface
 {
@@ -58,6 +91,9 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
    
    unsigned short int nX, nY; // number of pixels (not size of panel)
    unsigned short int nCharX, nCharY;
+   
+   Vector <Sprite*> vSprite;
+   
 
    public:
    
@@ -224,6 +260,13 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
       return false;
    }
    
+   // void Terminal::placeTexture4(const int _x1, const int _y1, const int _x2, const int _y2, HasTexture* _texture, const bool preserveAspectRatio)
+   // {
+      
+      // Renderer::placeTexture4(_x1*scalingFactor,_y1*scalingFactor,_x2*scalingFactor,_y2*scalingFactor,_texture,true);
+   // }
+
+   
    void render() override 
    {
       // render state
@@ -243,6 +286,17 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
    // {
       // //Renderer::placeLineAlpha(0,0,0,80,_x,panelY1,_x,panelY1+200*scalingFactor);
    // }
+   
+      for (int i=0;i<vSprite.size();++i)
+      {
+         Sprite* const sprite = vSprite(i);
+         if ( sprite != 0 )
+         {
+            Renderer::placeTexture4(panelX1+(sprite->x1*scalingFactor),panelY1+(sprite->y1*scalingFactor),panelX1+(sprite->x2*scalingFactor),panelY1+(sprite->y2*scalingFactor),sprite->currentTexture(),false);
+         }
+
+      }
+   
    }
    
    void setFont (Wildcat::Font* _font) override
@@ -289,6 +343,12 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
    {
 
    }
+   
+   void addSprite(Sprite *sprite)
+   {
+      vSprite.push(sprite);
+   }
+   
 };
 
 // Custom algorithms for filters and effects designed to be overlaid on the main screen

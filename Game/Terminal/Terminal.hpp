@@ -133,6 +133,11 @@ class Terminal: public GUI_Interface, public LogicTickInterface, public IdleTick
    
    void backspace(int amount=1);
 
+   // rendering
+   void placeTexture4(const int _x1, const int _y1, const int _x2, const int _y2, HasTexture* _texture, const bool preserveAspectRatio /* Default false. */);
+   
+   //pixelscreen
+   void addSprite(Sprite* sprite);
 
    // TERMINAL_PROGRAM
    void addProgram(Terminal_Program* _program);

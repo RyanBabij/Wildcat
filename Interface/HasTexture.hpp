@@ -1,6 +1,6 @@
 #pragma once
-#ifndef WILDCAT_HAS_TEXTURE_HPP
-#define WILDCAT_HAS_TEXTURE_HPP
+#ifndef WILDCAT_INTERFACE_HAS_TEXTURE_HPP
+#define WILDCAT_INTERFACE_HAS_TEXTURE_HPP
 
 /*
 	#include <Interface/HasTexture.hpp>

@@ -242,6 +242,12 @@ void Terminal::type(std::string _str)
    strTyping+=_str;
 }
 
+   // PIXELSCREEN
+void Terminal::addSprite(Sprite* sprite)
+{
+   pixelScreen.addSprite(sprite);
+}
+
    // TERMINAL_PROGRAM
 void Terminal::addProgram(Terminal_Program* _program)
 {
