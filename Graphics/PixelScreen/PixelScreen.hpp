@@ -98,7 +98,7 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
       amountStatic=255;
    }
    
-   void init()
+   void init() override
    {
       for (int i=0;i<1000;++i)
       {
@@ -227,7 +227,7 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
    // }
    }
    
-   void setFont (Wildcat::Font* _font)
+   void setFont (Wildcat::Font* _font) override
    {
       if ( _font == 0 )
       {

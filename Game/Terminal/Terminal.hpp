@@ -119,7 +119,7 @@ class Terminal: public GUI_Interface, public LogicTickInterface, public IdleTick
    // INIT
    Terminal();
    ~Terminal();
-   void init();
+   void init() override;
 
    // IO STUFF
    
