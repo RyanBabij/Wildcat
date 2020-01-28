@@ -98,7 +98,7 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
       
       updatesPerSecond=60;
       
-      amountStatic=255;
+      amountStatic=0;
    }
    
    void init() override
@@ -115,6 +115,19 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
       aScreenDataBuffer.fill(0); // RGBA
       //aScreenDataReal.fill(0); // RGBA
       aCharMode.fill(' ');
+   }
+   
+   void fill (unsigned char _r, unsigned char _g, unsigned char _b, unsigned char _a)
+   {
+      aScreenDataBuffer.fillLayer(0,_r);
+      aScreenDataBuffer.fillLayer(1,_g);
+      aScreenDataBuffer.fillLayer(2,_b);
+      aScreenDataBuffer.fillLayer(3,_a);
+      
+      texScreen.fillChannel(0,_r);
+      texScreen.fillChannel(1,_g);
+      texScreen.fillChannel(2,_b);
+      texScreen.fillChannel(3,_a);
    }
    
    void putChar (const unsigned short int _x, const unsigned short int _y, const unsigned char _char)
@@ -143,14 +156,15 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
       
       if ( updateTimer.totalUSeconds > uUPS)
       {
-         texScreen.fill(0);
-         fillStatic(amountStatic);
+         //texScreen.fill(0);
+         //fillStatic(amountStatic);
+         //fill(255,0,0,255);
          
          //merge down the pixel buffer
          const int nPixel = nX*nY*4;
          for (int i=0;i<nPixel;++i)
          {
-            //texScreen.data[i]=aScreenDataBuffer.data[i];
+           // texScreen.data[i]=aScreenDataBuffer.data[i];
          }
          
          // update screen state
@@ -164,7 +178,7 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
             {
                if ( aCharMode(_x,_y) != ' ' )
                {
-                  texScreen.copyDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],font->nX*_x,font->nY*_y);
+                 // texScreen.copyDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],font->nX*_x,font->nY*_y);
                   //texScreen.morphDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],font->nX*_x,font->nY*_y,100);
                }
                //texRuntime.morphDown(font8x8.aTexFont[(unsigned char)aGlyph[_y][_x]],8*_x,8*_y,22);
