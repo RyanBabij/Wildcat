@@ -45,6 +45,9 @@ void Terminal_Program::keyboardEvent (Keyboard* _keyboard)
 {
    
 }
-
+bool Terminal_Program::mouseEvent (Mouse* _mouse)
+{
+   return false;
+}
 
 #endif

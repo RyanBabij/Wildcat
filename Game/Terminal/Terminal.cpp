@@ -187,6 +187,26 @@ bool Terminal::keyboardEvent(Keyboard* _keyboard)
    return false;
 }
 
+bool Terminal::mouseEvent(Mouse* _mouse)
+{
+   if ( _mouse->inBounds(panelX1,panelY1,panelX2,panelY2) == false )
+   { return false; }
+   
+   pixelScreen.mouseEvent(_mouse);
+   
+   mouseX=pixelScreen.mouseX;
+   mouseY=pixelScreen.mouseY;
+   
+   for (int i=0;i<vProgram.size();++i)
+   {
+      if ( vProgram(i)->active)
+      {
+         vProgram(i)->mouseEvent(_mouse);
+      }
+   }
+   return false;
+}
+
 void Terminal::shiftUp(short int amount)
 {
    pixelScreen.shiftCharUp(amount);
@@ -261,20 +281,31 @@ void Terminal::eventResize()
    // determine largest scaling multiples which fit into the panel area.
    // I also want to add support for subpixel scaling, although it might
    // make the screen look a bit funny.
+   double scalingFactor;
    
-   double scalingFactorX=(double)panelNX/320;
-   double scalingFactorY=(double)panelNY/200;
-   
-   double scalingFactor = scalingFactorX;
-   if ( scalingFactorY < scalingFactor )
-   { scalingFactor = scalingFactorY; }
-
-   if ( subpixelScaling == false )
+   if ( panelNX < 320 || panelNY < 200 )
    {
-      scalingFactor = floor(scalingFactor);
+      scalingFactor=1;
+      pixelScreen.scalingFactor=1;
+   }
+   else
+   {
+      double scalingFactorX=(double)panelNX/320;
+      double scalingFactorY=(double)panelNY/200;
+      
+      scalingFactor = scalingFactorX;
+      if ( scalingFactorY < scalingFactor )
+      { scalingFactor = scalingFactorY; }
+
+      if ( subpixelScaling == false )
+      {
+         scalingFactor = floor(scalingFactor);
+      }
+      
+      pixelScreen.scalingFactor = scalingFactor;
    }
    
-   pixelScreen.scalingFactor = scalingFactor;
+
    
 
    pixelScreen.setPanel(panelCenterX - (160*scalingFactor),panelCenterY - (100*scalingFactor),panelCenterX + (160*scalingFactor),panelCenterY + (100*scalingFactor));

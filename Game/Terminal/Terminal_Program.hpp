@@ -46,6 +46,7 @@ class Terminal_Program
    virtual void cycle(); /* advance 1 game cycle. Maybe return a status. */
    
    virtual void keyboardEvent (Keyboard*);
+   virtual bool mouseEvent (Mouse*);
 };
 
 

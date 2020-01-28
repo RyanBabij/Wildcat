@@ -92,6 +92,8 @@ class Terminal: public GUI_Interface, public LogicTickInterface, public IdleTick
 
    public:
    
+   short int mouseX, mouseY; //in pixelscreen pixels.
+   
    unsigned char amountStatic; // amount of static to render
    
    bool allowInput;
@@ -147,6 +149,7 @@ class Terminal: public GUI_Interface, public LogicTickInterface, public IdleTick
    void render() override;
    bool renderProgram();
    bool keyboardEvent(Keyboard* /* _keyboard */) override;
+   bool mouseEvent(Mouse* /* _mouse */) override;
    void eventResize() override;
    void idleTick() override;
    void setFont(Wildcat::Font* _font) override;

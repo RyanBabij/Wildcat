@@ -110,6 +110,8 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
    
    unsigned char amountStatic; // maximum static val. 0 = disabled.
    
+   short int mouseX,mouseY; //pixel coords
+   
    PixelScreen(const unsigned short int _nX, const unsigned short int _nY) // define the size in pixels
    {
       nX=_nX;
@@ -135,6 +137,9 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
       updatesPerSecond=60;
       
       amountStatic=0;
+      
+      mouseX=-1;
+      mouseY=-1;
    }
    
    void init() override
@@ -174,6 +179,22 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
    /* MouseInterface:: */
    bool mouseEvent (Mouse* _mouse) override
    {
+      //calculate the mouse's pixel coords
+      
+      if ( _mouse == 0 ) { return false; }
+      
+      if (_mouse->inBounds(panelX1,panelY1,panelX2,panelY2))
+      {
+         int diffX = _mouse->x - panelX1;
+         int diffY = _mouse->y - panelY1;
+         
+         mouseX = diffX/scalingFactor;
+         mouseY = diffY/scalingFactor;
+         return true;
+      }
+      
+      mouseX=-1;
+      mouseY=-1;
       return false;
    }
    
