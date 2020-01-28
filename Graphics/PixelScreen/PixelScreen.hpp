@@ -41,16 +41,19 @@
 
 #include <Container/ArrayS3/ArrayS3.hpp>
 
+#include <Math/Random/RandomLehmer.hpp>
+
+
 class PixelScreen: public GUI_Interface, public IdleTickInterface
 {
+   RandomLehmer rngLehmer;
+   
    ArrayS3 <unsigned char> aScreenDataBuffer; // Desired state of screen
    //ArrayS3 <unsigned char> aScreenDataReal; // Actual state of screen after effects
    ArrayS2 <unsigned char> aCharMode; // Grid for drawing fonts onto screen.
     
    unsigned char rngPool [1000]; // for generating static
 
-   
-   
    Timer updateTimer;
    
    unsigned short int nX, nY; // number of pixels (not size of panel)
@@ -102,7 +105,8 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
    {
       for (int i=0;i<1000;++i)
       {
-         rngPool[i]=Random::randomInt(255);
+         //rngPool[i]=Random::randomInt(255);
+         rngPool[i]=rngLehmer.rand8();
       }
    }
    
@@ -252,7 +256,8 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
       
       int nPixels=nX*nY*4;
       
-      int i2 = Random::randomInt(1000);
+      //int i2 = Random::randomInt(1000);
+      int i2 = rngLehmer.rand8();
       
       //Static only draws direct to texture, not to buffer.
       for (int i=0;i<nPixels;++i)
@@ -262,7 +267,7 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
          texScreen.data[i]=rngPool[i2]%maxValue;
          
          ++i2;
-         if ( i2>=1000) { i2 = Random::randomInt(100); }
+         if ( i2>=1000) { i2 = rngLehmer.rand8(); }
       }
    }
    
