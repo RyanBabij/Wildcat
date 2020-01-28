@@ -40,7 +40,7 @@ void Terminal::init()
    
    subpixelScaling=false;
    
-   amountStatic=255;
+   amountStatic=0;
    
    timerTyping.init();
    timerTyping.start();
@@ -85,9 +85,10 @@ void Terminal::clearScreen(bool forced) /* forced will instantly clear the scree
    pixelScreen.clear();
 }
 
-void Terminal::fill(const unsigned char r, const unsigned char g, const unsigned char b, const unsigned char a)
+void Terminal::fill(const unsigned char _r, const unsigned char _g, const unsigned char _b, const unsigned char _a)
 {
    // call terminal fill
+   pixelScreen.fill(_r,_g,_b,_a);
 }
 
 void Terminal::write(const std::string _str, bool moveCursor, bool instant)
@@ -115,6 +116,16 @@ void Terminal::render()
 {
    pixelScreen.amountStatic=amountStatic;
    pixelScreen.render();
+   
+   //render program if necessary
+   
+   for (int i=0;i<vProgram.size();++i)
+   {
+      if (vProgram(i)->active)
+      {
+         vProgram(i)->render();
+      }
+   }
 }
 
 void Terminal::putCursor(unsigned short int _x, unsigned short int _y)
@@ -229,6 +240,12 @@ void Terminal::advanceCursor(unsigned short int amount)
 void Terminal::type(std::string _str)
 {
    strTyping+=_str;
+}
+
+   // TERMINAL_PROGRAM
+void Terminal::addProgram(Terminal_Program* _program)
+{
+   vProgram.push(_program);
 }
 
 void Terminal::eventResize()

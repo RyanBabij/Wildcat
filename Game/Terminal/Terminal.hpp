@@ -53,31 +53,14 @@ Timer toneTimer; /* Keep track of when last tone was played */
 #include <Data/Tokenize.hpp> // Tokenize console commands
 #include <Data/DataTools.hpp> // Check commands
 
-// #include "Server.hpp"
-// #include "Operator.hpp"
-//Operator op;
-
 // EASI interpreter
 #include <Game/EASI/EASI.cpp>
 
 #include <Container/String/ANSI.hpp>
 
-/* Class to store the Terminal's files which can be default system files,
-or created/modified by the user. Files will be read/written to disk
-so user can edit them externally if they prefer. Extension .txt is added
-for readability but is not required. */
-
-//#include "Terminal_Program.cpp"
-
-//#include "MemoryMap.hpp"
-
-// This needs to become timer-based
-#define TERM_GLYPH_DELAY 4
-
-//#include "Terminal_Screen.hpp"
-
 #include <Graphics/PixelScreen/PixelScreen.cpp>
 
+// Stores any hardcoded programs that can run inside the Terminal
 class Terminal_Program;
 
 class Terminal: public GUI_Interface, public LogicTickInterface, public IdleTickInterface
@@ -150,6 +133,9 @@ class Terminal: public GUI_Interface, public LogicTickInterface, public IdleTick
    
    void backspace(int amount=1);
 
+
+   // TERMINAL_PROGRAM
+   void addProgram(Terminal_Program* _program);
 
    // GUI STUFF
 
