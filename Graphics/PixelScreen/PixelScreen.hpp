@@ -51,7 +51,8 @@ class Sprite: public HasTexture
 {
    public:
    
-   int x1,y1,x2,y2; // PixelScreen coords
+   int x1,y1,x2,y2;
+   // PixelScreen coords (we might want to convert these to center coords and size
    Texture * texture;
    
    Sprite()
@@ -69,6 +70,11 @@ class Sprite: public HasTexture
       y1=_y1;
       x2=_x2;
       y2=_y2;
+   }
+   
+   bool isCollisionX(const int _x)
+   {
+      return( _x >= x1 && _x <= x2);
    }
    
    virtual Texture* currentTexture()
@@ -271,6 +277,24 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
    {
       aScreenDataBuffer(_x,_y,_z)=_value;
    }
+   void setPixel(const short int _x, const short int _y, const short int _r, const short int _g, const short int _b)
+   {
+      if ( isSafe(_x,nY-_y) == false ) { return; }
+      // aScreenDataBuffer(_x,_y,0)=_r;
+      // aScreenDataBuffer(_x,_y,1)=_g;
+      // aScreenDataBuffer(_x,_y,2)=_b;
+      // aScreenDataBuffer(_x,_y,3)=255;
+      
+         // Apparently textures are upside-down
+      texScreen.setPixel(_x,nY-_y,0,_r);
+      texScreen.setPixel(_x,nY-_y,1,_g);
+      texScreen.setPixel(_x,nY-_y,2,_b);
+      texScreen.setPixel(_x,nY-_y,3,255);
+   }
+   bool isSafe(const short int _x, const short int _y)
+   {
+      return( _x > 0 && _x < nX && _y > 0 && _y < nY );
+   }
    
    void eventResize() override
    {
@@ -291,7 +315,7 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
    void render() override 
    {
       // render state
-      texScreen.bloom();
+      //texScreen.bloom();
       
       bindNearestNeighbour(&texScreen);
       Renderer::placeTexture4(panelX1,panelY1,panelX2,panelY2,&texScreen,false);
@@ -310,6 +334,8 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
    
       for (int i=0;i<vSprite.size();++i)
       {
+         // OpenGL uses different coordinates from pixel screen so we need to flip the y.
+         //int drawY1 = 
          Sprite* const sprite = vSprite(i);
          if ( sprite != 0 )
          {
