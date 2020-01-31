@@ -1,4 +1,6 @@
 #pragma once
+#ifndef WILDCAT_MATH_GEOMETRY_GEOMETRY_HPP
+#define WILDCAT_MATH_GEOMETRY_GEOMETRY_HPP
 
 /* #include <Math/Geometry/Geometry.hpp>
 Math dealing with points and stuff.
@@ -11,6 +13,8 @@ Shape
 2D Quad/quadrilateral
 
 Math Vector
+
+Note that some of the vector math seems to be bad.
 
 */
 
@@ -509,13 +513,14 @@ class MathVector2D
 	void normalise() { normalize(); }
 	void normalize()
 	{
-	
-		std::cout<<"Normalising vector.\n";
 		/* Get length. */
 		const double l = length();
 		
-		const double lengthX = BasicMath::absolute(terminalPoint.x-initialPoint.x)/l;
-		const double lengthY = BasicMath::absolute(terminalPoint.y-initialPoint.y)/l;
+      // not sure why I made the unit vector positive here.
+		//const double lengthX = BasicMath::absolute(terminalPoint.x-initialPoint.x)/l;
+		const double lengthX = (terminalPoint.x-initialPoint.x)/l;
+		//const double lengthY = BasicMath::absolute(terminalPoint.y-initialPoint.y)/l;
+		const double lengthY = (terminalPoint.y-initialPoint.y)/l;
 		
 		terminalPoint.x=initialPoint.x+lengthX;
 		terminalPoint.y=initialPoint.y+lengthY;
@@ -662,6 +667,9 @@ class MathVector2D
 	
 	void increaseMagnitude(const double amount)
 	{
+
+      
+      
 		const double vectorMagnitude = getMagnitude();
 		/* We can't increase the magnitude of a 0 magnitude vector, since we don't know what direction to go in. */
 		if(vectorMagnitude==0)
@@ -669,7 +677,7 @@ class MathVector2D
 		
 		const double angleDegrees = BasicMath::get2DLineAngleDegrees <double> (initialPoint.x,initialPoint.y,terminalPoint.x,terminalPoint.y);
 			
-		//std::cout<<"Vector angle: "<<angleDegrees<<".\n";
+		std::cout<<"Vector angle: "<<angleDegrees<<".\n";
 		
 		//std::cout<<"Current magnitude: "<<vectorMagnitude<<".\n";
 		
@@ -687,6 +695,23 @@ class MathVector2D
 		addVectorDegrees(newMagnitude,angleDegrees);
 		
 	}
+   
+   void setMagnitude(double magnitude)
+   {
+      // we can easily set magnitude by normalising it, multiplying it by the desired amount
+      // and then adding the result.
+      
+      MathVector2D <T> vect(initialPoint,terminalPoint);
+      vect.normalise();
+      double incX = vect.xChange()*magnitude;
+      double incY = vect.yChange()*magnitude;
+      
+      std::cout<<"increment: "<<incX<<", "<<
+      
+      terminalPoint.x = initialPoint.x+incX;
+      terminalPoint.y = initialPoint.y+incY;
+      
+   }
 	
 
 	void deepCopy(MathVector2D <T> * target)
@@ -859,3 +884,4 @@ int main(int nArgs, char** arg)
 }
 */
 
+#endif
