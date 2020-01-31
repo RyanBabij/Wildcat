@@ -126,6 +126,8 @@ void Terminal::render()
          vProgram(i)->render();
       }
    }
+   
+   // render overlay text
 }
 
 void Terminal::putCursor(unsigned short int _x, unsigned short int _y)
@@ -168,6 +170,14 @@ bool Terminal::keyboardEvent(Keyboard* _keyboard)
       }
       else if (allowInput)
       {
+         // send keyboard to programs
+         for (int i=0;i<vProgram.size();++i)
+         {
+            if ( vProgram(i)->active)
+            {
+               vProgram(i)->keyboardEvent(_keyboard);
+            }
+         }
          // Get whatever the user typed.
          if (_keyboard->lastKey == Keyboard::ENTER && strTyping.size()==0 )
          {
@@ -363,6 +373,20 @@ void Terminal::setFont(Wildcat::Font* _font)
 void Terminal::putChar(const unsigned short int x, const unsigned short int y, const unsigned char _char)
 {
    pixelScreen.putChar(x,y,_char);
+}
+void Terminal::putString(const unsigned short int x, const unsigned short int y, const std::string _str)
+{
+   pixelScreen.putString(x,y,_str);
+}
+
+void Terminal::setTextOverlay(std::string _strOverlay)
+{
+   pixelScreen.strOverlay=_strOverlay;
+}
+
+void Terminal::clearOverlay()
+{
+   //pixelScreen.clearOverlay();
 }
 
 #endif

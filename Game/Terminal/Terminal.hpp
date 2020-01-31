@@ -133,6 +133,7 @@ class Terminal: public GUI_Interface, public LogicTickInterface, public IdleTick
    void advanceCursor(unsigned short int amount=1);
    void backspace(int amount=1);
    void putChar(const unsigned short int x, const unsigned short int y, const unsigned char _char);
+   void putString(const unsigned short int x, const unsigned short int y, std::string _str);
 
    // rendering
    void placeTexture4(const int _x1, const int _y1, const int _x2, const int _y2, HasTexture* _texture, const bool preserveAspectRatio /* Default false. */);
@@ -140,6 +141,8 @@ class Terminal: public GUI_Interface, public LogicTickInterface, public IdleTick
    //pixelscreen
    void addSprite(Sprite* sprite);
    void setPixel(const short int _x, const short int _y, const short int _r, const short int _g, const short int _b);
+   void setTextOverlay(std::string _strOverlay);
+   void clearOverlay();
 
    // TERMINAL_PROGRAM
    void addProgram(Terminal_Program* _program);
