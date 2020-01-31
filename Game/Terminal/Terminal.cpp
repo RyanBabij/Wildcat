@@ -267,6 +267,10 @@ void Terminal::addSprite(Sprite* sprite)
 {
    pixelScreen.addSprite(sprite);
 }
+void Terminal::setPixel(const short int _x, const short int _y, const short int _r, const short int _g, const short int _b)
+{
+   pixelScreen.setPixel(_x, _y, _r, _g, _b);
+}
 
    // TERMINAL_PROGRAM
 void Terminal::addProgram(Terminal_Program* _program)
@@ -354,6 +358,11 @@ void Terminal::setFont(Wildcat::Font* _font)
 {
    font = _font;
    pixelScreen.setFont(_font);
+}
+
+void Terminal::putChar(const unsigned short int x, const unsigned short int y, const unsigned char _char)
+{
+   pixelScreen.putChar(x,y,_char);
 }
 
 #endif

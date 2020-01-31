@@ -125,21 +125,21 @@ class Terminal: public GUI_Interface, public LogicTickInterface, public IdleTick
    
    bool isSafe (unsigned short int _x, unsigned short int _y);
    
+   // TEXT
    void newLine(short int amount=1);
    void shiftUp(short int amount);
-   
    void type(std::string _str); // print string with typing effect.
-   
    // advance cursor by amount. Scroll the screen if necessary.
    void advanceCursor(unsigned short int amount=1);
-   
    void backspace(int amount=1);
+   void putChar(const unsigned short int x, const unsigned short int y, const unsigned char _char);
 
    // rendering
    void placeTexture4(const int _x1, const int _y1, const int _x2, const int _y2, HasTexture* _texture, const bool preserveAspectRatio /* Default false. */);
    
    //pixelscreen
    void addSprite(Sprite* sprite);
+   void setPixel(const short int _x, const short int _y, const short int _r, const short int _g, const short int _b);
 
    // TERMINAL_PROGRAM
    void addProgram(Terminal_Program* _program);
