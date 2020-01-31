@@ -103,7 +103,11 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
 
    public:
    
+   std::string strOverlay; // simple text overlay for hud or help menus.
+   // in future I'll probably replace it with a separate char array.
+   
    Texture texScreen; // dynamically generated texture
+   Texture texOverlay; // dynamically generated texture. Text/hud overlay
    
    double scalingFactor; // how many times the standard resolution to scale up
    
@@ -136,6 +140,9 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
       
       texScreen.create(nX,nY,1,true); // we might instead use this as render
       texScreen.fill(0);
+      
+      texOverlay.create(nX,nY,1,true); // we might instead use this as render
+      texOverlay.fill(0);
       
       updateTimer.init();
       updateTimer.start();
@@ -180,6 +187,17 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
    void putChar (const unsigned short int _x, const unsigned short int _y, const unsigned char _char)
    {
       aCharMode(_x,_y)=_char;
+   }
+   void putString (unsigned short int _x, const unsigned short int _y, std::string _str)
+   {
+      for (unsigned int i=0;i<_str.size();++i)
+      {
+         if ( aCharMode.isSafe(_x,_y))
+         {
+            aCharMode(_x,_y)=_str[i];
+            ++_x;
+         }
+      }
    }
    
    /* MouseInterface:: */
@@ -241,7 +259,10 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
             {
                if ( aCharMode(_x,_y) != ' ' )
                {
-                 // texScreen.copyDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],font->nX*_x,font->nY*_y);
+                  // For now I'll just overlay the font with the normal render call.
+                  // I'd like this option in future for easy text overlays
+                  
+                // texScreen.copyDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],font->nX*_x,font->nY*_y);
                   //texScreen.morphDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],font->nX*_x,font->nY*_y,100);
                }
                //texRuntime.morphDown(font8x8.aTexFont[(unsigned char)aGlyph[_y][_x]],8*_x,8*_y,22);
@@ -343,7 +364,33 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
          }
 
       }
-   
+      
+      //simple text overlay for now.
+      
+      texOverlay.fill(0);
+      
+      // draw font as an overlay
+      for (int _y=0;_y<nCharY;++_y)
+      {
+         for (int _x=0;_x<nCharX;++_x)
+         {
+            if ( aCharMode(_x,_y) != ' ' )
+            {
+               // For now I'll just overlay the font with the normal render call.
+               // I'd like this option in future for easy text overlays
+               
+               texOverlay.copyDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],font->nX*_x,font->nY*_y);
+               //texScreen.morphDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],font->nX*_x,font->nY*_y,100);
+            }
+            //texRuntime.morphDown(font8x8.aTexFont[(unsigned char)aGlyph[_y][_x]],8*_x,8*_y,22);
+            
+            //texScreen.morphDown(font->aTexFont['A'],8*_x,8*_y,25);
+         }
+      }
+      bindNearestNeighbour(&texOverlay);
+      Renderer::placeTexture4(panelX1,panelY1,panelX2,panelY2,&texOverlay,false);
+      unbind(&texOverlay);
+      
    }
    
    void setFont (Wildcat::Font* _font) override
