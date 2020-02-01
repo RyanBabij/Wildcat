@@ -312,6 +312,16 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
       texScreen.setPixel(_x,nY-_y,2,_b);
       texScreen.setPixel(_x,nY-_y,3,255);
    }
+   
+   unsigned char getPixel(const short int _x, const short int _y, const short int _channel)
+   {
+      if ( aScreenDataBuffer.isSafe(_x,_y,_channel) )
+      {
+         return texScreen.uPixel(_x,_y,_channel);
+      }
+      return 0;
+   }
+   
    bool isSafe(const short int _x, const short int _y)
    {
       return( _x > 0 && _x < nX && _y > 0 && _y < nY );
@@ -342,16 +352,7 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
       Renderer::placeTexture4(panelX1,panelY1,panelX2,panelY2,&texScreen,false);
       unbind(&texScreen);
       
-      // this looks quite bad with non-integer scaling factors. I reckon a
-      // texture overlay will probably look better.
-      for (double _y=panelY2-(scalingFactor);_y>=panelY1;_y-=scalingFactor)
-      {
-         Renderer::placeLineAlpha(0,0,0,100,panelX1,_y,panelX2,_y,scalingFactor/1.5);
-      }
-   // for (int _x=panelX1;_x<panelX1+320*scalingFactor;_x+=scalingFactor)
-   // {
-      // //Renderer::placeLineAlpha(0,0,0,80,_x,panelY1,_x,panelY1+200*scalingFactor);
-   // }
+
    
       for (int i=0;i<vSprite.size();++i)
       {
@@ -390,6 +391,17 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
       bindNearestNeighbour(&texOverlay);
       Renderer::placeTexture4(panelX1,panelY1,panelX2,panelY2,&texOverlay,false);
       unbind(&texOverlay);
+      
+      // this looks quite bad with non-integer scaling factors. I reckon a
+      // texture overlay will probably look better.
+      for (double _y=panelY2-(scalingFactor);_y>=panelY1;_y-=scalingFactor)
+      {
+         Renderer::placeLineAlpha(0,0,0,80,panelX1,_y,panelX2,_y,scalingFactor/2);
+      }
+   // for (int _x=panelX1;_x<panelX1+320*scalingFactor;_x+=scalingFactor)
+   // {
+      // //Renderer::placeLineAlpha(0,0,0,80,_x,panelY1,_x,panelY1+200*scalingFactor);
+   // }
       
    }
    
@@ -441,6 +453,10 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
    void addSprite(Sprite *sprite)
    {
       vSprite.push(sprite);
+   }
+   void removeSprite(Sprite* sprite)
+   {
+      vSprite.erase(sprite);
    }
    
 };

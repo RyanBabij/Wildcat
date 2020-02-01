@@ -140,7 +140,9 @@ class Terminal: public GUI_Interface, public LogicTickInterface, public IdleTick
    
    //pixelscreen
    void addSprite(Sprite* sprite);
+   void removeSprite(Sprite* sprite);
    void setPixel(const short int _x, const short int _y, const short int _r, const short int _g, const short int _b);
+   unsigned char getPixel(const short int _x, const short int _y, const short int _channel);
    void setTextOverlay(std::string _strOverlay);
    void clearOverlay();
 

@@ -277,9 +277,17 @@ void Terminal::addSprite(Sprite* sprite)
 {
    pixelScreen.addSprite(sprite);
 }
+void Terminal::removeSprite(Sprite* sprite)
+{
+   pixelScreen.removeSprite(sprite);
+}
 void Terminal::setPixel(const short int _x, const short int _y, const short int _r, const short int _g, const short int _b)
 {
    pixelScreen.setPixel(_x, _y, _r, _g, _b);
+}
+unsigned char Terminal::getPixel(const short int _x, const short int _y, const short int _channel)
+{
+   return pixelScreen.getPixel(_x,_y,_channel);
 }
 
    // TERMINAL_PROGRAM
