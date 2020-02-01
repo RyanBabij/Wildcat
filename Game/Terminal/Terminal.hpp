@@ -36,13 +36,6 @@
 
 #include <string>
 
-/* Audio stuffs. */
-#include <Audio/Sound.hpp> // Generic sound data handler
-#include <Audio/Wav.hpp>
-#include <Audio/AudioPlayer.hpp> // Generic audio player
-#include <Audio/AudioPlayer_OpenAL.hpp>
-/* Global OpenAL audio player. */
-AudioPlayer_OpenAL globalAudioPlayer;
 /* Dial tones. */
 Sound * dialTone[10];
 Sound* sRing;
