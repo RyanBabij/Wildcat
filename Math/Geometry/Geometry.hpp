@@ -667,17 +667,14 @@ class MathVector2D
 	
 	void increaseMagnitude(const double amount)
 	{
-
-      
-      
-		const double vectorMagnitude = getMagnitude();
+      const double vectorMagnitude = getMagnitude();
 		/* We can't increase the magnitude of a 0 magnitude vector, since we don't know what direction to go in. */
 		if(vectorMagnitude==0)
 		{ return; }
 		
 		const double angleDegrees = BasicMath::get2DLineAngleDegrees <double> (initialPoint.x,initialPoint.y,terminalPoint.x,terminalPoint.y);
 			
-		std::cout<<"Vector angle: "<<angleDegrees<<".\n";
+		//std::cout<<"Vector angle: "<<angleDegrees<<".\n";
 		
 		//std::cout<<"Current magnitude: "<<vectorMagnitude<<".\n";
 		
@@ -689,8 +686,9 @@ class MathVector2D
 		//std::cout<<"Reducing magnitude to: "<<newMagnitude<<".\n";
 		//std::cout<<"New magnitude: "<<newMagnitude<<".\n";
 		/* Make vector 0 magnitude. */
-		terminalPoint.x = initialPoint.x;
-		terminalPoint.y = initialPoint.y;
+      terminalPoint.set(initialPoint.x,initialPoint.y);
+		//terminalPoint.x = initialPoint.x;
+		//terminalPoint.y = initialPoint.y;
 		/* Add new magnitude at same angle. */
 		addVectorDegrees(newMagnitude,angleDegrees);
 		
@@ -700,16 +698,19 @@ class MathVector2D
    {
       // we can easily set magnitude by normalising it, multiplying it by the desired amount
       // and then adding the result.
+      //std::cout<<"Setting mag\n";
       
       MathVector2D <T> vect(initialPoint,terminalPoint);
       vect.normalise();
       double incX = vect.xChange()*magnitude;
       double incY = vect.yChange()*magnitude;
       
-      std::cout<<"increment: "<<incX<<", "<<
+      //std::cout<<"increment: "<<incX<<", "<<incY<<"\n";
       
-      terminalPoint.x = initialPoint.x+incX;
-      terminalPoint.y = initialPoint.y+incY;
+      terminalPoint.set(initialPoint.x+incX, initialPoint.y+incY);
+      
+      //terminalPoint.x = initialPoint.x+incX;
+      //terminalPoint.y = initialPoint.y+incY;
       
    }
 	
