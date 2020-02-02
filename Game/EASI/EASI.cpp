@@ -11,7 +11,7 @@
 
 #include <Game/EASI/EASI.hpp>
 
-#include <queue> // shunting alorithm
+#include <queue> // shunting algorithm
 
 EASI::EASI()
 {

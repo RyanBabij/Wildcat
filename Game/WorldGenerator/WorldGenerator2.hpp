@@ -4,7 +4,7 @@
 
 // These are hardcoded globals for now.
 
-#include <WorldGenerator/Biome.hpp>
+#include <Game/WorldGenerator/Biome.hpp>
 
 //#include <Debug/RetCode.hpp> // FOR RETURN CODES.
 
@@ -28,7 +28,7 @@
 
 #include <limits.h> /* For INT_MAX */
 
-#include <Time/Timer.hpp>
+#include <System/Time/Timer.hpp>
 
 /*	WorldGenerator2
 	#include <WorldGenerator/WorldGenerator2.hpp>

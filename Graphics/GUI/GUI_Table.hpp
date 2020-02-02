@@ -7,7 +7,7 @@
 		TABLE. Allows the organised display of a large amount of data. I am thinking that a template and pointer design might be more efficient, but this system is at least easy to understand.
 */
 
-#include <GUI/GUI.hpp>
+#include <Graphics/GUI/GUI.hpp>
 #include <Container/Table/Table.hpp>
 
 class GUI_Table: public GUI_Interface
