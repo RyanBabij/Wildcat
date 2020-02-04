@@ -83,7 +83,7 @@ namespace DataTools
 	{ // basically just wraps the stl function.
 		for ( const auto c : _s )
 		{
-         if (std::isalnum(c) == false || (allowSpaces && c!=' ') )
+         if (std::isalnum(c) == false || (allowSpaces==false && c==' ') )
          {
             return false;
          }
@@ -221,12 +221,11 @@ namespace DataTools
    
 	/* Turns a variable into a string, and also pads with zeroes. */
 	template <class T>
-	inline static std::string toString (const T n, unsigned int nZeroes)
+	inline static std::string toString (const T n, unsigned int nZeroes=1)
 	{
 		std::ostringstream oss;
 		oss<<n;
 		std::string val = oss.str();
-
 		std::string retVal = "";
 
 		if(val.length()<nZeroes)
@@ -241,13 +240,13 @@ namespace DataTools
 		retVal+=val;
 		return retVal;
 	}
-	template <class T>
-	inline static std::string toString(const T n)
-	{
-      std::ostringstream oss;
-		oss<<n;
-		return oss.str();
-	}
+	// template <class T>
+	// inline static std::string toString(const T n)
+	// {
+      // std::ostringstream oss;
+		// oss<<n;
+		// return oss.str();
+	// }
 
       // Delimit thousands with the given delimiter. Also works on negative values
 	std::string delimitThousands(const std::string _str, const char _delimiter)
