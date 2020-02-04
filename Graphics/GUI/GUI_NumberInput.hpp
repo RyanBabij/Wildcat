@@ -74,6 +74,13 @@ class GUI_NumberInput: public GUI_Interface
 		hasIncrement1=true;
 		hasIncrement2=true;
 		hasIncrement3=true;
+      
+		regionDecrement1hovered=false;
+		regionDecrement10hovered=false;
+		regionDecrement100hovered=false;
+		regionIncrement1hovered=false;
+		regionIncrement10hovered=false;
+		regionIncrement100hovered=false;
 	}
 	void setNumbers ( const int _minValue, const int _maxValue, const int _defaultValue)
 	{
@@ -127,7 +134,7 @@ class GUI_NumberInput: public GUI_Interface
 
 	void render()
 	{
-		if ( active==true)
+		if ( active==true )
 		{
 			if ( texIncrement == 0 || texDecrement == 0 )
 			{
