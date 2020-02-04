@@ -293,8 +293,15 @@ class ANSI
 		unsigned char finalByte = 'm';
 
 		std::string escapeCode = "";
+      
+      if ( _str.size()==1)
+      {
+         ansiString=_str;
+         vForegroundColour.push(currentForegroundColour);
+         vBackgroundColour.push(currentBackgroundColour);
+      }
 		
-		for (unsigned int i=0;i<_str.size()-1;++i)
+		for (unsigned int i=0;i<_str.size()-1;++i) // note that 1 char strings aren't processed.
 		{
 			if ((unsigned char)_str[i]==escape1 && (unsigned char)_str[i+1] == escape2)
 			{
