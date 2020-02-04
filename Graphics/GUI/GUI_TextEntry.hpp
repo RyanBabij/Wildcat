@@ -42,7 +42,7 @@ class GUI_TextEntry: public GUI_Interface
 	GUI_TextEntry() : GUI_Interface() /* super */
 	{
 		input="";
-		fieldName="Blah:";
+		fieldName="?:";
 		active=true;
 		selected=false;
 		characterLimit=0;
