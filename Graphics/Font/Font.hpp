@@ -159,7 +159,7 @@ class Font
 		colour codes are provided. Currently only red is supported.
 		
 	*/
-	int drawText(std::string text, unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2, bool centeredX = false, bool centeredY=false, bool rawTextMode=false,
+   int drawText(std::string text, unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2, bool centeredX = false, bool centeredY=false, bool rawTextMode=false,
 				unsigned char _colourRed=0, unsigned char _colourGreen=0,unsigned char _colourBlue=0,unsigned char _alpha=255)
 	{
 		
@@ -172,6 +172,8 @@ class Font
 		{
 			return 0;
 		}
+      
+      
 		
 		/* Automatically sort the box coordinates here, so we don't need to input the coordinates in any particular order. */
 		if (y1<y2) { DataTools::swap(&y1,&y2); }
@@ -181,16 +183,13 @@ class Font
 		const int panelHeight = y1-y2;
 		
 		// STRIP AND PROCESS ANSI ESCAPE CODES.
-	//	std::cout<<"Processing ANSI: "<<text<<".\n";
 		ANSI ansi;
 		ansi.setDefaultForeground(_colourRed,_colourGreen,_colourBlue,_alpha);
 		ansi.setDefaultBackground(0,0,0,0);
 		ansi.read(text);
 		
 		text = ansi.ansiString;
-		
-		//ansi.printColours();
-		
+
 		if (ansi.size()==0)
 		{
 			return 0;
@@ -333,7 +332,7 @@ class Font
 	
 	//Pass a character array. Array can be 2D, but rows won't be respected as newlines unless the coordinates are set manually to align.
 	// Be aware that 2d arrays are row major, meaning x and y are switched.
-	int drawText(char* text, unsigned int arraySize, unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2, bool centeredX = false, bool centeredY=false, bool rawTextMode=false,
+	inline int drawText(unsigned int arraySize, const char* text, unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2, bool centeredX = false, bool centeredY=false, bool rawTextMode=false,
 				unsigned char _colourRed=0, unsigned char _colourGreen=0,unsigned char _colourBlue=0)
 	{
 		if (loadSuccess == false || arraySize == 0)
