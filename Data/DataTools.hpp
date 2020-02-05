@@ -32,7 +32,11 @@ namespace DataTools
       // because I do that too often.
       #define WILDCAT_WARN_CARRIAGE_RETURN
       #ifdef WILDCAT_WARN_CARRIAGE_RETURN
-      if ( delim.find('\n') != delim.find('\r') )
+      
+      const bool hasNewLine = delim.find('\n') != std::string::npos;
+      const bool hasCarriage = delim.find('\r') != std::string::npos;
+      
+      if (hasNewLine != hasCarriage)
       {
          std::cout<<"WARNING: Tokenising one of two potential carriage returns.\n";
       }
