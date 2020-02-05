@@ -20,7 +20,7 @@
 #include <Graphics/Texture/Texture.hpp>
 #include <File/FileManager.hpp>
 
-bool loadTextureMipmapRotate(const std::string filePath, GLuint* tex0, GLuint* tex90, GLuint* tex180, GLuint* tex270)
+bool loadTextureMipmapRotate(const std::string filePath, GLuint* tex0, GLuint* tex90, GLuint* tex180, GLuint* tex270, const bool compress=false)
 { /* will rotate the image clockwise 90 degrees 4 times, and store each rotation as a texture */
 
 	int fileSize;
@@ -92,7 +92,7 @@ bool loadTextureMipmapRotate(const std::string filePath, GLuint* tex0, GLuint* t
 	return false;
 }
 
-bool loadTextureAutoMipmap(const std::string filePath, GLuint* textureID)
+bool loadTextureAutoMipmap(const std::string filePath, GLuint* textureID, const bool compress=false)
 {
 	glGenTextures(1,textureID);
 	glBindTexture(GL_TEXTURE_2D, *textureID);
@@ -127,7 +127,7 @@ bool loadTextureAutoMipmap(const std::string filePath, GLuint* textureID)
 	return true;
 }
 
-bool loadTextureAutoMipmap(const std::string filePath, Texture* tex)
+bool loadTextureAutoMipmap(const std::string filePath, Texture* tex, const bool compress=false)
 {
 	glGenTextures(1,&tex->textureID);
 	glBindTexture(GL_TEXTURE_2D, tex->textureID);
@@ -164,7 +164,7 @@ bool loadTextureAutoMipmap(const std::string filePath, Texture* tex)
 
 /* Apparently you can get OpenGL to do the mipmap generation for you... Wish I knew that sooner.
 However, old versions of OpenGL may not support this, so it is a good idea to fall back to manual mipmap generation. */
-bool loadTextureAutoMipmapNative(const std::string filePath, GLuint* textureID)
+bool loadTextureAutoMipmapNative(const std::string filePath, GLuint* textureID, const bool compress=false)
 {
 	/* NOTE: It seems that the GLuint needs to be initialised (ie to 0) before being passed here, in some cases. */
 	glGenTextures(1,textureID);
@@ -191,7 +191,7 @@ bool loadTextureAutoMipmapNative(const std::string filePath, GLuint* textureID)
 	}
 	return true;
 }
-bool loadTextureAutoMipmapNative(const std::string filePath, Texture* texture)
+bool loadTextureAutoMipmapNative(const std::string filePath, Texture* texture, const bool compress=false)
 {
 	/* NOTE: It seems that the GLuint needs to be initialised (ie to 0) before being passed here, in some cases. */
 	glGenTextures(1,&texture->textureID);
@@ -220,7 +220,7 @@ bool loadTextureAutoMipmapNative(const std::string filePath, Texture* texture)
 
 /* Uses nearest-neighbour scaling. This is useful when you want to preserve the pixel outlines, such
 as when using sprites, or going for a retro look. */
-bool loadTextureNearestNeighbour(const std::string filePath, GLuint* textureID)
+bool loadTextureNearestNeighbour(const std::string filePath, GLuint* textureID, const bool compress=false)
 {
 	/* NOTE: It seems that the GLuint needs to be initialised (ie to 0) before being passed here, in some cases. */
 	glGenTextures(1,textureID);
@@ -236,7 +236,17 @@ bool loadTextureNearestNeighbour(const std::string filePath, GLuint* textureID)
 		Texture* texture = new Texture;
 		texture->create(png.nX,png.nY,1);
 		texture->data=png.data;
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, texture->nX, texture->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->data);
+
+      if (compress)
+      {
+         glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, texture->nX, texture->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->data);
+      }
+      else
+      {
+         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture->nX, texture->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->data);
+      }
+      
+		
 		/* 0221216034 Memleak fix? */
 		delete texture;
 	}
@@ -248,7 +258,7 @@ bool loadTextureNearestNeighbour(const std::string filePath, GLuint* textureID)
 
 /* New implementation for Texture class. */
 /* NOTE: Try switching internal format from GL_RGBA8 to GL_RGBA4. Also try compression. */
-bool loadTextureNearestNeighbour(const std::string filePath, Texture* texture)
+bool loadTextureNearestNeighbour(const std::string filePath, Texture* texture, const bool compress=false)
 {
 	if(texture==0) {return false;}
   
@@ -278,7 +288,15 @@ bool loadTextureNearestNeighbour(const std::string filePath, Texture* texture)
   glBindTexture(GL_TEXTURE_2D, texture->textureID);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, texture->nX, texture->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->data);
+  
+      if (compress)
+      {
+         glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, texture->nX, texture->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->data);
+      }
+      else
+      {
+         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture->nX, texture->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->data);
+      }
 
 	return true;
 }
@@ -343,7 +361,7 @@ void unbind(Texture * texture) // free up graphics RAM
 
 /* New implementation for Texture class. */
 /* NOTE: Try switching internal format from GL_RGBA8 to GL_RGBA4. Also try compression. */
-bool loadTextureLinear(const std::string filePath, Texture* texture)
+bool loadTextureLinear(const std::string filePath, Texture* texture, const bool compress=false)
 {
 
 	if(texture!=0)
@@ -366,7 +384,16 @@ bool loadTextureLinear(const std::string filePath, Texture* texture)
 			texture->averageRed = png.averageRed;
 			texture->averageGreen = png.averageGreen;
 			texture->averageBlue = png.averageBlue;
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, texture->nX, texture->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->data);
+         
+         if (compress)
+         {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, texture->nX, texture->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->data);
+         }
+         else
+         {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture->nX, texture->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->data);
+         }
+         
 		}
 		else
 		{ return false; }
@@ -376,7 +403,7 @@ bool loadTextureLinear(const std::string filePath, Texture* texture)
 	return false;
 }
 
-bool loadTextureRotate(const std::string filePath, Texture* tex0, Texture* tex90, Texture* tex180, Texture* tex270)
+bool loadTextureRotate(const std::string filePath, Texture* tex0, Texture* tex90, Texture* tex180, Texture* tex270, const bool compress=false)
 { /* will rotate the image clockwise 90 degrees 4 times, and store each rotation as a texture */
 
 	int fileSize;
@@ -430,25 +457,57 @@ bool loadTextureRotate(const std::string filePath, Texture* tex0, Texture* tex90
 		glBindTexture(GL_TEXTURE_2D, tex0->textureID);
 		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, tex0->nX, tex0->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex0->data);
-		
+      
+      if (compress)
+      {
+         glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, tex0->nX, tex0->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex0->data);
+      }
+      else
+      {
+         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex0->nX, tex0->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex0->data);
+      }
+
 		glGenTextures(1,&tex90->textureID);
 		glBindTexture(GL_TEXTURE_2D, tex90->textureID);
 		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, tex90->nX, tex90->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex90->data);
+
+      if (compress)
+      {
+         glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, tex90->nX, tex90->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex90->data);
+      }
+      else
+      {
+         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex90->nX, tex90->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex90->data);
+      }
 		
 		glGenTextures(1,&tex180->textureID);
 		glBindTexture(GL_TEXTURE_2D, tex180->textureID);
 		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, tex180->nX, tex180->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex180->data);
+
+      if (compress)
+      {
+         glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, tex180->nX, tex180->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex180->data);
+      }
+      else
+      {
+         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex180->nX, tex180->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex180->data);
+      }
 		
 		glGenTextures(1,&tex270->textureID);
 		glBindTexture(GL_TEXTURE_2D, tex270->textureID);
 		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, tex270->nX, tex270->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex270->data);
+
+      if (compress)
+      {
+         glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, tex270->nX, tex270->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex270->data);
+      }
+      else
+      {
+         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex270->nX, tex270->nY, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex270->data);
+      }
 		
 
 		return true;
