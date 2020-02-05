@@ -33,11 +33,16 @@ class RandomLehmer
 
    public:
 
-   RandomLehmer()
+   RandomLehmer(const uint32_t _seed=0)
    {
       nLehmer=0;
       currentByte=3;
       currentVal=0;
+   }
+   
+   void seed (const uint32_t _seed=0)
+   {
+      nLehmer=_seed;
    }
 
    // generate a psuedorandom number from 0-4294967295
@@ -50,6 +55,10 @@ class RandomLehmer
       tmp = (uint64_t)m1*0x12fad5c9;
       uint32_t m2=(tmp>>32)^tmp;
       return m2;
+   }
+   inline uint32_t rand32(const uint32_t _max)
+   {
+      return rand32()%_max;
    }
 
    // return random number from 0-255. Generates 4 values at a time
@@ -69,7 +78,33 @@ class RandomLehmer
       }
       return aByte[currentByte];
    }
+   inline unsigned char rand8(const unsigned char max)
+   {
+      return rand8()%max;
+   }
+   inline unsigned int multiRoll8(const unsigned short int nDices, const unsigned char diceMax, const bool allowZeroRoll=false)
+   {
+		unsigned int total=0;
+
+		for ( unsigned int i=0;i<nDices;++i)
+		{
+			if ( allowZeroRoll == false )
+			{
+				total+=rand8(diceMax-1)+1;
+			}
+			else
+			{
+				total+=rand8(diceMax);
+			}
+
+		}
+		return total;
+   }
    
+	/* Will return true one in 'prob' times. Ie, with prob at 100, will return true roughly 1 in 100 times. */
+	inline bool oneIn(const int prob)
+	{ return (rand32(prob)==0); }
+
 };
 
 #endif
