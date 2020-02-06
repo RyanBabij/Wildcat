@@ -104,6 +104,14 @@ class RandomLehmer
 	/* Will return true one in 'prob' times. Ie, with prob at 100, will return true roughly 1 in 100 times. */
 	inline bool oneIn(const int prob)
 	{ return (rand32(prob)==0); }
+   
+	//Range is inclusive. Seems to work with negative values.
+	inline int range32(const int _min, const int _max)
+	{
+		if (_min==_max) { return _min; }
+
+		return (rand32(_max-_min)) + _min;
+	}
 
 };
 
