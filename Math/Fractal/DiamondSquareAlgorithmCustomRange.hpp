@@ -1,14 +1,17 @@
 #pragma once
+#ifndef WILDCAT_MATH_FRACTAL_DIAMONDSQUAREALGORITHMCUSTOMRANGE_HPP
+#define WILDCAT_MATH_FRACTAL_DIAMONDSQUAREALGORITHMCUSTOMRANGE_HPP
 
-#include <Math/Random/GlobalRandom.hpp>
 #include <Container/ArrayS2/ArrayS2.hpp>
+#include <Math/Random/RandomLehmer.hpp>
 
-#include <Math/Random/GlobalRandomThreadSafe.hpp>
-
-/*
-	DiamondSquareAlgorithm
-
-	This algorithm should have less artifacts than the midpoint displacement algorithm.
+/* Wildcat: DiamondSquareAlgorithmCustomRange.hpp
+	#include <Math/Fractal/DiamondSquareAlgorithmCustomRange.hpp>
+   
+   Uses the diamond-square variant of the midpoint displacement
+   algorithm to reduce visible artifacts. Good for terrain generation.
+   This one allows a custom range to be specified, which is useful if
+   you want high or low resolution output.
 
 	The passed array must be initialised with 0s.
 
@@ -22,33 +25,35 @@
 
 	Consider multithreading, but not a high priority.
 
-	0223413688. Algorithm will now respect non-zero entries by leaving them alone.
+	Algorithm will respect non-zero entries by leaving them alone.
+   This allows you to define some basic shapes that you want the
+   world to use during generation. For example you can generate
+   islands by setting all border values to 1.
 
-	023-236-2049: Fixed bug where freesteps were only being done in diamond mode. (This may have made artifacts worse... Maybe change it. (just comment out the freesteps bit).
-
-	025-162-5792: Removed old code. Noticed that aValueTable isn't working properly. Improved performance, etc, etc. Removed thread related stuff, since this library has nothing to do with threads at the moment. Still needs work.
+	Fixed bug where freesteps were only being done in diamond mode.
+   (This may have made artifacts worse... Maybe change it.
+   (just comment out the freesteps bit).
 
 	The value table isn't working properly on the fly, so I made it do it again at the end. This can be fixed later. Value table seems to be working now.
-
-	
-	0253463172 - The fractal has been modified to be more flexible with the range. For the majority of cases, a range of values from 0-255 is enough. However sometimes there is a need for greater detail, for example when using a fractal to place rare resources on a map. With 256 values this means that we can't go under 1/256% chance of occurence. Unsigned chars had to be changed to int, and references to 256 have been changed to the required range.
+   
+   The algorithm must support values above 256 because in some cases more precision is required. For example when using a fractal to place rare resources on a map. With 256 values this means that we can't go under 1/256% chance of occurence. Unsigned chars had to be changed to int, and references to 256 have been changed to the required range.
 	
 	Note that in some cases the biome table must be rebuilt.
 	
 	Setting the freesteps too high is causing biases to 0 and max values. Anything above 3 seems to create a noticable bias in the value tables.
-	
-	0253463626 - Fixed a bug that caused freesteps to be 0, not a random value. Took over an hour to chase down...
-	
-	TODO: Merge DiamondSquareAlgorithm and DiamondSquareAlgorithmCustomRange possibly using templates. Alternatively we can stick with int for everything here and convert later if we need to save space.
+   
+   I changed the RNG from Mersenne Twister to Lehmer. This should significantly improve performance.
+   
+   Todo: Add repeatable seeding.
 */
 
 class DiamondSquareAlgorithmCustomRange
 {
 	private:
 
-	//MTRand random;
+   RandomLehmer rng;
 
-	static void addToValueTable(int* valueTable, int value)
+	static void addToValueTable(int* valueTable, unsigned int value)
 	{
 		if ( valueTable!=0 )
 		{
@@ -59,7 +64,7 @@ class DiamondSquareAlgorithmCustomRange
 	public:
 	
 		// Values of the fractal will range from 0 to maxValue inclusive.
-	int maxValue;
+   int maxValue;
 	
 	DiamondSquareAlgorithmCustomRange()
 	{
@@ -67,16 +72,13 @@ class DiamondSquareAlgorithmCustomRange
 		maxValue=255;
 	}
 
-	void generate(ArrayS2 <int>* aMap=0, int* aValueTable=0, int freeSteps = 0, double smoothing = 0.85, double variance = 250, double varianceDecrement = 0.1)
+	void generate(ArrayS2 <int>* aMap=0, int* aValueTable=0, unsigned short int freeSteps = 0, float smoothing = 0.85, float variance = 250, float varianceDecrement = 0.1)
 	{
-		//std::cout<<"Variance is: "<<variance<<".\n";
-		//std::cout<<"Free steps: " <<freeSteps<<".\n";
-		//std::cout<<"GenerateThreadSafe\n";
 			// RESET VALUE TABLE
 		if ( aValueTable!=0 )
 		{
 			std::cout<<"Reset value table.\n";
-			for ( int i=0;i<=maxValue;++i)
+			for (int i=0;i<=maxValue;++i)
 			{
 				aValueTable[i]=0;
 			}
@@ -99,31 +101,31 @@ class DiamondSquareAlgorithmCustomRange
 			// Warning: Messing with this can destroy several hours of your life.
 		int freeStepValue = -1; // -1 == random.
 
-		int squareSize = aMap->nX-1;
+		unsigned int squareSize = aMap->nX-1;
 
 		// BASE CASE: SET CORNER VALUES (ONLY IF THEY AREN'T ALREADY SET).
 		// NOTE THAT A VALUE OF 0 WILL ALWAYS BE OVERWRITTEN.
 		if ( (*aMap)(0,0) == 0 )
 		{
-			(*aMap)(0,0)=Random::randInt(maxValue);
+			(*aMap)(0,0)=rng.rand32(maxValue);
 		}
 		addToValueTable(aValueTable,(*aMap)(0,0));
 
 		if ( (*aMap)(0,aMap->nY-1) == 0 )
 		{
-			(*aMap)(0,aMap->nY-1)=Random::randInt(maxValue);
+			(*aMap)(0,aMap->nY-1)=rng.rand32(maxValue);
 		}
 		addToValueTable(aValueTable,(*aMap)(0,aMap->nY-1));
 
 		if ( (*aMap)(aMap->nX-1,0) == 0 )
 		{
-			(*aMap)(aMap->nX-1,0)=Random::randInt(maxValue);
+			(*aMap)(aMap->nX-1,0)=rng.rand32(maxValue);
 		}
 		addToValueTable(aValueTable,(*aMap)(aMap->nX-1,0));
 
 		if ( (*aMap)(aMap->nX-1,aMap->nY-1) == 0 )
 		{
-			(*aMap)(aMap->nX-1,aMap->nY-1)=Random::randInt(maxValue);
+			(*aMap)(aMap->nX-1,aMap->nY-1)=rng.rand32(maxValue);
 		}
 		addToValueTable(aValueTable,(*aMap)(aMap->nX-1,aMap->nY-1));
 
@@ -147,7 +149,7 @@ class DiamondSquareAlgorithmCustomRange
 							{
 								if ( freeStepValue == -1 )
 								{
-									const int _rand = Random::randInt(maxValue);
+									const int _rand = rng.rand32(maxValue);
 									(*aMap)(targetX,targetY)=_rand;
 									addToValueTable(aValueTable,_rand);
 								}
@@ -188,7 +190,7 @@ class DiamondSquareAlgorithmCustomRange
 									const int average = totalCorners/4;
 
 								//int variance2 = Random::randInt(variance) - (variance/2);
-								int result = average+Random::range(-variance,variance);
+								int result = average+rng.range32(-variance,variance);
 								if (result<0) { result=0; }
 								if (result>maxValue) { result=maxValue; }
 
@@ -220,7 +222,7 @@ class DiamondSquareAlgorithmCustomRange
 							{
 								if ( freeStepValue == -1 )
 								{
-									const int _rand = Random::randInt(maxValue);
+									const unsigned int _rand = rng.rand32(maxValue);
 									(*aMap)(_x,_y)=_rand;
 									addToValueTable(aValueTable,_rand);
 								}
@@ -263,7 +265,7 @@ class DiamondSquareAlgorithmCustomRange
 									average = total/nSides;
 								}
 
-								int result = average+Random::range(-variance,variance);
+								int result = average+rng.range32(-variance,variance);
 
 								if (result<0) { result=0; }
 								if (result>maxValue) { result=maxValue; }
@@ -308,7 +310,7 @@ class DiamondSquareAlgorithmCustomRange
 			// TEMPORARY FIX FOR VALUE TABLE PROBLEMS.
 		if (aValueTable!=0)
 		{
-			for ( int i=0;i<=maxValue;++i)
+			for (int i=0;i<=maxValue;++i)
 			{
 				aValueTable[i]=0;
 			}
@@ -329,3 +331,5 @@ class DiamondSquareAlgorithmCustomRange
 	}
 
 };
+
+#endif

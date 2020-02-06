@@ -1,16 +1,15 @@
 #pragma once
+#ifndef WILDCAT_MATH_FRACTAL_DIAMONDSQUAREALGORITHM_HPP
+#define WILDCAT_MATH_FRACTAL_DIAMONDSQUAREALGORITHM_HPP
 
-#include <Math/Random/GlobalRandom.hpp>
+#include <Math/Random/RandomLehmer.hpp>
 #include <Container/ArrayS2/ArrayS2.hpp>
 
-//#include <Math/Random/GlobalRandomThreadSafe.hpp>
+/* Wildcat: DiamondSquareAlgorithm.hpp
+	#include <Math/Fractal/DiamondSquareAlgorithm.hpp>
 
-#include <File/FileLog.hpp>
-
-/*
-	DiamondSquareAlgorithm
-
-	This algorithm should have less artifacts than the midpoint displacement algorithm.
+   Uses the diamond-square variant of the midpoint displacement
+   algorithm to reduce visible artifacts. Good for terrain generation.
 
 	The passed array must be initialised with 0s.
 
@@ -24,34 +23,30 @@
 
 	In the future I would like multithreading.
 
-	0223413688. Algorithm will now respect non-zero entries by leaving them alone.
+	Algorithm will now respect non-zero entries by leaving them alone.
 
-	023-236-2049: Fixed bug where freesteps were only being done in diamond mode. (This may have made artifacts worse... Maybe change it. (just comment out the freesteps bit).
+	Fixed bug where freesteps were only being done in diamond mode. (This may have made artifacts worse... Maybe change it. (just comment out the freesteps bit).
 
-	025-162-5792: Removed old code. Noticed that aValueTable isn't working properly. Improved performance, etc, etc. Removed thread related stuff, since this library has nothing to do with threads at the moment. Still needs work.
+	Removed old code. Noticed that aValueTable isn't working properly. Improved performance, etc, etc. Removed thread related stuff, since this library has nothing to do with threads at the moment. Still needs work.
 
 	The value table isn't working properly on the fly, so I made it do it again at the end. This can be fixed later. Value table seems to be working now.
 
 	Smoothing now continues through free steps to ensure consistent smoothing while playing with free steps values.
 	
-	//Variance should not be set excessively high otherwise it will bias towards extreme values. A good rule is to start it at half the maximum range.
-	//Tweaked variance random range to respect bounds.
+	Variance should not be set excessively high otherwise it will bias towards extreme values. A good rule is to start it at half the maximum range.
+	Tweaked variance random range to respect bounds.
 	
-	027-248-0059 - Readded basic cratering option.
+	Readded basic cratering option.
+   
+   I changed the RNG from Mersenne Twister to Lehmer. This should significantly improve performance.
+   
+   Todo: Add repeatable seeding and null seeding.
 */
-
-//#include <Math/Random/MersenneTwister.hpp>
-//MTRand r2;
-
-
-// Mersenne twister is now part of c++
-#include <random>
-#include <functional>
 
 class DiamondSquareAlgorithm
 {
 	private:
-	RandomNonStatic random;
+   RandomLehmer rng;
 
 	static void addToValueTable(int* valueTable, int value)
 	{
@@ -75,26 +70,16 @@ class DiamondSquareAlgorithm
 		wrapY=false;
 	}
 
-	void test()
-	{
-	}
-	
-	void test2(ArrayS2 <unsigned char>* aMap=0, int* aValueTable=0)
-	{
-	}
-	
 		// Note that random numbers are generated even if they aren't used, to map rng output to each tile regardless of settings.
-	void generate(ArrayS2 <unsigned char>* aMap=0, int* aValueTable=0, int freeSteps = 0, double smoothing = 0.85, double variance = 250, double varianceDecrement = 0.1, bool cratering=false)
+	void generate(ArrayS2 <unsigned char>* aMap=0, int* aValueTable=0, unsigned short int freeSteps = 0, float smoothing = 0.85, float variance = 250, float varianceDecrement = 0.1, const bool cratering=false)
 	{
-		//std::cout<<"Passed seed is: "<<seed<<".\n";
 		if ( seed==0 )
 		{
-			random.seed();
+			rng.seed();
 		}
 		else
 		{
-			//std::cout<<"Seed is fixed at "<<seed<<".\n";
-			random.seed(seed);
+			rng.seed(seed);
 		}
 		
 			// RESET VALUE TABLE
@@ -110,9 +95,9 @@ class DiamondSquareAlgorithm
 
 
 		if (aMap==0) { std::cout<<"ERROR\n"; return; }
-		int mapSize = aMap->nX;
+		unsigned int mapSize = aMap->nX;
 
-		int squareSize = aMap->nX-1;
+		unsigned int squareSize = aMap->nX-1;
 
 		
 		// BASE CASE: SET CORNER VALUES (ONLY IF THEY AREN'T ALREADY SET).
@@ -121,25 +106,25 @@ class DiamondSquareAlgorithm
 		{
 			if ( (*aMap)(0,0) == 0 )
 			{
-				(*aMap)(0,0)=random.randInt(255);
+				(*aMap)(0,0)=rng.rand8();
 			}
 		//	addToValueTable(aValueTable,(*aMap)(0,0));
 
 			if ( (*aMap)(0,aMap->nY-1) == 0 )
 			{
-				(*aMap)(0,aMap->nY-1)=random.randInt(255);
+				(*aMap)(0,aMap->nY-1)=rng.rand8();
 			}
 		//	addToValueTable(aValueTable,(*aMap)(0,aMap->nY-1));
 
 			if ( (*aMap)(aMap->nX-1,0) == 0 )
 			{
-				(*aMap)(aMap->nX-1,0)=random.randInt(255);
+				(*aMap)(aMap->nX-1,0)=rng.rand8();
 			}
 		//	addToValueTable(aValueTable,(*aMap)(aMap->nX-1,0));
 
 			if ( (*aMap)(aMap->nX-1,aMap->nY-1) == 0 )
 			{
-				(*aMap)(aMap->nX-1,aMap->nY-1)=random.randInt(255);
+				(*aMap)(aMap->nX-1,aMap->nY-1)=rng.rand8();
 			}
 		//	addToValueTable(aValueTable,(*aMap)(aMap->nX-1,aMap->nY-1));
 		}
@@ -178,7 +163,7 @@ class DiamondSquareAlgorithm
 							{
 								if ( freeStepValue == -1 )
 								{
-									const int _rand = random.randInt(255);
+									const int _rand = rng.rand8();
 									(*aMap)(targetX,targetY)=_rand;
 							//		addToValueTable(aValueTable,_rand);
 								}
@@ -187,12 +172,12 @@ class DiamondSquareAlgorithm
 									(*aMap)(targetX,targetY)=freeStepValue;
 							//		addToValueTable(aValueTable,freeStepValue);
 									// Generate a random number to keep rng predictable for each tile.
-									random.randInt(255);
+									rng.rand8();
 								}
 							}
-							else if ( squareSize > 6 && cratering==true && random.randInt(100)==0 )
+							else if ( squareSize > 6 && cratering==true && rng.rand32(100)==0 )
 							{
-								const int _rand = random.randInt(255);
+								const int _rand = rng.rand8();
 								(*aMap)(targetX,targetY)=_rand;
 								//(*aMap)(targetX,targetY)=0;
 						//		addToValueTable(aValueTable,_rand);
@@ -236,12 +221,12 @@ class DiamondSquareAlgorithm
 									//if (lowerRange<0) { lowerRange=0; }
 									int higherRange = variance;
 									//if (higherRange > 255) { higherRange = 255; }
-									result = average+random.range(lowerRange,higherRange);
+									result = average+rng.range32(lowerRange,higherRange);
 								}
 								else
 								{
 									// Generate a random number to keep rng predictable for each tile.
-									random.randInt(255);
+									rng.rand8();
 								}
 								
 									// Just to be sure.
@@ -257,7 +242,7 @@ class DiamondSquareAlgorithm
 							// MAKE SURE NON-ZERO VALUES STILL GET COUNTED IN THE TABLE.
 							//addToValueTable(aValueTable,(*aMap)(targetX,targetY));
 							// Generate a random number to keep rng predictable for each tile.
-							random.randInt(255);
+							rng.rand8();
 						}
 					}
 				}
@@ -279,7 +264,7 @@ class DiamondSquareAlgorithm
 							{
 								if ( freeStepValue == -1 )
 								{
-									const unsigned char _rand = random.randInt(255);
+									const unsigned char _rand = rng.rand8();
 									(*aMap)(_x,_y)=_rand;
 								//	addToValueTable(aValueTable,_rand);
 								}
@@ -289,7 +274,7 @@ class DiamondSquareAlgorithm
 								//	addToValueTable(aValueTable,freeStepValue);
 								
 									// Generate a random number to keep rng predictable for each tile.
-									random.randInt(255);
+									rng.rand8();
 								}
 							}
 							else
@@ -325,7 +310,7 @@ class DiamondSquareAlgorithm
 									average = total/nSides;
 								}
 
-								int result = average+random.range(-variance,variance);
+								int result = average+rng.range32(-variance,variance);
 
 								if (result<0) { result=0; }
 								if (result>255) { result=255; }
@@ -351,7 +336,7 @@ class DiamondSquareAlgorithm
 							//addToValueTable(aValueTable,(*aMap)(_x,_y));
 							
 							// Generate a random number to keep rng predictable for each tile.
-							random.randInt(255);
+							rng.rand8();
 						}
 					}
 				}
@@ -394,3 +379,5 @@ class DiamondSquareAlgorithm
 	}
 
 };
+
+#endif
