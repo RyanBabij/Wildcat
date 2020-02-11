@@ -35,7 +35,7 @@ class RandomLehmer
 
    RandomLehmer(const uint32_t _seed=0)
    {
-      nLehmer=0;
+      nLehmer=_seed;
       currentByte=3;
       currentVal=0;
    }
@@ -82,11 +82,29 @@ class RandomLehmer
    {
       return rand8()%max;
    }
-   inline unsigned int multiRoll8(const unsigned short int nDices, const unsigned char diceMax, const bool allowZeroRoll=false)
+   inline uint32_t multiRoll8(const uint16_t nDices, const unsigned char diceMax, const bool allowZeroRoll=false)
    {
-		unsigned int total=0;
+		uint32_t total=0;
 
-		for ( unsigned int i=0;i<nDices;++i)
+		for ( uint16_t i=0;i<nDices;++i)
+		{
+			if ( allowZeroRoll == false )
+			{
+				total+=rand8(diceMax-1)+1;
+			}
+			else
+			{
+				total+=rand8(diceMax);
+			}
+
+		}
+		return total;
+   }
+   inline uint32_t multiRoll32(const uint16_t nDices, const uint16_t diceMax, const bool allowZeroRoll=false)
+   {
+		uint32_t total=0;
+
+		for ( uint16_t i=0;i<nDices;++i)
 		{
 			if ( allowZeroRoll == false )
 			{
@@ -102,11 +120,11 @@ class RandomLehmer
    }
    
 	/* Will return true one in 'prob' times. Ie, with prob at 100, will return true roughly 1 in 100 times. */
-	inline bool oneIn(const int prob)
+	inline bool oneIn(const uint16_t prob)
 	{ return (rand32(prob)==0); }
    
 	//Range is inclusive. Seems to work with negative values.
-	inline int range32(const int _min, const int _max)
+	inline int32_t range32(const int32_t _min, const int32_t _max)
 	{
 		if (_min==_max) { return _min; }
 
