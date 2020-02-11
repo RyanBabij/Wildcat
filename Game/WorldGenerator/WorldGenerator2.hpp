@@ -673,13 +673,14 @@ class WorldGenerator2
 		
 		// This section benefits greatly from multithreading.
 		//Biome creation time reduced from 3.2 seconds to 0.8 on my quad core.
-    // The main problem is that the biomes need to merge together in a predictable way.
+    // Unfortunately the biomes are not merging in the correct order,
+    // so that will need to be fixed. We will probably want to define a heirarchy of
+    // biomes which can overwrite other biomes.
 		
-		//#define THREADED_BIOMES
-    
-  //#define THREADED_BIOMES
-  #if defined THREAD_ALL || defined THREADED_BIOMES 
-  
+
+   //#define THREADED_WORLDGEN
+   #if defined THREADED_WORLDGEN
+
     std::thread t1( [this, subSeed] { createBiome(JUNGLE, 0.33, 4, 0.78, "Jungle", 0 ,subSeed[1]); });
     std::thread t2( [this, subSeed] { createBiome(FOREST, 0.5, 8, 0.8, "Forest", 0 ,subSeed[2]); });
     std::thread t3( [this, subSeed] { createBiome(WETLAND, 0.05, 11, 0.79, "Wetland", 0 ,subSeed[3]); });
