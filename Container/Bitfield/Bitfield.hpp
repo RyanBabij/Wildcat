@@ -25,6 +25,7 @@ class Bitfield
    unsigned long int nX, nY;
       // byte values (always rounded up to nearest 8 bits).
    unsigned long int nXBytes, nYBytes;
+   unsigned long int nBytes;
    
    unsigned char * data;
    
@@ -39,6 +40,8 @@ class Bitfield
       
       nXBytes=0;
       nYBytes=0;
+      
+      nBytes=0;
    }
    ~Bitfield()
    {
@@ -91,14 +94,21 @@ class Bitfield
       nX = _nX;
       nY = _nY;
       
-      unsigned long int totalBytes = _nX*_nY;
-      if ( totalBytes%8 != 0 )
-      {
-         ++totalBytes;
-      }
-      std::cout<<"Initializing array of "<<totalBytes<<" bytes.\n";
-      data = new unsigned char [totalBytes] (); // initialised array to 0 values
+      unsigned long int nBits = _nX*_nY;
       
+      nBytes = nBits/8;
+      if ( nBits%8 != 0 )
+      {
+         ++nBytes;
+      }
+      data = new unsigned char [nBytes] (); // initialised array to 0 values
+      
+   }
+   
+   std::string toString()
+   {
+      std::string strRet((char*)data,nBytes);
+      return strRet;
    }
    
    
