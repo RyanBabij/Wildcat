@@ -14,6 +14,7 @@ Class to store an expandable list of items. Currently just a wrapper of std::vec
 
 #include <random> // for vector shuffle (only with seed).
 #include <Math/Random/GlobalRandom.hpp> // Used for getting random entries.
+#include <Math/Random/RandomLehmer.hpp> // Faster RNG
 
 /* Debug macro */
 #ifdef CONTAINER_VECTOR_VERBOSE
@@ -125,17 +126,23 @@ class Vector
     /* To shuffle vector in a predictable way. */
 	void shuffle (int _seed)
 	{
-    std::mt19937 g;
-    g.seed(_seed);
- 
-    std::shuffle(begin(), end(), g);
-
+      RandomLehmer g(_seed);
+      shuffle(g);
 	}
     /* To shuffle vector in a predictable way. */
 	void shuffle(std::mt19937 rng)
 	{
 		std::shuffle(begin(),end(), rng);
 	}
+   //basically a custom implementation of std::shuffle
+   void shuffle( RandomLehmer rng )
+   {
+       unsigned long int n = size();
+       for (unsigned long int i = n-1; i > 0; --i)
+       {
+           std::swap(data[i], data[rng.rand32() % (i+1)]);
+       }
+   }
   
   //Get a random entry. (must pass an rng)
 	inline T& getRandom(RandomNonStatic& rng)
