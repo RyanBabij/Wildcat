@@ -17,7 +17,7 @@
 class Bitfield
 {
    public:
-   Vector <char> vBit; //  vector of bits already created.
+   //Vector <char> vBit; //  vector of bits already created.
    unsigned char currentBit; // current bit to store data in
    //unsigned char mask;
    
@@ -31,7 +31,7 @@ class Bitfield
    
    Bitfield()
    {
-      currentBit=0; //
+      //currentBit=0; //
       //mask=1;
       data=0;
       
