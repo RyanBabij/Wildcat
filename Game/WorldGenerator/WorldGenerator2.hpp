@@ -1,144 +1,110 @@
 #pragma once
-#ifndef WILDCAT_MISC_WORLDGEN_WORLDGEN_HPP
-#define WILDCAT_MISC_WORLDGEN_WORLDGEN_HPP
+#ifndef WILDCAT_GAME_WORLDGENERATOR_WORLDGENERATOR2_HPP
+#define WILDCAT_GAME_WORLDGENERATOR_WORLDGENERATOR2_HPP
 
-// These are hardcoded globals for now.
-
-#include <Game/WorldGenerator/Biome.hpp>
-
-//#include <Debug/RetCode.hpp> // FOR RETURN CODES.
-
-#include <Math/Fractal/DiamondSquareAlgorithm.hpp>
-#include <Math/Fractal/DiamondSquareAlgorithmCustomRange.hpp>
-//#include <Math/Fractal/MidpointDisplacement.hpp>
-#include <Math/Random/GlobalRandom.hpp> // Random::
-#include <Math/Random/RandomLehmer.hpp> // Faster RNG
-#include <Graphics/Png/Png.hpp> // FOR PNG EXPORT.
-//#include <NameGen/NameGen.hpp>
-#include <Container/ArrayS2/ArrayS2.hpp>
-//#include <Container/ArrayS3/ArrayS3.hpp>
-#include <Container/Vector/Vector.hpp>
-
-#include <Math/BasicMath/BasicMath.hpp> // TO CHECK IF MAPSIZE IS POW2+1.
-
-#include <File/FileManagerStatic.hpp> /* For saving the world data to file. */
-
-#include <thread>
-//#include <mutex>
-//#include <condition_variable> // std::condition_variable
-
-#include <limits.h> /* For INT_MAX */
-
-#include <System/Time/Timer.hpp>
-
-/*	WorldGenerator2
+/*	Wildcat: WorldGenerator2
 	#include <WorldGenerator/WorldGenerator2.hpp>
+   
+   Version 2 of the WorldGenerator. The old version used a range of values but this one just assigns
+   types to each tile. It also uses Diamond Square instead of Midpoint Displacement.
+   
+   I want to update this so that it uses custom Biome objects. It should be possible to define
+   biomes at runtime.
+   
+   The WorldGenerator doesn't model complex things like geology and weather, that's outside the
+   scope of the project.
 
-	This is a revision of the old WorldGenerator. The new class doesn't bother with ranges of values, but instead just assigns each tile a value to indicate what kind of tile it is. It also makes use of the diamond square algorithm, instead of the midpoint displacement algorithm.
+   TODO:
+   Ensure biome percentages are accurate. I think biome layers are currently overlapping each other.
+   
+   Like with my DiamondSquare algorithm, it should be possible to specify a template world and then
+   use the WorldGenerator to fill in details.
 
-	NOTES:
-
-	To increase the variability of the worlds, why not randomise the amounts of certain biomes? For example, make it possible for an entire world to be desert.
-
-	The worlds are created by the gods, so there's no need for the world to be subject to laws of geology.
-
-
-	Biomes are overwriting each other. Maybe we should only allow biomes to be written on grassland. The problems is that I might specify 10% mountains, and then 10% of the land will be covered in mountains, but it will later be turned into desert.
-
-	We could have a list of HasXY which are still free to be tampered with. Each pass will reduce the list to loop through.
-
-	We are currently having specialised code for each biome. Why not create a generic 'addBiome()' function?
-
-	Okay, I have a function to dynamically create biomes. On top of this, it would be nice to create my own custom biomes from outside of the generator. So basically the class will have a vector of Biome classes, and then we run through them in the generator.
-
-	Erosion is going to be difficult with overlapping biomes. We might need to draw to a mask and then run the erosion on the mask before laying it down on the map.
-
-
-
-	I'm conflicted about having the ability to export the map as a PNG within this class itself. But it is a convenient feature.
-
-	New idea: Ocean can be considered just another biome. We can implement smoothing/erosion by having the tiles on their own layer, smoothing that layer, then merging it down.
-
-	I would like there to be a way to relate biomes to each other. For example, a user might not want deserts to be next to snow. We could support a range-map for something like temperature or rainfall. Range-maps might also be good for good/evil, terrain roughness, prevalence of caves... All kinds of cool stuff.
-
-	
-	Preserving seed: Right now we seed once at the beginning, and then every random value goes from that seed. This means that output can completely change from any minor change in the code. Instead the seed needs to be used to generate seeds. We could even specifically have a landform seed, biome seed, etc, for advanced seed searching.
-	
-	The seed variable in this class is to be the 'base seed'. Other seeds will spin off from the base seed.
-
-	TODO:
+   PNG export should probably be handled outside of this header.
+   
+   I need to implment a way for different biomes to be related to each other. For example not allow
+   desert biomes to touch snow biomes. Also allow biomes to be biased to certain longitude.
+   
+   Make sure the seed values are properly making reproducible maps. Biomes, landmass, etc should
+   get their own subseeds too.
 
 	Multithreading support.
-	Runtime biome definition.
-	Error handling + stability.
 	Bring back smoothness-breaking.
-	Specify only x-wrapping.
-
-	Allow all seeds to be preserved and specified.
-	Allow biomes to be biased to latitudes.
 	Seperate natural features to their own layer.
-	
 	Potential feature: Flip the map so that the most land is at the north. Just a psychological thing.
 	We could find the longitude line with the least land tiles over it and set that as the wrapping point.
 
 */
 
+// These are hardcoded globals for now.
+#include <Game/WorldGenerator/Biome.hpp>
+
+#include <Math/Fractal/DiamondSquareAlgorithm.hpp>
+#include <Math/Fractal/DiamondSquareAlgorithmCustomRange.hpp>
+#include <Math/Random/GlobalRandom.hpp> // Random::
+#include <Math/Random/RandomLehmer.hpp> // Faster RNG
+#include <Graphics/Png/Png.hpp> // FOR PNG EXPORT.
+#include <Container/ArrayS2/ArrayS2.hpp>
+#include <Container/Vector/Vector.hpp>
+#include <Math/BasicMath/BasicMath.hpp> // TO CHECK IF MAPSIZE IS POW2+1.
+#include <File/FileManagerStatic.hpp> /* For saving the world data to file. */
+#include <System/Time/Timer.hpp>
+
+#include <thread>
+#include <limits.h> /* For INT_MAX */
+
 /*
 New approach: Each tile has more than a single piece of data for it, therefore we should use an object for each tile.
 */
-
 class WorldGenerator2_Tile
 {
-	public:
-	int localSeed; //Seed used to generate local terrain.
-	int terrainType;
-	int evilLevel; //Evil places are more difficult. 0=peaceful, 255=Evil.
-	int height; //Its average height.
-	int nCaves; //The number of caves to spawn on this tile.
-	
-	WorldGenerator2_Tile()
-	{
-		localSeed=0;
-		terrainType=0;
-		evilLevel=0;
-		height=0;
-		nCaves=0;
-	}
-  ~WorldGenerator2_Tile()
-  {
-  }
-	
-	//Returns a string which contains all the tile data.
-	std::string getFullSeed()
-	{
-		return "";
-	}
-	
+   public:
+      int localSeed; //Seed used to generate local terrain.
+      int terrainType;
+      int evilLevel; //Evil places are more difficult. 0=peaceful, 255=Evil.
+      int height; //Its average height.
+      int nCaves; //The number of caves to spawn on this tile.
+
+   WorldGenerator2_Tile()
+   {
+      localSeed=0;
+      terrainType=0;
+      evilLevel=0;
+      height=0;
+      nCaves=0;
+   }
+   ~WorldGenerator2_Tile()
+   {
+   }
+
+   //Returns a string which contains all the tile data.
+   std::string getFullSeed()
+   {
+      return "";
+   }
+
 };
 
-	// IMPLEMENTING SUPPORT FOR BIOMES SPECIFIED AT RUNTIME.
-	// DESIGN TO RUN MULTIPLE IN PARALLEL.
+// IMPLEMENTING SUPPORT FOR BIOMES SPECIFIED AT RUNTIME.
+// DESIGN TO RUN MULTIPLE IN PARALLEL.
 class WorldGenerator2_Biome
 {
+   public:
+      // THE NAME OF THE BIOME, EG: DESERT.
+      std::string name;
+      int seed;
+      double percentLand;
+      int freeSteps;
+      double smoothing;
 
-	public:
-			// THE NAME OF THE BIOME, EG: DESERT.
-		std::string name;
-		int seed;
-		double percentLand;
-		int freeSteps;
-		double smoothing;
-		
-
-
-	WorldGenerator2_Biome ( const std::string _name, const double _percentLand, const int _freeSteps, const double _smoothing, const int _seed = 0 )
-	{
-		name = _name;
-		percentLand = _percentLand;
-		freeSteps = _freeSteps;
-		smoothing = _smoothing;
-		seed = _seed;
-	}
+   WorldGenerator2_Biome ( const std::string _name, const double _percentLand, const int _freeSteps, const double _smoothing, const int _seed = 0 )
+   {
+      name = _name;
+      percentLand = _percentLand;
+      freeSteps = _freeSteps;
+      smoothing = _smoothing;
+      seed = _seed;
+   }
 
 };
 
@@ -149,18 +115,8 @@ class WorldGenerator2
 	*/
 	
 	private:
-
-			// RNG for generating seeds.
-		//RandomNonStatic random;
       RandomLehmer rng;
-		// Landform RNG.
-	//Random randomLandform;
-	
-	//std::mutex mutexArrayAccess;
-	
-	//std::condition_variable cvDesertFinished;
-
-
+      
 	public:
 
 	int mapSize;
@@ -225,320 +181,303 @@ class WorldGenerator2
 	
 	unsigned char seaLevel;
 
-	WorldGenerator2()
-	{
-			// seed is a core seed. If this is selected, it is used to create the other seeds.
-			// seed 0 is random seed.
-		seed=0;
-		
-		landformSeed=0;
-		oceanPercent=0.5;
-		mountainPercent=0.025;
-		forestPercent=0.25;
-		desertPercent=0.33;
-		snowPercent=0.04;
-		goodPercent=0.05;
-		evilPercent=0.05;
+WorldGenerator2()
+{
+   // seed is a core seed. If this is selected, it is used to create the other seeds.
+   // seed 0 is random seed.
+   seed=0;
 
-			// length along each side.
-		mapSize = 4096;
-		mapArea = mapSize * mapSize;
+   landformSeed=0;
+   oceanPercent=0.5;
+   mountainPercent=0.025;
+   forestPercent=0.25;
+   desertPercent=0.33;
+   snowPercent=0.04;
+   goodPercent=0.05;
+   evilPercent=0.05;
 
-			// I WOULD LIKE TO BRING THESE BACK, BECAUSE THEY CREATED INTERESTING CRATER-LIKE FEATURES.
-		//breakSmoothness=0;
-		//brokenMultiplier=0;
-		//squareSizeLimit=0;
+   // length along each side.
+   mapSize = 4096;
+   mapArea = mapSize * mapSize;
 
-			//ORIGINAL VALUES
-		freeSteps=4;
-		variance=400;
-		landSmoothing=0.86;
+   // I WOULD LIKE TO BRING THESE BACK, BECAUSE THEY CREATED INTERESTING CRATER-LIKE FEATURES.
+   //breakSmoothness=0;
+   //brokenMultiplier=0;
+   //squareSizeLimit=0;
 
-		//freeSteps=20;
-		//variance=1;
-		//landSmoothing=0.5;
+   //ORIGINAL VALUES
+   freeSteps=4;
+   variance=400;
+   landSmoothing=0.86;
 
-		islandMode=false;
-		landMode=false;
+   //freeSteps=20;
+   //variance=1;
+   //landSmoothing=0.5;
 
-		totalLandTiles=0;
-		totalOceanTiles=0;
-		
-		wrapX=false;
-		wrapY=false;
-		
-		seaLevel=0;
-	}
+   islandMode=false;
+   landMode=false;
+
+   totalLandTiles=0;
+   totalOceanTiles=0;
+
+   wrapX=false;
+   wrapY=false;
+
+   seaLevel=0;
+}
+
+void createLand(int _seed = 0)
+{
+   for ( int i=0;i<256;++i)
+   { heightTable[i] = 0; }
+
+   aHeightMap.init(mapSize,mapSize,0);
+   totalLandTiles=0;
+   totalOceanTiles=0;
+
+   // FORCE ISLAND MAP.
+   if ( islandMode == true )
+   { aHeightMap.fillBorder(1); }
+   // FORCE LAND MAP
+   if ( landMode == true )
+   { aHeightMap.fillBorder(255); }
+
+   DiamondSquareAlgorithm dsa;
+   landSmoothing=0.78;
+
+   // HEIGHTMAP TABLE FREESTEPS SMOOTHING VARIANCE
+   dsa.seed = _seed;
+   dsa.wrapX = wrapX;
+   dsa.wrapY = wrapY;
+
+   dsa.generate(&aHeightMap, heightTable, freeSteps, landSmoothing, variance, 0);
+   //exit(1);
+
+   //unsigned char seaLevel=0;
+   seaLevel=0;
+   double total=0;
+   for (int i=0; i<256; ++i)
+   {
+      total+=heightTable[i];
+      if(total/mapArea >= oceanPercent)
+      {
+         seaLevel = i;
+         break;
+      }
+   }
+
+   for (int _y=0;_y<mapSize;++_y)
+   {
+      for (int _x=0;_x<mapSize;++_x)
+      {
+         if ( aHeightMap(_x,_y) > seaLevel )
+         {
+            aTerrainType(_x,_y) = GRASSLAND;
+            aTile(_x,_y).terrainType=GRASSLAND;
+            //Count the land tiles for later use.
+            ++totalLandTiles;
+         }
+         else
+         {
+            aTerrainType(_x,_y) = OCEAN;
+            aTile(_x,_y).terrainType = OCEAN;
+            ++totalOceanTiles;
+         }
+      }
+   }
+
+   // TODO: OPTION TO REMOVE DIAGONAL LAND/SEA CONNECTIONS FOR BETTER GAMEPLAY.
+}
 	
-	void createLand(int _seed = 0)
-	{
-		for ( int i=0;i<256;++i)
-		{ heightTable[i] = 0; }
 
-		aHeightMap.init(mapSize,mapSize,0);
-		totalLandTiles=0;
-		totalOceanTiles=0;
+void generateHeightmap()
+{
+   std::cout<<"Generating heightmap.\n";
 
-			// FORCE ISLAND MAP.
-		if ( islandMode == true )
-		{ aHeightMap.fillBorder(1); }
-			// FORCE LAND MAP
-		if ( landMode == true )
-		{ aHeightMap.fillBorder(255); }
-
-		DiamondSquareAlgorithm dsa;
-		landSmoothing=0.78;
-		
-			// HEIGHTMAP TABLE FREESTEPS SMOOTHING VARIANCE
-		dsa.seed = _seed;
-		dsa.wrapX = wrapX;
-		dsa.wrapY = wrapY;
-		
-		dsa.generate(&aHeightMap, heightTable, freeSteps, landSmoothing, variance, 0);
-		//exit(1);
-
-		//unsigned char seaLevel=0;
-		seaLevel=0;
-		double total=0;
-		for (int i=0; i<256; ++i)
-		{
-			total+=heightTable[i];
-			if(total/mapArea >= oceanPercent)
-			{
-				seaLevel = i;
-				break;
-			}
-		}
-
-		for (int _y=0;_y<mapSize;++_y)
-		{
-			for (int _x=0;_x<mapSize;++_x)
-			{
-				if ( aHeightMap(_x,_y) > seaLevel )
-				{
-					aTerrainType(_x,_y) = GRASSLAND;
-					aTile(_x,_y).terrainType=GRASSLAND;
-					//Count the land tiles for later use.
-					++totalLandTiles;
-				}
-				else
-				{
-					aTerrainType(_x,_y) = OCEAN;
-					aTile(_x,_y).terrainType = OCEAN;
-					++totalOceanTiles;
-				}
-			}
-		}
-		
-		// TODO: OPTION TO REMOVE DIAGONAL LAND/SEA CONNECTIONS FOR BETTER GAMEPLAY.
-	}
-	
-	
-	void generateHeightmap()
-	{
-		std::cout<<"Generating heightmap.\n";
-
-		aHeightMap2.init(mapSize,mapSize,0);
+   aHeightMap2.init(mapSize,mapSize,0);
 
 
-		DiamondSquareAlgorithm dsa;
-		landSmoothing=0.78;
-		
-			// HEIGHTMAP TABLE FREESTEPS SMOOTHING VARIANCE
-		dsa.seed = landformSeed+1; /* Temporary */
-		dsa.wrapX = wrapX;
-		dsa.wrapY = wrapY;
-		
-		dsa.generate(&aHeightMap, 0, freeSteps, landSmoothing, variance, 0);
+   DiamondSquareAlgorithm dsa;
+   landSmoothing=0.78;
+
+   // HEIGHTMAP TABLE FREESTEPS SMOOTHING VARIANCE
+   dsa.seed = landformSeed+1; /* Temporary */
+   dsa.wrapX = wrapX;
+   dsa.wrapY = wrapY;
+
+   dsa.generate(&aHeightMap, 0, freeSteps, landSmoothing, variance, 0);
 
 
 
-		for (int _y=0;_y<mapSize;++_y)
-		{
-			for (int _x=0;_x<mapSize;++_x)
-			{
-				if ( aHeightMap(_x,_y) > 250 )
-				{
-					//aTerrainType(_x,_y) = MOUNTAIN;
-					//aTile(_x,_y).terrainType=MOUNTAIN;
-					//Count the land tiles for later use.
-					//++totalLandTiles;
-				}
-				else
-				{
-					// aTerrainType(_x,_y) = OCEAN;
-					// aTile(_x,_y).terrainType = OCEAN;
-					// ++totalOceanTiles;
-				}
-			}
-		}
-		
-		// TODO: OPTION TO REMOVE DIAGONAL LAND/SEA CONNECTIONS FOR BETTER GAMEPLAY.
-	}
-		
-		// Rivers flow from mountains and go downhill.
-    // Rivers can collect in areas to form freshwater lakes.
-    // Some rivers are major, and others are minor. Only major rivers should be shown on world view.
-    // Major rivers are basically those that can't be easily crossed.
-	void createRivers(int nRivers=1, int _seed=0)
-	{
-		std::cout<<"Creating rivers.\n";
-		
-    std::cout<<"River seed: "<<_seed<<".\n";
-    
-		//Get a heightmap for rivers.
-		
-		//Rivers always flow from mountain tiles.
-		
-		Vector <HasXY*> vMountainTiles;
-    
-    //std::mt19937 rng;
-    rng.seed(_seed);
-		
-		//ArrayS2 <int> aOceanID;
-		//aOceanID.init(mapSize,mapSize,0);
+   for (int _y=0;_y<mapSize;++_y)
+   {
+      for (int _x=0;_x<mapSize;++_x)
+      {
+         if ( aHeightMap(_x,_y) > 250 )
+         {
+            //aTerrainType(_x,_y) = MOUNTAIN;
+            //aTile(_x,_y).terrainType=MOUNTAIN;
+            //Count the land tiles for later use.
+            //++totalLandTiles;
+         }
+         else
+         {
+            // aTerrainType(_x,_y) = OCEAN;
+            // aTile(_x,_y).terrainType = OCEAN;
+            // ++totalOceanTiles;
+         }
+      }
+   }
 
-		int nOceanTiles=0;
-		for(int _y=0;_y<mapSize;++_y)
-		{
-			for(int _x=0;_x<mapSize;++_x)
-			{
-				if (aTerrainType(_x,_y)==MOUNTAIN)
-				{
-					vMountainTiles.push(new HasXY (_x,_y));
-				}
-			}
-		}
-    if (_seed == 0)
-    {
+   // TODO: OPTION TO REMOVE DIAGONAL LAND/SEA CONNECTIONS FOR BETTER GAMEPLAY.
+}
+
+// Rivers flow from mountains and go downhill.
+// Rivers can collect in areas to form freshwater lakes.
+// Some rivers are major, and others are minor. Only major rivers should be shown on world view.
+// Major rivers are basically those that can't be easily crossed.
+void createRivers(int nRivers=1, int _seed=0)
+{
+   std::cout<<"Creating rivers.\n";
+   std::cout<<"River seed: "<<_seed<<".\n";
+   //Rivers always flow from mountain tiles.
+
+   Vector <HasXY*> vMountainTiles;
+   rng.seed(_seed);
+
+   int nOceanTiles=0;
+   for(int _y=0;_y<mapSize;++_y)
+   {
+      for(int _x=0;_x<mapSize;++_x)
+      {
+         if (aTerrainType(_x,_y)==MOUNTAIN)
+         {
+            vMountainTiles.push(new HasXY (_x,_y));
+         }
+      }
+   }
+   if (_seed == 0)
+   {
       vMountainTiles.shuffle();
-    }
-    else
-    {
+   }
+   else
+   {
       vMountainTiles.shuffle(_seed);
-    }
+   }
 
-		
-		for (int i=0;i<nRivers && i<vMountainTiles.size();++i)
-		{
-			//aTerrainType(vMountainTiles(i)) = RIVER;
+
+   for (int i=0;i<nRivers && i<vMountainTiles.size();++i)
+   {
+      //aTerrainType(vMountainTiles(i)) = RIVER;
       aRiverMap(vMountainTiles(i)) = i;
-			
-			int currentX = vMountainTiles(i)->x;
-			int currentY = vMountainTiles(i)->y;
-			
-			int maxRiverLength = 200;
-			while (maxRiverLength-- > 0)
-			{
-			
-				// Spread to lowest neighbor which isn't river. Abort when next to ocean.
-				Vector <HasXY*>* vNeighbors = aTerrainType.getNeighborsOrthogonal(currentX,currentY,false);
-        
-        if ( vNeighbors == 0 ) { break; }
-        
 
-          //Shuffle vectors to randomly resolve equal height neighbors.
-        if ( _seed==0)
-        {
-          vNeighbors->shuffle();
-        }
-				else
-        {
-          vNeighbors->shuffle(rng);
-        }
+      int currentX = vMountainTiles(i)->x;
+      int currentY = vMountainTiles(i)->y;
 
-				//int i2=0;
-				int lowestHeight = 256;
-				HasXY* lowestTile = 0;
-        
-        bool abortRiver = false;
-        
-				for (int i2=0;i2<vNeighbors->size();++i2)
-				{
-						// Abort when the river is touching an ocean.
-					if (aTerrainType((*vNeighbors)(i2)) == OCEAN )
-					{
-						abortRiver=true;
-						break;
-					}
-          // Abort if touching another river. (River will flow into this one)
-          if ( aRiverMap((*vNeighbors)(i2)) != i && aRiverMap((*vNeighbors)(i2)) != -1)
-					{
-						abortRiver=true;
-						break;
-					}
-        }
-        if ( abortRiver )
-        {
-          break;
-        }
-				
-				for (int i2=0;i2<vNeighbors->size();++i2)
-				{
-					 if ( aRiverMap((*vNeighbors)(i2)) == -1 && aHeightMap((*vNeighbors)(i2)) < lowestHeight )
-					{
-						lowestTile = (*vNeighbors)(i2);
-						lowestHeight = aHeightMap((*vNeighbors)(i2));
-					}
-				}
-				if ( lowestTile != 0 )
-				{
-					//aTerrainType(lowestTile) = RIVER;
-					aRiverMap(lowestTile) = i;
-					currentX = lowestTile->x;
-					currentY = lowestTile->y;
-				}
-				else
-				{
-					break;
-				}
-        
-        
-        for (int i3=0;i3<vNeighbors->size();++i3)
-        {
-          delete (*vNeighbors)(i3);
-        }
-        vNeighbors->clear();
-        delete vNeighbors;
-			}
-		
-		}
-    
-    for ( int i=0;i<vMountainTiles.size();++i)
-    {
+      int maxRiverLength = 200;
+      while (maxRiverLength-- > 0)
+      {
+         // Spread to lowest neighbor which isn't river. Abort when next to ocean.
+         Vector <HasXY*>* vNeighbors = aTerrainType.getNeighborsOrthogonal(currentX,currentY,false);
+
+         if ( vNeighbors == 0 ) { break; }
+
+         //Shuffle vectors to randomly resolve equal height neighbors.
+         if ( _seed==0)
+         {
+            vNeighbors->shuffle();
+         }
+         else
+         {
+            vNeighbors->shuffle(rng);
+         }
+
+         //int i2=0;
+         int lowestHeight = 256;
+         HasXY* lowestTile = 0;
+
+         bool abortRiver = false;
+
+         for (int i2=0;i2<vNeighbors->size();++i2)
+         {
+            // Abort when the river is touching an ocean.
+            if (aTerrainType((*vNeighbors)(i2)) == OCEAN )
+            {
+               abortRiver=true;
+               break;
+            }
+            // Abort if touching another river. (River will flow into this one)
+            if ( aRiverMap((*vNeighbors)(i2)) != i && aRiverMap((*vNeighbors)(i2)) != -1)
+            {
+               abortRiver=true;
+               break;
+            }
+         }
+         if ( abortRiver )
+         {
+            break;
+         }
+
+         for (int i2=0;i2<vNeighbors->size();++i2)
+         {
+            if ( aRiverMap((*vNeighbors)(i2)) == -1 && aHeightMap((*vNeighbors)(i2)) < lowestHeight )
+            {
+               lowestTile = (*vNeighbors)(i2);
+               lowestHeight = aHeightMap((*vNeighbors)(i2));
+            }
+         }
+         if ( lowestTile != 0 )
+         {
+            //aTerrainType(lowestTile) = RIVER;
+            aRiverMap(lowestTile) = i;
+            currentX = lowestTile->x;
+            currentY = lowestTile->y;
+         }
+         else
+         {
+            break;
+         }
+
+
+         for (int i3=0;i3<vNeighbors->size();++i3)
+         {
+            delete (*vNeighbors)(i3);
+         }
+         vNeighbors->clear();
+         delete vNeighbors;
+      }
+
+   }
+
+   for ( int i=0;i<vMountainTiles.size();++i)
+   {
       delete vMountainTiles(i);
-    }
-    vMountainTiles.clear();
-	}
+   }
+   vMountainTiles.clear();
+}
 
 	
-	// Possible biome configuration options:
-	// Pass it a map to share with other biomes.
-	// Specify it to use the highest, lowest, or middle values.
-	void addBiome(const std::string _name, const double _percentLand, const int _freeSteps, const int _smoothing, const int _seed=0)
-	{
-		//std::cout<<"Biome added: "<<_name<<".\n";
-		//vBiome.push(new WorldGenerator2_Biome(_name, _percentLand, _freeSteps, _smoothing, _seed));
-	}
+// Possible biome configuration options:
+// Pass it a map to share with other biomes.
+// Specify it to use the highest, lowest, or middle values.
+void addBiome(const std::string _name, const double _percentLand, const int _freeSteps, const int _smoothing, const int _seed=0)
+{
+   //std::cout<<"Biome added: "<<_name<<".\n";
+   //vBiome.push(new WorldGenerator2_Biome(_name, _percentLand, _freeSteps, _smoothing, _seed));
+}
 
-	void randomiseBiomes()
-	{
-		oceanPercent=(double)rng.rand8(100) / 100;
-		std::cout<<"oceanPercent "<<oceanPercent<<".\n";
-		mountainPercent=(double)rng.rand8(100) / 100;
-		forestPercent=(double)rng.rand8(100) / 100;
-		std::cout<<"forestPercent "<<forestPercent<<".\n";
-		desertPercent=(double)rng.rand8(100) / 100;
-		std::cout<<"desertPercent "<<desertPercent<<".\n";
-		snowPercent=(double)rng.rand8(100) / 100;
-		std::cout<<"snowPercent "<<snowPercent<<".\n";
-	}
-	
-	void test()
-	{
-		std::cout<<"ayo\n";
-	}
-
+void randomiseBiomes()
+{
+   oceanPercent=(double)rng.rand8(100) / 100;
+   std::cout<<"oceanPercent "<<oceanPercent<<".\n";
+   mountainPercent=(double)rng.rand8(100) / 100;
+   forestPercent=(double)rng.rand8(100) / 100;
+   std::cout<<"forestPercent "<<forestPercent<<".\n";
+   desertPercent=(double)rng.rand8(100) / 100;
+   std::cout<<"desertPercent "<<desertPercent<<".\n";
+   snowPercent=(double)rng.rand8(100) / 100;
+   std::cout<<"snowPercent "<<snowPercent<<".\n";
+}
 
 		// NEED TO IMPLEMENT FALSE RETURN IF WORLD CAN'T BE GENERATED.
 	bool generate()
@@ -888,32 +827,6 @@ class WorldGenerator2
 			}
 		}
 	}
-
-	// void createWorldInfo()
-	// {
-		// std::cout<<"Generating world info.\n";
-
-		// // FIGURE OUT HOW MANY BODIES OF WATER THERE ARE.
-
-		// // COUNT OCEAN TILES.
-
-		// ArrayS2 <int> aOceanID;
-		// aOceanID.init(mapSize,mapSize,0);
-
-		// int nOceanTiles=0;
-		// for(int _y=0;_y<mapSize;++_y)
-		// {
-			// for(int _x=0;_x<mapSize;++_x)
-			// {
-				// if (aTerrainType(_x,_y)==OCEAN)
-				// {
-					// ++nOceanTiles;
-				// }
-			// }
-		// }
-		// std::cout<<"There are "<<nOceanTiles<<" ocean tiles.\n";
-	// }
-
 	
 		// WE MAY NEED TO CONSIDER WRAPPING IN ARRAY CHECKS, HOWEVER THE QUICK AND DIRTY NORMAL METHOD SEEMS TO BE WORKING OKAY FOR NOW.
 	void erodeCoast(const int iterations = 1)
