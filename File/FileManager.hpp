@@ -450,7 +450,8 @@ static int deleteDirectory(const std::string &refcstrRootDirectory, bool bDelete
 		std::FILE * pFile = std::fopen (_filePath.c_str(),"a");
 		if (pFile!=NULL)
 		{
-			std::fputs (_text.c_str(),pFile);
+         // fwrite must be used instead of fputs in order to allow null values to be written
+			std::fwrite (_text.c_str(),1,_text.size(),pFile);
 			std::fclose (pFile);
 			return true;
 		}
