@@ -12,6 +12,7 @@
 #include <Math/Fractal/DiamondSquareAlgorithmCustomRange.hpp>
 //#include <Math/Fractal/MidpointDisplacement.hpp>
 #include <Math/Random/GlobalRandom.hpp> // Random::
+#include <Math/Random/RandomLehmer.hpp> // Faster RNG
 #include <Graphics/Png/Png.hpp> // FOR PNG EXPORT.
 //#include <NameGen/NameGen.hpp>
 #include <Container/ArrayS2/ArrayS2.hpp>
@@ -150,7 +151,8 @@ class WorldGenerator2
 	private:
 
 			// RNG for generating seeds.
-		RandomNonStatic random;
+		//RandomNonStatic random;
+      RandomLehmer rng;
 		// Landform RNG.
 	//Random randomLandform;
 	
@@ -390,7 +392,7 @@ class WorldGenerator2
 		
 		Vector <HasXY*> vMountainTiles;
     
-    std::mt19937 rng;
+    //std::mt19937 rng;
     rng.seed(_seed);
 		
 		//ArrayS2 <int> aOceanID;
@@ -521,14 +523,14 @@ class WorldGenerator2
 
 	void randomiseBiomes()
 	{
-		oceanPercent=(double)Random::randomInt(100) / 100;
+		oceanPercent=(double)rng.rand8(100) / 100;
 		std::cout<<"oceanPercent "<<oceanPercent<<".\n";
-		mountainPercent=(double)Random::randomInt(100) / 100;
-		forestPercent=(double)Random::randomInt(100) / 100;
+		mountainPercent=(double)rng.rand8(100) / 100;
+		forestPercent=(double)rng.rand8(100) / 100;
 		std::cout<<"forestPercent "<<forestPercent<<".\n";
-		desertPercent=(double)Random::randomInt(100) / 100;
+		desertPercent=(double)rng.rand8(100) / 100;
 		std::cout<<"desertPercent "<<desertPercent<<".\n";
-		snowPercent=(double)Random::randomInt(100) / 100;
+		snowPercent=(double)rng.rand8(100) / 100;
 		std::cout<<"snowPercent "<<snowPercent<<".\n";
 	}
 	
@@ -563,11 +565,11 @@ class WorldGenerator2
 		{
 				// Randomly generate the base seed.
 			seed = Random::randomInt(INT_MAX);
-			random.seed(seed);
+			rng.seed(seed);
 		}
 		else
 		{
-			random.seed(seed);
+			rng.seed(seed);
 		}
 		
 			// Derive the sub seeds from the main seed.
@@ -576,7 +578,7 @@ class WorldGenerator2
 		int subSeed [100];
 		for (int& s : subSeed)
 		{
-			s = random.randomInt(INT_MAX);
+			s = rng.rand32(INT_MAX);
 		}
 		
 
