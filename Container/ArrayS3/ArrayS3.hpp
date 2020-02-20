@@ -1,25 +1,26 @@
-#ifndef ARRAYSTATIC3D_HPP
-#define ARRAYSTATIC3D_HPP
+#ifndef WILDCAT_CONTAINER_ARRAYS3_ARRAYS3_HPP
+#define WILDCAT_CONTAINER_ARRAYS3_ARRAYS3_HPP
+#pragma once
 
-/* ArrayS3.hpp
+/* Wildcat: ArrayS3
 	#include <Container/ArrayS3/ArrayS3.hpp>
 
-	Static 3-dimensional array. Component of Wildcat engine.
-	
-	
-	0271093718: Adding support for tuples.
-	
-	TODO: Add tuple support.
+	Static 3-dimensional array. Also includes a lot
+   of additional functionality for dealing with graphics
+   or games.
+
+   Todo
+      Check tuple support
+      Should we add load/save support? Probably not.
+      Add toString maybe. Probably will need specialisation.
 */
 
-#include <iostream>
 #include <Data/DataTools.hpp>
 #include <File/CanLoadSave.hpp>
 #include <Math/BasicMath/BasicMath.hpp>
-#include <limits> // TO DETERMINE IF A VALUE IS EQUAL TO INFINITY.
-
 #include <Interface/HasXY.hpp>
 
+#include <limits> // for infinity checks
 
 template <class T>
 class ArrayS3: public CanLoadSave
@@ -63,10 +64,8 @@ class ArrayS3: public CanLoadSave
 
 	}
 
-		// NEW
 		// ATTEMPT TO PORT RESIZE FUNCTION FROM ARRAYS2 TO ARRAYS3.
 		// SEEMS TO WORK, BUT MAKES PRETTY MESSY THUMBNAILS.
-
 	ArrayS3<T>* resizeTo(const int _x, const int _y, const int _z)
 	/* can upsize and downsize. can squash aspect ratio */
 	/* works by discarding pixels */
@@ -82,35 +81,21 @@ class ArrayS3: public CanLoadSave
 
 		for (unsigned int z=0;z<resizedArray->nZ;++z)
 		{
-		for(unsigned int y=0;y<resizedArray->nY;++y)
-		{
-			for(unsigned int x=0;x<resizedArray->nX;++x)
-			{
-				int targetX = x*pixelRatioX;
-				int targetY = y*pixelRatioY;
-				int targetZ = z*pixelRatioZ;
+         for(unsigned int y=0;y<resizedArray->nY;++y)
+         {
+            for(unsigned int x=0;x<resizedArray->nX;++x)
+            {
+               int targetX = x*pixelRatioX;
+               int targetY = y*pixelRatioY;
+               int targetZ = z*pixelRatioZ;
 
-				(*resizedArray)(x,y,z)=(*this)(targetX,targetY,targetZ);
-				//get all the required neighbor pixels.
-				//Vector <T> neighbours;
-
-				//for(int y2=y;y2<y+pixelRatioY;++y2)
-				//{
-				//	for(int x2=x;x2<x+pixelRatioX;++x2)
-				//	{
-						//neighbours.push(vIndex(x2,y2));
-
-				//	}
-				//}
-
-			}
-		}
+               (*resizedArray)(x,y,z)=(*this)(targetX,targetY,targetZ);
+            }
+         }
 		}
 
 		return resizedArray;
 	}
-
-
 
 	bool isSafe(const unsigned int _x, const unsigned int _y, const unsigned int _z)
 	{
@@ -167,44 +152,12 @@ class ArrayS3: public CanLoadSave
 		{
 			for (unsigned int _z=0;_z<nZ;++_z)
 			{
-				//(*this)(x,y,_z)=vValues(_z);
-				ArrayS3::operator () (x,y,_z)=vValues(_z);
+				(*this)(x,y,_z)=vValues(_z);
+				//ArrayS3::operator () (x,y,_z)=vValues(_z);
 			}
 		}
 	}
-		//Accepts an ArrayS2 and will fill each z with the single value at the ArrayS2 coordinate.
-	// inline void operator() (const unsigned int x, const unsigned int y, ArrayS2 <T> *aValue)
-	// {
-		// if ( aValue.isSafe(x,y) )
-		// {
-			// for (unsigned int _z=0;_z<nZ;++_z)
-			// {
-				// //(*this)(x,y,_z)=vValues(_z);
-				// ArrayS3::operator () (x,y,_z)=aValue(x,y);
-			// }
-		// }
-		// // if ((unsigned int) vValues.size() == nZ)
-		// // {
-			// // for (unsigned int _z=0;_z<nZ;++_z)
-			// // {
-				// // //(*this)(x,y,_z)=vValues(_z);
-				// // ArrayS3::operator () (x,y,_z)=vValues(_z);
-			// // }
-		// // }
-	// }
-	// {
-		// // if(x<nX && y<nY && z<nZ)
-		// // {
-			// // return data[(y*nX+x)*nZ+z];
-		// //}
-		// // else
-		// // {
-			// // outOfBounds=nullValue;
-			// // overFlow=true;
-			// // return outOfBounds;
-		// // }
-	// }
-	
+
 	inline T& operator[] (unsigned int i)
 	{ return data[i]; }
 	void fill(T value)
@@ -286,88 +239,6 @@ class ArrayS3: public CanLoadSave
 		//fill(nullValue);
 		outOfBounds=_nullValue;
 		overFlow=false;
-	}
-
-
-	bool load(unsigned char __attribute__ ((unused)) * pointData)
-	{
-	/*
-		delete [] saveData;
-		saveData=pointData;
-
-		unsigned char headerLength2;
-		unpack(&headerLength2);
-		if(headerLength2==headerLength)
-		{
-			char* header2 = new char [headerLength];
-			unpack(header2,headerLength);
-			bool headersMatch=true;
-
-			for(unsigned int i=0;i<headerLength;++i)
-			{
-				if(header[i]!=header2[i]) { headersMatch=false; }
-			}
-			if(headersMatch)
-			{
-				unpack(&nX);
-				unpack(&nY);
-				unpack(&nZ);
-				unpack(&nullValue);
-				data=new T[nX*nY*nZ];
-				unpack(data,nX*nY*nZ);
-
-				nullAddress=&data[nX*nY*nZ];
-				currentElement=&data[0];
-				outOfBounds=nullValue;
-				overFlow=false;
-				currentPos=0;
-			}
-			else { std::cout<<"Headers do not match\n"; }
-			delete [] header2;
-		}
-		else { std::cout<<"Header lengths do not match\n"; }
-	*/
-		return false;
-	}
-
-	unsigned char* save()
-	{
-	/*
-		//Need to know how much memory to allocate (in bytes) (for now).
-		currentPos=0;
-		setObjectSize();
-		pack(&headerLength);
-		pack(header.c_str(),headerLength);
-		pack(&nX);
-		pack(&nY);
-		pack(&nZ);
-		pack(&nullValue);
-		pack(data,nX*nY*nZ);
-		currentPos=0;
-		return saveData;
-		*/
-		return 0;
-	}
-
-	unsigned int getObjectSize()
-	{
-		return 0;
-		//return((nX*nY*nZ)*sizeof(T)+headerLength+sizeof(unsigned int)*3+1+sizeof(T));
-	}
-
-	template <class T2>
-	void print(std::string delim="")
-	{
-		for(unsigned int z=0;z<nZ;z++) {
-			for(unsigned int y=0;y<nY;y++) {
-				for(unsigned int x=0;x<nX;x++)
-				{
-					std::cout<<(T2)vIndex(x,y,z)<<delim;
-				}
-				std::cout<<"\n";
-			}
-			std::cout<<"\n";
-		}
 	}
 
 	inline void merge(unsigned int x1, unsigned int y1, unsigned int z1, unsigned int x2, unsigned int y2, unsigned int z2, unsigned int x3, unsigned int y3, unsigned int z3, ArrayS3 <T> * array)
@@ -527,13 +398,6 @@ class ArrayS3: public CanLoadSave
 		}
 	}
 
-	void loadStream(T * _data, T * _nullAddress)
-	{
-	/*
-		data=DataTools::copy(data,nullAddress);
-		nullAddress=&data[nullAddress-data];
-	*/
-	}
 
 	void loadXMajor(T * _data)
 	{
@@ -598,153 +462,6 @@ class ArrayS3: public CanLoadSave
 		delete [] data;
 		data = newData;
 	}
-/*
-	void loadStream(T *data)
-	{
-		for(unsigned int i=0;i<size;i++)
-		{
-			array[i]=data[i];
-		}
-	}
-	void merge(unsigned int x, unsigned int y, unsigned int z, DynamicArray <T> d)
-	{
-		for(unsigned int z2=0;z2<d.numZ;z2++)
-		{
-			for(unsigned int y2=0;y2<d.numY;y2++)
-			{
-				for(unsigned int x2=0;x2<d.numX;x2++)
-				{
-					this->write(x+x2,y+y2,z+z2,d.read(x2,y2,z2));
-				}
-			}
-		}
-	}
-
-	void insertStream(unsigned int from, unsigned int to, T* stream)
-	{
-		for(unsigned int i=from;i<size;i++)
-		{
-			if(i>from)
-			{
-				break;
-			}
-			//if stream is done
-			//break;
-			array[i]=stream[i];
-		}
-	}
-
-	//Fill a line of data between two points. (More complicated than it sounds).
-	void fillLine2D(unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2, unsigned int z, T value)
-	{
-		double xStep=(double)x2-x1;
-		double yStep=(double)y2-y1;
-		double posXStep=xStep;
-		double posYStep=yStep;
-		if(posXStep<0)
-		{
-			posXStep=-posXStep;
-		}
-		if(posYStep<0)
-		{
-			posYStep=-posYStep;
-		}
-
-		if(posXStep>=posYStep)
-		{
-			//X focused.
-			if(xStep!=0)
-			{
-				double slope= yStep/xStep;
-				if(yStep==0&&xStep>0)
-				{
-					for(double x=x1;x<x2;x++)
-					{
-						write(x,y2,z,value);
-					}
-				}
-				else if(yStep==0&&xStep<0)
-				{
-					for(double x=x2;x<x1;x++)
-					{
-						write(x,y2,z,value);
-					}
-				}
-				else if(xStep>0)
-				{
-						double y=y1;
-						for(double x=x1;x<x2;x++)
-						{
-							write((unsigned int)x,(unsigned int)y,z,value);
-							y+=slope;
-						}
-				}
-				else if(xStep<0)
-				{
-						double y=y2;
-						for(double x=x2;x<x1;x++)
-						{
-							write((unsigned int)x,(unsigned int)y,z,value);
-							y+=slope;
-						}
-				}
-			}
-			else if(xStep==0&&yStep>0)
-			{
-				for(double y=y1;y<y2;y++)
-				{
-					write(x2,y,z,value);
-				}
-			}
-			else if(xStep==0&&yStep<0)
-			{
-				for(double y=y2;y<y1;y++)
-				{
-					write(x2,y,z,value);
-				}
-			}
-		}
-		else
-		{
-			//Y focused.
-			if(yStep!=0)
-			{
-				double slope= xStep/yStep;
-				if(xStep==0&&yStep>0)
-				{
-					for(double y=y1;y<y2;y++)
-					{
-						write(x2,y,z,value);
-					}
-				}
-				else if(xStep==0&&yStep<0)
-				{
-					for(double y=y2;y<y1;y++)
-					{
-						write(x2,y,z,value);
-					}
-				}
-				else if(yStep>0)
-				{
-						double x=x1;
-						for(double y=y1;y<y2;y++)
-						{
-							write((unsigned int)x,(unsigned int)y,z,value);
-							x+=slope;
-						}
-				}
-				else if(yStep<0)
-				{
-						double x=x2;
-						for(double y=y2;y<y1;y++)
-						{
-							write((unsigned int)x,(unsigned int)y,z,value);
-							x+=slope;
-						}
-				}
-			}
-		}
-	}
-	*/
 };
+
 #endif
