@@ -15,6 +15,9 @@
   #include <windows.h> //CreateDirectory (will need to be ported)
 #endif
 
+//#include <experimental/filesystem>
+#include <sys/stat.h>
+
 /* File/FileManager.hpp
 Library to make file IO easier. Also allows easier object serialisation.
 */
@@ -286,7 +289,10 @@ class FileManager
 #endif
 		
 #ifdef WILDCAT_LINUX
-		return false;
+		// there's a faster way but this works for now
+		std::string _command = "mkdir -p "+_path;
+		system(_command.c_str());
+		return true;
 #endif
 	}
 	
@@ -382,30 +388,44 @@ static int deleteDirectory(const std::string &refcstrRootDirectory, bool bDelete
 		}
 	}
 #endif
+#ifdef WILDCAT_LINUX
+	// quick and dirty method
+	std::string _command = "rm -r "+refcstrRootDirectory;
+	system(_command.c_str());
+#endif
 	return 0;
 }
 
-#ifdef WILDCAT_LINUX
 
-//system("mkdir -p /tmp/a/b/c")
 
-#endif
-
-#ifdef WILDCAT_WINDOWS
-	
 		// https://stackoverflow.com/questions/8233842/how-to-check-if-directory-exist-using-c-and-winapi
 	static bool directoryExists(std::string _dirName)
 	{
+#ifdef WILDCAT_WINDOWS
 		DWORD attribs = GetFileAttributesA(_dirName.c_str());
 		if (attribs == INVALID_FILE_ATTRIBUTES)
 		{
 			return false;
 		}
 		return (attribs & FILE_ATTRIBUTE_DIRECTORY);
+#else // this might be cross platform
+		//return std::filesystem::exists(_dirName);
+		//return false;
+		
+		
+	// another quick and dirty method
+	struct stat sb;
+
+	if (stat(_dirName.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
+	{
+	    return true;
 	}
+	return false;
 #endif
-  
-	// RETURN TRUE IF FILE EXISTS. RETURN FALSE IF FILE DOESN'T EXIST.
+	}
+
+	// Return true if file exists, false otherwise.
+	// There is no c++ std way to do this, so we have to use OS-specific code.
 	static bool fileExists(const std::string filePath)
 	{
 		std::fstream ifile(filePath.c_str());
