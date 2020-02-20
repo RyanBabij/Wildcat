@@ -11,6 +11,8 @@
    in future I may consider a String wrapper class.
 */
 
+#include <Container/Vector/Vector.hpp>
+
 #include <sstream>
 #include <string>     // std::string, memcpy (need a better way of doing this.)
 #include <iostream>   // std::cout
@@ -18,7 +20,7 @@
 #include <locale>     // std::isalnum
 #include <stdlib.h>   // atoi
 
-#include <Container/Vector/Vector.hpp>
+#include <string.h> // contains old functions like memcpy
 
 
 namespace DataTools
@@ -537,8 +539,10 @@ namespace DataTools
 	Update: Changed from char to unsigned char... Should fix things a little
 	Update: Now I'm using memcpy, and things seem to be working better. */
 	{
+//#ifdef WILDCAT_WINDOWS
 		memcpy(*startAddress,number,sizeof(T));
 		*startAddress+=sizeof(T);
+//#endif
 	}
 	template <class T>
 	void mergeOutOfArray(T* number, unsigned char** startAddress)
