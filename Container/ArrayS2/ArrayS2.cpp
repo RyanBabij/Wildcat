@@ -71,7 +71,7 @@ void ArrayS2<ARRAYS2_T>::init(const unsigned int x, const unsigned int y, const 
 	nY=y;
 	data = new ARRAYS2_T [x*y];
 	nullAddress=&data[x*y];
-	this->nullValue=nullValue;
+	this->nullValue=_nullValue;
 	currentElement=&data[0];
 	fill(_nullValue);
 }
@@ -84,9 +84,7 @@ void ArrayS2<ARRAYS2_T>::initClass(const unsigned int x, const unsigned int y)
 	nY=y;
 	data = new ARRAYS2_T [x*y];
 	nullAddress=&data[x*y];
-	//this->nullValue=nullValue;
 	currentElement=&data[0];
-	//fill(_nullValue);
 }
 
 
