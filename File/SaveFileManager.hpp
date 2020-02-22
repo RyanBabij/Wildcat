@@ -244,7 +244,7 @@ class SaveFileManager
   // Load the savefile into RAM.
   void saveToFile (std::string _path)
   {
-    std::cout<<"SAVING DATA TO: "<<_path<<".\n";
+    //std::cout<<"SAVING DATA TO: "<<_path<<".\n";
     
     //savePath = _path;
     
