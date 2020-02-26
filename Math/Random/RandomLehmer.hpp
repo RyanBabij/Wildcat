@@ -58,6 +58,7 @@ class RandomLehmer
    }
    inline uint32_t rand32(const uint32_t _max)
    {
+      if ( _max==0 ) { return 0; }
       return rand32()%_max;
    }
 
