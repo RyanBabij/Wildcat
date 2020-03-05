@@ -11,8 +11,19 @@
    
    It saves space but requires a few extra calculations to
    store and retrieve a bit.
+   
+   This could probably use std::bitset although at this point
+   I don't know if it would be faster.
+   
+   A bitqueue might also be handy. Basically a vector but
+   allows pushing bits instead of bool.
+   
+   Todo: Return a string representation of the bitfield
+   for loading/saving.
 
 */
+
+#include <bitset>
 
 class Bitfield
 {
@@ -85,6 +96,27 @@ class Bitfield
          data[targetByte] = data[targetByte] & (~mask);
       }
    }
+   // set binary representation of given value from given position, with a maximum of length bits set.
+   // overflow not recommended
+   // currently only up to 8 bits supported
+   void setValue(unsigned int bitX, unsigned int bitY, unsigned char value, unsigned char length)
+   {
+      std::bitset<8> hello(value);
+      for (int i=0;i<length;++i)
+      {
+         set(bitX,bitY,value);
+         ++bitX;
+         if (bitX>=nX)
+         {
+            bitX=0;
+            ++bitY;
+         }
+         if ( bitY>=nY )
+         {
+            return;
+         }
+      }
+   }
    
    void init (const unsigned int _nX, const unsigned int _nY)
    // this should specify bits not bytes
@@ -110,33 +142,6 @@ class Bitfield
       std::string strRet((char*)data,nBytes);
       return strRet;
    }
-   
-   
-   
-   void addBit(const bool bit) // move to bitqueue
-   {
-      // if ( bit )
-      // {
-         // currentBit = currentBit | (mask & 255);
-      // }
-      // mask=mask<<1;
-      
-      // if (mask==0)
-      // {
-         // vBit.push(currentBit);
-         // currentBit=0;
-         // mask=1;
-      // }
-   }
-
-   void save()
-   {
-      // return binary data which can be written to a file.
-   }
-   void load()
-   {
-   }
-   
    
 };
 
