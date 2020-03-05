@@ -9,6 +9,11 @@
    Class will only lock if threading is enabled with WILDCAT_THREADING
 */
 
+#ifdef WILDCAT_THREADING
+   #include <mutex>
+#endif
+
+
 class Mutex
 {
 #ifdef WILDCAT_THREADING
