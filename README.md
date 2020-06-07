@@ -33,3 +33,21 @@ Code for mathematical algorithms, includng random number generation. Includes ge
 
 #### System
 Stuff which relies on OS functionality. Sleep, threads (not so much with C++17), time and timers. OS-specific defines.
+
+### Contributions
+
+All contributions are welcome.
+
+### License
+
+This code library will remain open source and public domain.
+
+### Style guide
+
+I prefer the Allman style. Column width is 120. Function names should be descriptive rather than short.
+
+Classes are UpperCamelCase, objects are camelCase, functions are camelCase. Iterators/indexes start with i, arrays start with a, vectors start with v, global variables/defines are UPPERCASE, local shadow variables start with an \_underscore.
+
+Indentation is tabbed, best viewed at 3 spaces per tab.
+
+Indentation is a mess. I'm in the process of moving from spaced indentation to tabbed indentation, because I discovered that you can set Github's tab width with .editorconfig.
