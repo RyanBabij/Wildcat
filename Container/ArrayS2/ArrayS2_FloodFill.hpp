@@ -3,17 +3,21 @@
 #define WILDCAT_CONTAINER_ARRAYS2_ARRAYS2_FLOODFILL_HPP
 
 /* ArrayS2_FloodFill.cpp
-#include <Container/ArrayS2/ArrayS2_FloodFill.hpp>
-Implementation of flood fill.
+#include <Container/ArrayS2/ArrayS2_FloodFill.hpp> */
+
+/** @ brief Implementation of flood fill.
+
+This function returns a vector of all the coordinates within the flood fill area. This particular version has no
+tolerance setting, it only checks for equality. Future versions will allow custom comparison and assignment.
+
+There seems to be a bug which is sometimes causing duplicate coordinates to be pushed. For now I temporarily fixed
+it by making an array to check if a coordinate has already been added. Obviously this is not a good solution
+but it fixes it for now. I guess there are too many coordinates being pushed to vToCheck, because this shouldn't be
+happening normally.
+
+I should try using a deque instead of vector for this.
+
 */
-
-// THIS FUNCTION RETURNS A VECTOR OF ALL THE COORDINATES WITHIN THE FLOOD FILL AREA.
-// THIS PARTICULAR VERSION HAS NO TOLERANCE SETTING, IT ONLY CHECKS FOR EQUALITY.
-// Later versions will allow to specify what value to fill and how to compare.
-
-// I cleaned up the code and removed some redundant pushes to vector. This seems to have almost doubled
-// performance. I should also try using a deque instead of vector.
-
 
 Vector <HasXY*> * floodFillVector ( const int _startX, const int _startY, const bool includeDiagonals )
 {
