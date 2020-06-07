@@ -32,6 +32,11 @@ Vector <HasXY*> * floodFillVector ( const int _startX, const int _startY, const 
 	int posY=_startY;
 
 	ArrayS2 <bool> aChecked ( nX,nY,false );
+	aChecked(_startX,_startY)=true;
+	
+	// Bugfix: This algorithm seems to fill multiple coordinates twice, so for now we need this array here to quickly
+	// check for this.
+	ArrayS2 <bool> aFilled ( nX,nY,false );
 
 	/* scanline fill loop */
 	while (currentV!=vToCheck.size())
@@ -46,7 +51,12 @@ Vector <HasXY*> * floodFillVector ( const int _startX, const int _startY, const 
 		while ( posX>=0 && (*this)(posX,posY)==initialValue )
 		{
 			// Fill the coordinate we are currently on.
-			vToFill->push(new HasXY(posX,posY));
+			if (aFilled(posX,posY)==false)
+			{
+				vToFill->push(new HasXY(posX,posY));
+				aFilled(posX,posY)=true;
+			}
+
 
 			/* check below */
 			/* If we're not on the bottom row, and the below tile is land. */
@@ -120,7 +130,11 @@ Vector <HasXY*> * floodFillVector ( const int _startX, const int _startY, const 
 		while ( posX < nX && (*this)(posX,posY)==initialValue )
 		{
 			// Fill the coordinate we are currently on.
-			vToFill->push(new HasXY(posX,posY));
+			if (aFilled(posX,posY)==false)
+			{
+				vToFill->push(new HasXY(posX,posY));
+				aFilled(posX,posY)=true;
+			}
 
 			/* check below */
 			/* If we're not on the bottom row, and the below tile is water. */
@@ -191,6 +205,7 @@ Vector <HasXY*> * floodFillVector ( const int _startX, const int _startY, const 
 }
 
 // This one hasn't been updated.
+// May also have duplicate coordinates bug.
 ArrayS2 <short int> * floodFillUniqueID ( const bool includeDiagonals, int* lastID )
 {
 	ArrayS2 <short int>* aID = new ArrayS2 <short int> (nX,nY,-1);
