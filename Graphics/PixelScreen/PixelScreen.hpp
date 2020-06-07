@@ -83,6 +83,8 @@ class Sprite: public HasTexture
    }
 };
 
+#include <Graphics/GUI/GUI_Interface.hpp>
+
 class PixelScreen: public GUI_Interface, public IdleTickInterface
 {
    RandomLehmer rngLehmer;
@@ -112,9 +114,12 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
    double scalingFactor; // how many times the standard resolution to scale up
    
    // EFFECTS
+	bool enableEffects;
    
    int fadeSpeed; // max rgb value change per frame
    double updatesPerSecond; // amount of times to update screen state per second
+	bool scanLines;
+	bool charLayer;
    // I might want to just link it with the global idleTick speed.
    // Or have a postRender() function which preps for the next render.
    
@@ -124,6 +129,11 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
    
    PixelScreen(const unsigned short int _nX, const unsigned short int _nY) // define the size in pixels
    {
+		init (_nX,_nY);
+   }
+	
+	void init(const unsigned short int _nX, const unsigned short int _nY)
+	{
       nX=_nX;
       nY=_nY;
       
@@ -147,13 +157,15 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
       updateTimer.init();
       updateTimer.start();
       
+		enableEffects=false;
       updatesPerSecond=60;
-      
+      scanLines=false;
+      charLayer=false;
       amountStatic=0;
       
       mouseX=-1;
       mouseY=-1;
-   }
+	}
    
    void init() override
    {
@@ -300,17 +312,17 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
    }
    void setPixel(const short int _x, const short int _y, const short int _r, const short int _g, const short int _b)
    {
-      if ( isSafe(_x,nY-_y) == false ) { return; }
+      if ( isSafe(_x,nY-1-_y) == false ) { return; }
       // aScreenDataBuffer(_x,_y,0)=_r;
       // aScreenDataBuffer(_x,_y,1)=_g;
       // aScreenDataBuffer(_x,_y,2)=_b;
       // aScreenDataBuffer(_x,_y,3)=255;
       
          // Apparently textures are upside-down
-      texScreen.setPixel(_x,nY-_y,0,_r);
-      texScreen.setPixel(_x,nY-_y,1,_g);
-      texScreen.setPixel(_x,nY-_y,2,_b);
-      texScreen.setPixel(_x,nY-_y,3,255);
+      texScreen.setPixel(_x,nY-1-_y,0,_r);
+      texScreen.setPixel(_x,nY-1-_y,1,_g);
+      texScreen.setPixel(_x,nY-1-_y,2,_b);
+      texScreen.setPixel(_x,nY-1-_y,3,255);
    }
    
    unsigned char getPixel(const short int _x, const short int _y, const short int _channel)
@@ -324,11 +336,12 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
    
    bool isSafe(const short int _x, const short int _y)
    {
-      return( _x > 0 && _x < nX && _y > 0 && _y < nY );
+      return( _x >= 0 && _x < nX && _y >= 0 && _y < nY );
    }
    
    void eventResize() override
    {
+		//std::cout<<"PIXELSCREEN RESIZED: "<<panelX1<<", "<<panelY1<<", "<<panelX2<<", "<<panelY2<<".\n";
    }
    
    bool keyboardEvent(Keyboard* _keyboard) override
@@ -347,62 +360,75 @@ class PixelScreen: public GUI_Interface, public IdleTickInterface
    {
       // render state
       //texScreen.bloom();
+		//std::cout<<"Panel is: "<<panelX1<<", "<<panelY1<<", "<<panelX2<<", "<<panelY2<<"\n";
       
       bindNearestNeighbour(&texScreen);
       Renderer::placeTexture4(panelX1,panelY1,panelX2,panelY2,&texScreen,false);
       unbind(&texScreen);
-      
+
+		if (enableEffects)
+		{
 
    
-      for (int i=0;i<vSprite.size();++i)
-      {
-         // OpenGL uses different coordinates from pixel screen so we need to flip the y.
-         //int drawY1 = 
-         Sprite* const sprite = vSprite(i);
-         if ( sprite != 0 )
-         {
-            Renderer::placeTexture4(panelX1+(sprite->x1*scalingFactor),panelY1+(sprite->y1*scalingFactor),panelX1+(sprite->x2*scalingFactor),panelY1+(sprite->y2*scalingFactor),sprite->currentTexture(),false);
-         }
+			for (int i=0;i<vSprite.size();++i)
+			{
+				// OpenGL uses different coordinates from pixel screen so we need to flip the y.
+				//int drawY1 = 
+				Sprite* const sprite = vSprite(i);
+				if ( sprite != 0 )
+				{
+					Renderer::placeTexture4(panelX1+(sprite->x1*scalingFactor),panelY1+(sprite->y1*scalingFactor),panelX1+(sprite->x2*scalingFactor),panelY1+(sprite->y2*scalingFactor),sprite->currentTexture(),false);
+				}
 
-      }
-      
-      //simple text overlay for now.
-      
-      texOverlay.fill(0);
-      
-      // draw font as an overlay
-      for (int _y=0;_y<nCharY;++_y)
-      {
-         for (int _x=0;_x<nCharX;++_x)
-         {
-            if ( aCharMode(_x,_y) != ' ' )
-            {
-               // For now I'll just overlay the font with the normal render call.
-               // I'd like this option in future for easy text overlays
-               
-               texOverlay.copyDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],font->nX*_x,font->nY*_y);
-               //texScreen.morphDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],font->nX*_x,font->nY*_y,100);
-            }
-            //texRuntime.morphDown(font8x8.aTexFont[(unsigned char)aGlyph[_y][_x]],8*_x,8*_y,22);
-            
-            //texScreen.morphDown(font->aTexFont['A'],8*_x,8*_y,25);
-         }
-      }
-      bindNearestNeighbour(&texOverlay);
-      Renderer::placeTexture4(panelX1,panelY1,panelX2,panelY2,&texOverlay,false);
-      unbind(&texOverlay);
-      
-      // this looks quite bad with non-integer scaling factors. I reckon a
-      // texture overlay will probably look better.
-      for (double _y=panelY2-(scalingFactor);_y>=panelY1;_y-=scalingFactor)
-      {
-         Renderer::placeLineAlpha(0,0,0,80,panelX1,_y,panelX2,_y,scalingFactor/2);
-      }
-   // for (int _x=panelX1;_x<panelX1+320*scalingFactor;_x+=scalingFactor)
-   // {
-      // //Renderer::placeLineAlpha(0,0,0,80,_x,panelY1,_x,panelY1+200*scalingFactor);
-   // }
-      
+			}
+					
+			
+			//simple text overlay for now.
+			
+			texOverlay.fill(0);
+			
+			
+			if ( charLayer )
+			{
+				// draw font as an overlay
+				for (int _y=0;_y<nCharY;++_y)
+				{
+					for (int _x=0;_x<nCharX;++_x)
+					{
+						if ( aCharMode(_x,_y) != ' ' )
+						{
+							// For now I'll just overlay the font with the normal render call.
+							// I'd like this option in future for easy text overlays
+							
+							texOverlay.copyDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],font->nX*_x,font->nY*_y);
+							//texScreen.morphDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],font->nX*_x,font->nY*_y,100);
+						}
+						//texRuntime.morphDown(font8x8.aTexFont[(unsigned char)aGlyph[_y][_x]],8*_x,8*_y,22);
+						
+						//texScreen.morphDown(font->aTexFont['A'],8*_x,8*_y,25);
+					}
+				}
+			}
+			bindNearestNeighbour(&texOverlay);
+			Renderer::placeTexture4(panelX1,panelY1,panelX2,panelY2,&texOverlay,false);
+			unbind(&texOverlay);
+			
+			//return;
+			
+			if (scanLines)
+			{
+				// this looks quite bad with non-integer scaling factors. I reckon a
+				// texture overlay will probably look better.
+				for (double _y=panelY2-(scalingFactor);_y>=panelY1;_y-=scalingFactor)
+				{
+					Renderer::placeLineAlpha(0,0,0,80,panelX1,_y,panelX2,_y,scalingFactor/2);
+				}
+			// for (int _x=panelX1;_x<panelX1+320*scalingFactor;_x+=scalingFactor)
+			// {
+				// //Renderer::placeLineAlpha(0,0,0,80,_x,panelY1,_x,panelY1+200*scalingFactor);
+			// }
+			}
+		}
    }
    
    void setFont (Wildcat::Font* _font) override
