@@ -38,6 +38,20 @@ class GUI_Button: public GUI_Interface
 		clickedTexture=0;
 		cycleClick=false;
 	}
+	
+	virtual void init() override
+	{
+		GUI_Interface::init();
+	}
+	
+	
+	void init (const std::string _text, Texture* const _texture, const Colour* const _cNormal, const Colour* const _cHovered, const Colour* const _cDisabled, const bool _active)
+	{
+		text=_text;
+		texture=_texture;
+		setColours(_cNormal,_cHovered,_cDisabled);
+		active=_active;
+	}
 
 	void unClick() { unclick(); }
 	void unclick()
@@ -62,7 +76,7 @@ class GUI_Button: public GUI_Interface
 		regionButtonArea.set(panelX1,panelY1,panelX2,panelY2);
 	}
 
-	void movePanel ( const int _moveX, const int _moveY )
+	void movePanel ( const int _moveX, const int _moveY ) override
 	{
 		GUI_Interface::movePanel(_moveX,_moveY);
 		regionButtonArea.move(_moveX,_moveY);
@@ -80,7 +94,7 @@ class GUI_Button: public GUI_Interface
 		regionButtonArea.set(panelX1,panelY1,panelX2,panelY2);
 	}
 
-	void setColours(const Colour* _cNormal, const Colour* _cHovered, const Colour* _cDisabled)
+	void setColours(const Colour* const _cNormal, const Colour* const _cHovered, const Colour* const _cDisabled)
 	{
 		cNormal.set(_cNormal);
 		cHovered.set(_cHovered);
@@ -88,7 +102,7 @@ class GUI_Button: public GUI_Interface
 	}
 
 	/* OpenGL. Call whenever the button needs to be rendered. NOTE: Move to GUI parent class. */
-	void render()
+	void render() override
 	{
 		if(active==true && panelNX!=0 && panelNY!=0)
 		{
@@ -125,7 +139,7 @@ class GUI_Button: public GUI_Interface
 	}
 
 	/* Handle mouse input. */
-	bool mouseEvent ( Mouse* mouse )
+	bool mouseEvent ( Mouse* mouse ) override
 	{
 		if(active==true)
 		{
