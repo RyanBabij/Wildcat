@@ -15,6 +15,9 @@ rand8 just generates a 32 bit value and then splits it into 4 8-bit values. As o
 would hope, this runs about 4x faster than rand32. It actually runs about 5x
 faster if you don't modulus the result.
 
+I haven't benchmarked flip() but I would guess it's even faster than rand8() because it can
+pull 32 velues before running the rng again.
+
 Theoretically using 64-bit would double the speed but I currently compile
 only for 32 bit.
 
@@ -33,6 +36,7 @@ class RandomLehmer
 	uint32_t currentVal;
 	unsigned char currentByte;
 	unsigned char aByte[4];
+	unsigned char flipMask; // 8 flips per byte.
 
 	public:
 
@@ -41,6 +45,7 @@ class RandomLehmer
 		nLehmer=_seed;
 		currentByte=3;
 		currentVal=0;
+		flipMask=0;
 	}
 
 	void seed (const uint32_t _seed=0)
@@ -95,6 +100,19 @@ class RandomLehmer
 	{
 		return rand8()%max;
 	}
+	
+	// basically returns true 50% of the time. Uses bitmasks for performance.
+	inline bool flip()
+	{
+		flipMask = flipMask << 1;
+		if (flipMask == 0)
+		{
+			rand8();
+			flipMask=1;
+		}
+		return aByte[currentByte] & flipMask;
+	}
+	
 	inline uint32_t multiRoll8(const uint16_t nDices, const unsigned char diceMax, const bool allowZeroRoll=false)
 	{
 		uint32_t total=0;
