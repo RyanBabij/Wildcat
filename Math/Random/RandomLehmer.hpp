@@ -20,6 +20,9 @@ only for 32 bit.
 
 I'll probably shift all of my RNG stuff to using this class, but it'll take a while.
 
+Note: For good quality seeding you should pass an rng instead of something like time(NULL), to prevent
+accidentally seeding multiple RNGs with the same value.
+
 */
 
 class RandomLehmer
@@ -44,6 +47,13 @@ class RandomLehmer
    {
       nLehmer=_seed;
    }
+	
+	// you can seed the rng with another rng to prevent all your rngs being accidentally seeded with the same
+	// time(NULL) value.
+	void seed (RandomLehmer &seeder)
+	{
+		nLehmer = seeder.rand32();
+	}
 
    // generate a psuedorandom number from 0-4294967295
    uint32_t rand32()
@@ -61,6 +71,8 @@ class RandomLehmer
       if ( _max==0 ) { return 0; }
       return rand32()%_max;
    }
+   inline uint32_t rand(const uint32_t _max)
+   { return rand32(_max); } 
 
    // return random number from 0-255. Generates 4 values at a time
    // pulling from a 32 bit value.
