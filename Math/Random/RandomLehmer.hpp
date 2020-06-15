@@ -27,27 +27,27 @@ accidentally seeding multiple RNGs with the same value.
 
 class RandomLehmer
 {
-   uint32_t nLehmer;
+	uint32_t nLehmer;
 
-   // 8 bit
-   uint32_t currentVal;
-   unsigned char currentByte;
-   unsigned char aByte[4];
+	// 8 bit
+	uint32_t currentVal;
+	unsigned char currentByte;
+	unsigned char aByte[4];
 
-   public:
+	public:
 
-   RandomLehmer(const uint32_t _seed=0)
-   {
-      nLehmer=_seed;
-      currentByte=3;
-      currentVal=0;
-   }
-   
-   void seed (const uint32_t _seed=0)
-   {
-      nLehmer=_seed;
-   }
-	
+	RandomLehmer(const uint32_t _seed=0)
+	{
+		nLehmer=_seed;
+		currentByte=3;
+		currentVal=0;
+	}
+
+	void seed (const uint32_t _seed=0)
+	{
+		nLehmer=_seed;
+	}
+
 	// you can seed the rng with another rng to prevent all your rngs being accidentally seeded with the same
 	// time(NULL) value.
 	void seed (RandomLehmer &seeder)
@@ -55,48 +55,48 @@ class RandomLehmer
 		nLehmer = seeder.rand32();
 	}
 
-   // generate a psuedorandom number from 0-4294967295
-   uint32_t rand32()
-   {
-      nLehmer += 0xe120fc15;
-      uint64_t tmp;
-      tmp = (uint64_t)nLehmer * 0x4a39b70d;
-      uint32_t m1 = (tmp >>32)^tmp;
-      tmp = (uint64_t)m1*0x12fad5c9;
-      uint32_t m2=(tmp>>32)^tmp;
-      return m2;
-   }
-   inline uint32_t rand32(const uint32_t _max)
-   {
-      if ( _max==0 ) { return 0; }
-      return rand32()%_max;
-   }
-   inline uint32_t rand(const uint32_t _max)
-   { return rand32(_max); } 
+	// generate a psuedorandom number from 0-4294967295
+	uint32_t rand32()
+	{
+		nLehmer += 0xe120fc15;
+		uint64_t tmp;
+		tmp = (uint64_t)nLehmer * 0x4a39b70d;
+		uint32_t m1 = (tmp >>32)^tmp;
+		tmp = (uint64_t)m1*0x12fad5c9;
+		uint32_t m2=(tmp>>32)^tmp;
+		return m2;
+	}
+	inline uint32_t rand32(const uint32_t _max)
+	{
+		if ( _max==0 ) { return 0; }
+		return rand32()%_max;
+	}
+	inline uint32_t rand(const uint32_t _max)
+	{ return rand32(_max); } 
 
-   // return random number from 0-255. Generates 4 values at a time
-   // pulling from a 32 bit value.
-   unsigned char rand8()
-   {
-      ++currentByte;
-      if ( currentByte==4)
-      {
-         currentVal=rand32();
-         currentByte=0;
-         // stolen from stackoverflow.com/questions/30777450/bitwise-bitshift-operations-on-64-bit-integers-in-c
-         aByte[0] = (currentVal & 0xff000000UL) >> 24;
-         aByte[1] = (currentVal & 0x00ff0000UL) >> 16;
-         aByte[2] = (currentVal & 0x0000ff00UL) >>  8;
-         aByte[3] = (currentVal & 0x000000ffUL);
-      }
-      return aByte[currentByte];
-   }
-   inline unsigned char rand8(const unsigned char max)
-   {
-      return rand8()%max;
-   }
-   inline uint32_t multiRoll8(const uint16_t nDices, const unsigned char diceMax, const bool allowZeroRoll=false)
-   {
+	// return random number from 0-255. Generates 4 values at a time
+	// pulling from a 32 bit value.
+	unsigned char rand8()
+	{
+		++currentByte;
+		if ( currentByte==4)
+		{
+			currentVal=rand32();
+			currentByte=0;
+			// stolen from stackoverflow.com/questions/30777450/bitwise-bitshift-operations-on-64-bit-integers-in-c
+			aByte[0] = (currentVal & 0xff000000UL) >> 24;
+			aByte[1] = (currentVal & 0x00ff0000UL) >> 16;
+			aByte[2] = (currentVal & 0x0000ff00UL) >>  8;
+			aByte[3] = (currentVal & 0x000000ffUL);
+		}
+		return aByte[currentByte];
+	}
+	inline unsigned char rand8(const unsigned char max)
+	{
+		return rand8()%max;
+	}
+	inline uint32_t multiRoll8(const uint16_t nDices, const unsigned char diceMax, const bool allowZeroRoll=false)
+	{
 		uint32_t total=0;
 
 		for ( uint16_t i=0;i<nDices;++i)
@@ -109,14 +109,12 @@ class RandomLehmer
 			{
 				total+=rand8(diceMax);
 			}
-
 		}
 		return total;
-   }
-   inline uint32_t multiRoll32(const uint16_t nDices, const uint16_t diceMax, const bool allowZeroRoll=false)
-   {
+	}
+	inline uint32_t multiRoll32(const uint16_t nDices, const uint16_t diceMax, const bool allowZeroRoll=false)
+	{
 		uint32_t total=0;
-
 		for ( uint16_t i=0;i<nDices;++i)
 		{
 			if ( allowZeroRoll == false )
@@ -127,20 +125,18 @@ class RandomLehmer
 			{
 				total+=rand8(diceMax);
 			}
-
 		}
 		return total;
-   }
-   
+	}
+
 	/* Will return true one in 'prob' times. Ie, with prob at 100, will return true roughly 1 in 100 times. */
 	inline bool oneIn(const uint16_t prob)
 	{ return (rand32(prob)==0); }
-   
+
 	//Range is inclusive. Seems to work with negative values.
 	inline int32_t range32(const int32_t _min, const int32_t _max)
 	{
 		if (_min==_max) { return _min; }
-
 		return (rand32(_max-_min)) + _min;
 	}
 
