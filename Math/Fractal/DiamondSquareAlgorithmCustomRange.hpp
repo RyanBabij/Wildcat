@@ -71,6 +71,11 @@ class DiamondSquareAlgorithmCustomRange
 			// Default range is 0-255 inclusive.
 		maxValue=255;
 	}
+	
+	void seed(unsigned int seed)
+	{
+		rng.seed(seed);
+	}
 
 	void generate(ArrayS2 <int>* aMap=0, int* aValueTable=0, unsigned short int freeSteps = 0, float smoothing = 0.85, float variance = 250, float varianceDecrement = 0.1)
 	{
