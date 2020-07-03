@@ -33,7 +33,7 @@ class LinearMidpointDisplacement
 	// Run midpoint displacement algorithm on the line.
 	// Ignore already set values.
 	// Line should have n^2+1 elements.
-	void generate(int * array, const int len, int maxValue)
+	void generate(int * array, const int len, int maxValue, int freeSteps=0)
 	{
 		if ( len < 3 )
 		{
@@ -59,17 +59,38 @@ class LinearMidpointDisplacement
 			{
 				if (array[i]==0)
 				{
-					//array[i]=(array[i-currentSize]+array[i+currentSize]) / 2;
-					int variance = (rng.rand32() % currentSize*3) - currentSize;
-					array[i]=((array[i-currentSize]+array[i+currentSize]) / 2) + variance;
-					if (array[i] > maxValue)
+					if ( freeSteps > 0 )
 					{
-						array[i] = maxValue;
+						array[i]=rng.rand32() % maxValue;
+						if (array[i] > maxValue)
+						{
+							array[i] = maxValue;
+						}
+						if ( array[i]<1 ) // workaround: 0 tiles are considered ininitialized
+						{
+							array[i]=1;
+						}
+						
+						--freeSteps;
 					}
-					if ( array[i]<1 ) // workaround: 0 tiles are considered ininitialized
+					else
 					{
-						array[i]=1;
+						
+						//array[i]=(array[i-currentSize]+array[i+currentSize]) / 2;
+						int variance = (rng.rand32() % currentSize*3) - currentSize;
+						array[i]=((array[i-currentSize]+array[i+currentSize]) / 2) + variance;
+						if (array[i] > maxValue)
+						{
+							array[i] = maxValue;
+						}
+						if ( array[i]<1 ) // workaround: 0 tiles are considered ininitialized
+						{
+							array[i]=1;
+						}
+						
 					}
+					
+
 				}
 			}
 			if (currentSize==1)
