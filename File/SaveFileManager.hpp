@@ -62,23 +62,25 @@
 
 /* Objects that can load and save should use this interface. */
 
+#include <Data/UID.cpp>
+
+UID <long long unsigned int> SaveFileInterface_UID;
+
 class SaveFileInterface
 {
   private:
     // uid is used to store pointers between objects.
-  long long int uid;
+  long long unsigned int uid;
   
   public:
-  static long long int currentID;
-
   
   SaveFileInterface()
   {
-    uid = currentID++;
+    uid = SaveFileInterface_UID.get();
   }
   ~SaveFileInterface() {}
   
-  long long int getUID()
+  long long unsigned int getUID()
   {
     return uid;
   }
@@ -104,7 +106,6 @@ class SaveFileInterface
   }
   
 };
-long long int SaveFileInterface::currentID = 0;
 
 // Basically a container designed for saving large collections of data, for example array contents.
 class SaveChunk
