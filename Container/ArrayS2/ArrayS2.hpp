@@ -1178,220 +1178,220 @@ void resetNeighbor()
 	// This function gets all unique areas. We should keep this functionality.
 	
 //template <class ARRAYS2_T>
-Vector <HasXY> * floodFillVectorNOPE ( const int _startX=0, const int _startY=0, bool includeDiagonals=true )
-{
-	std::cout<<"Fill called for coordinates: ("<<_startX<<", "<<_startY<<")\n";
-	const ARRAYS2_T initialValue = (*this)(_startX,_startY);
+// Vector <HasXY> * floodFillVectorNOPE ( const int _startX=0, const int _startY=0, bool includeDiagonals=true )
+// {
+	// std::cout<<"Fill called for coordinates: ("<<_startX<<", "<<_startY<<")\n";
+	// const ARRAYS2_T initialValue = (*this)(_startX,_startY);
 	
-	// Vector of coordinates to return.
-	Vector <HasXY> * vToFill = new Vector <HasXY>;
+	// // Vector of coordinates to return.
+	// Vector <HasXY> * vToFill = new Vector <HasXY>;
 
-	/* vectors of coordinates to be checked (this can be changed to std::pair */
-	Vector <int> vX;
-	Vector <int> vY;
-	int currentV=-1;
-	int posX=_startX;
-	int posY=_startY;
+	// /* vectors of coordinates to be checked (this can be changed to std::pair */
+	// Vector <int> vX;
+	// Vector <int> vY;
+	// int currentV=-1;
+	// int posX=_startX;
+	// int posY=_startY;
 	
-	int landMassSize = 0;
-	Vector <int> vLandmassSize;
-	int currentID = 1;
+	// int landMassSize = 0;
+	// Vector <int> vLandmassSize;
+	// //int currentID = 1;
 	
-	ArrayS2 <bool> aChecked ( nX,nY,false );
+	// ArrayS2 <bool> aChecked ( nX,nY,false );
 	
-	/* scanline fill loop */
-	while (true)
-	{
-        const int INITIAL_X=posX;
-        /* go left to find the leftmost tile for this row which meets the criteria for water, filling along the way */
-        /* we also check the tile directly above or below to see if there are any tiles that can be filled on those rows. */
-        /* If we find such tiles, then we store the leftmost ones, for both the upper and lower row. */
-        /* NOTE: y coords seems to encode upside-down, so we need to work upside-down here. */
-        /* Fill left */
-        while ( posX>=0 && aChecked(posX,posY)==false && (*this)(posX,posY)==initialValue )
-        {
-			//aLandmassID(posX,posY)=currentID;
-			aChecked(posX,posY)=true;
-			vToFill->push(HasXY(posX,posY));
+	// /* scanline fill loop */
+	// while (true)
+	// {
+        // const int INITIAL_X=posX;
+        // /* go left to find the leftmost tile for this row which meets the criteria for water, filling along the way */
+        // /* we also check the tile directly above or below to see if there are any tiles that can be filled on those rows. */
+        // /* If we find such tiles, then we store the leftmost ones, for both the upper and lower row. */
+        // /* NOTE: y coords seems to encode upside-down, so we need to work upside-down here. */
+        // /* Fill left */
+        // while ( posX>=0 && aChecked(posX,posY)==false && (*this)(posX,posY)==initialValue )
+        // {
+			// //aLandmassID(posX,posY)=currentID;
+			// aChecked(posX,posY)=true;
+			// vToFill->push(HasXY(posX,posY));
 
-			/* check below */
-			/* If we're not on the bottom row, and the below tile is land. */
-			if(posY<nY-1 && (*this)(posX,posY+1)==true )
-			{
+			// /* check below */
+			// /* If we're not on the bottom row, and the below tile is land. */
+			// if(posY<nY-1 && (*this)(posX,posY+1)==true )
+			// {
 
-				/* If we are at the leftmost or rightmost column of the map. */
-				if(posX==0 || posX==nX-1 )
-				{
-					/* push tile below us if it's valid. */
-					if(aChecked(posX,posY+1)==false)
-					{
-						vX.push(posX); vY.push(posY+1);
-					}
-				}
-				/* if we aren't at the leftmost or rightmost column of the map. */
-				else
-				{
-					/* if the bottom-left tile doesn't match, and the below tile has not been processed. */
-					if ( (*this)(posX-1,posY+1)!=initialValue && aChecked(posX,posY+1)==false )
-					{ 
-						vX.push(posX); vY.push(posY+1);
-					}
-				}
-			}
-			/* check above */
-			/* If we're not on the top row, and the above tile is water. */
-			if(posY>0 && (*this)(posX,posY-1)==initialValue )
-			{
-				/* If we are at the leftmost or rightmost column of the map. */
-				if(posX==0 || posX==nX-1 )
-				{
-					/* push tile above us if it's valid. */
-					if(aChecked(posX,posY-1)==false)
-					{
-						vX.push(posX); vY.push(posY-1);
-					}
-				}
-				/* if we aren't at the leftmost or rightmost column of the map. */
-				else
-				{
-					/* if the top-left tile is land, and the above tile has not been processed. */
-					if ((*this)(posX-1,posY-1)!=initialValue && aChecked(posX,posY-1)==false)
-					{
-						vX.push(posX); vY.push(posY-1);
-					}
-				}
-			}
-			--posX; /* move left 1 tile */
-		}
+				// /* If we are at the leftmost or rightmost column of the map. */
+				// if(posX==0 || posX==nX-1 )
+				// {
+					// /* push tile below us if it's valid. */
+					// if(aChecked(posX,posY+1)==false)
+					// {
+						// vX.push(posX); vY.push(posY+1);
+					// }
+				// }
+				// /* if we aren't at the leftmost or rightmost column of the map. */
+				// else
+				// {
+					// /* if the bottom-left tile doesn't match, and the below tile has not been processed. */
+					// if ( (*this)(posX-1,posY+1)!=initialValue && aChecked(posX,posY+1)==false )
+					// { 
+						// vX.push(posX); vY.push(posY+1);
+					// }
+				// }
+			// }
+			// /* check above */
+			// /* If we're not on the top row, and the above tile is water. */
+			// if(posY>0 && (*this)(posX,posY-1)==initialValue )
+			// {
+				// /* If we are at the leftmost or rightmost column of the map. */
+				// if(posX==0 || posX==nX-1 )
+				// {
+					// /* push tile above us if it's valid. */
+					// if(aChecked(posX,posY-1)==false)
+					// {
+						// vX.push(posX); vY.push(posY-1);
+					// }
+				// }
+				// /* if we aren't at the leftmost or rightmost column of the map. */
+				// else
+				// {
+					// /* if the top-left tile is land, and the above tile has not been processed. */
+					// if ((*this)(posX-1,posY-1)!=initialValue && aChecked(posX,posY-1)==false)
+					// {
+						// vX.push(posX); vY.push(posY-1);
+					// }
+				// }
+			// }
+			// --posX; /* move left 1 tile */
+		// }
 		
-		/* check the last X for this scan. */
-		// NOTE: I THINK SWITCHING TO A DO WHILE MIGHT REMOVE THE NEED FOR THIS BIT.
+		// /* check the last X for this scan. */
+		// // NOTE: I THINK SWITCHING TO A DO WHILE MIGHT REMOVE THE NEED FOR THIS BIT.
 
-		++posX;
-		/* check below */
-		/* If we're not on the bottom row, and the below tile is water, and the below tile hasn't been processed yet. */
-		if(posY<nY-1 && (*this)(posX,posY+1)==true && aChecked(posX,posY+1)==false )
-		{
-			/* push coords onto vectors. */
-			vX.push(posX); vY.push(posY+1);
-		}
+		// ++posX;
+		// /* check below */
+		// /* If we're not on the bottom row, and the below tile is water, and the below tile hasn't been processed yet. */
+		// if(posY<nY-1 && (*this)(posX,posY+1)==true && aChecked(posX,posY+1)==false )
+		// {
+			// /* push coords onto vectors. */
+			// vX.push(posX); vY.push(posY+1);
+		// }
 
-		/* check above */
-		/* If we're not on the top row, and the above tile is water, and the above tile hasn't been processed yet. */
-		if(posY>0 && (*this)(posX,posY-1)==true && aChecked(posX,posY-1)==false)
-		{
-			/* push coords onto vectors. */
-			vX.push(posX); vY.push(posY-1);
-		}
+		// /* check above */
+		// /* If we're not on the top row, and the above tile is water, and the above tile hasn't been processed yet. */
+		// if(posY>0 && (*this)(posX,posY-1)==true && aChecked(posX,posY-1)==false)
+		// {
+			// /* push coords onto vectors. */
+			// vX.push(posX); vY.push(posY-1);
+		// }
 
-		// DIAGONALS: SAME BUT CHECK BELOW-LEFT
-		if(posY<nY-1 && posX>0 && (*this)(posX-1,posY+1)==true && aChecked(posX-1,posY+1)==false )
-		{
-			vX.push(posX-1); vY.push(posY+1);
-		}
+		// // DIAGONALS: SAME BUT CHECK BELOW-LEFT
+		// if(posY<nY-1 && posX>0 && (*this)(posX-1,posY+1)==true && aChecked(posX-1,posY+1)==false )
+		// {
+			// vX.push(posX-1); vY.push(posY+1);
+		// }
 		
-		// DIAGONALS: SAME BUT CHECK ABOVE-LEFT
-		if(posY>0 && posX>0 && (*this)(posX-1,posY-1)==true && aChecked(posX-1,posY-1)== false )
-		{
-			vX.push(posX-1); vY.push(posY-1);
-		}
+		// // DIAGONALS: SAME BUT CHECK ABOVE-LEFT
+		// if(posY>0 && posX>0 && (*this)(posX-1,posY-1)==true && aChecked(posX-1,posY-1)== false )
+		// {
+			// vX.push(posX-1); vY.push(posY-1);
+		// }
 
-		posX=INITIAL_X+1;
+		// posX=INITIAL_X+1;
 		
 		
-		//aLandmassID = -1 is to become aChecked=false;
-		//island is to become (*this).
+		// //aLandmassID = -1 is to become aChecked=false;
+		// //island is to become (*this).
 		
-		/* Go back to the initial x position, and now fill right */
-		while ( posX < nX && (*this)(posX,posY)==true && aChecked(posX,posY)==false )
-		{
-			aChecked(posX,posY)=true;
-			++landMassSize;
-			/* check below */
-			/* If we're not on the bottom row, and the below tile is water. */
-			if(posY<nY-1 && (*this)(posX,posY+1)==true )
-			{
-			/* If we are at the leftmost or rightmost column of the map. */
-			if(posX==0 || posX==nX-1 )
-			{
-			/* push tile below us if it's valid. */
-			if(aChecked(posX,posY+1)==false)
-			{ vX.push(posX); vY.push(posY+1); }
-			}
-			/* if we aren't at the leftmost or rightmost column of the map. */
-			else
-			{
-			/* if the bottom-left tile is land, and the below tile has not been processed. */
-			if ( (*this)(posX-1,posY+1)==false && aChecked(posX,posY+1)==false )
-			{ vX.push(posX); vY.push(posY+1); }
-			}
-			}
-			/* check above */
-			/* If we're not on the top row, and the above tile is water. */
-			if(posY>0 && (*this)(posX,posY-1)==true )
-			{
-			/* If we are at the leftmost or rightmost column of the map. */
-			if(posX==0 || posX==nX-1 )
-			{
-			/* push tile above us if it's valid. */
-			if(aChecked(posX,posY-1)==false)
-			{ vX.push(posX); vY.push(posY-1);
-			}
-			}
-			/* if we aren't at the leftmost or rightmost column of the map. */
-			else
-			{
-			/* if the top-left tile is land, and the above tile has not been processed. */
-			if ( (*this)(posX-1,posY-1)==false && aChecked(posX,posY-1)==false )
-			{ vX.push(posX); vY.push(posY-1); }
-			}
-			}
-			/* move right 1 tile */
-			++posX;
-		}
+		// /* Go back to the initial x position, and now fill right */
+		// while ( posX < nX && (*this)(posX,posY)==true && aChecked(posX,posY)==false )
+		// {
+			// aChecked(posX,posY)=true;
+			// ++landMassSize;
+			// /* check below */
+			// /* If we're not on the bottom row, and the below tile is water. */
+			// if(posY<nY-1 && (*this)(posX,posY+1)==true )
+			// {
+			// /* If we are at the leftmost or rightmost column of the map. */
+			// if(posX==0 || posX==nX-1 )
+			// {
+			// /* push tile below us if it's valid. */
+			// if(aChecked(posX,posY+1)==false)
+			// { vX.push(posX); vY.push(posY+1); }
+			// }
+			// /* if we aren't at the leftmost or rightmost column of the map. */
+			// else
+			// {
+			// /* if the bottom-left tile is land, and the below tile has not been processed. */
+			// if ( (*this)(posX-1,posY+1)==false && aChecked(posX,posY+1)==false )
+			// { vX.push(posX); vY.push(posY+1); }
+			// }
+			// }
+			// /* check above */
+			// /* If we're not on the top row, and the above tile is water. */
+			// if(posY>0 && (*this)(posX,posY-1)==true )
+			// {
+			// /* If we are at the leftmost or rightmost column of the map. */
+			// if(posX==0 || posX==nX-1 )
+			// {
+			// /* push tile above us if it's valid. */
+			// if(aChecked(posX,posY-1)==false)
+			// { vX.push(posX); vY.push(posY-1);
+			// }
+			// }
+			// /* if we aren't at the leftmost or rightmost column of the map. */
+			// else
+			// {
+			// /* if the top-left tile is land, and the above tile has not been processed. */
+			// if ( (*this)(posX-1,posY-1)==false && aChecked(posX,posY-1)==false )
+			// { vX.push(posX); vY.push(posY-1); }
+			// }
+			// }
+			// /* move right 1 tile */
+			// ++posX;
+		// }
 
-		//KLUDGE. DO WHILE MAYBE IS SMARTER. MAYBE.
-		--posX;
+		// //KLUDGE. DO WHILE MAYBE IS SMARTER. MAYBE.
+		// --posX;
 		
-		// DIAGONALS: CHECK BELOW-RIGHT
-		if(posY<nY-1 && posX<nX-1 && (*this)(posX+1,posY+1)==true && aChecked(posX+1,posY+1)==false )
-		{
-			vX.push(posX+1); vY.push(posY+1);
-		}
+		// // DIAGONALS: CHECK BELOW-RIGHT
+		// if(posY<nY-1 && posX<nX-1 && (*this)(posX+1,posY+1)==true && aChecked(posX+1,posY+1)==false )
+		// {
+			// vX.push(posX+1); vY.push(posY+1);
+		// }
 
-		// DIAGONALS: CHECK ABOVE-RIGHT
-		if(posY>0 && posX<nX-1 && (*this)(posX+1,posY-1)==true && aChecked(posX+1,posY-1)==false )
-		{
-			vX.push(posX+1); vY.push(posY-1);
-		}
+		// // DIAGONALS: CHECK ABOVE-RIGHT
+		// if(posY>0 && posX<nX-1 && (*this)(posX+1,posY-1)==true && aChecked(posX+1,posY-1)==false )
+		// {
+			// vX.push(posX+1); vY.push(posY-1);
+		// }
 
-		/* entire row is complete. Go to next set of coords. */
-		/* Look for some good coords on the vector. */
-		++currentV;
+		// /* entire row is complete. Go to next set of coords. */
+		// /* Look for some good coords on the vector. */
+		// ++currentV;
 
-		for (;currentV<vX.size();++currentV)
-		{
-			if ( aChecked(vX(currentV),vY(currentV)) == false )
-			{
-				posX=vX(currentV);
-				posY=vY(currentV);
-				break;
-			}
-		}
+		// for (;currentV<vX.size();++currentV)
+		// {
+			// if ( aChecked(vX(currentV),vY(currentV)) == false )
+			// {
+				// posX=vX(currentV);
+				// posY=vY(currentV);
+				// break;
+			// }
+		// }
 
-		if(currentV==vX.size())
-		{
-			break;
-		}
-	}
+		// if(currentV==vX.size())
+		// {
+			// break;
+		// }
+	// }
 	
-	vX.clear();
-	vY.clear();
-	vLandmassSize.push(landMassSize);
-	landMassSize=0;
-	++currentID;	
-	return 0;
-}
+	// vX.clear();
+	// vY.clear();
+	// vLandmassSize.push(landMassSize);
+	// landMassSize=0;
+	// ++currentID;	
+	// return 0;
+// }
 
 //	Vector <HasXY> * floodFillVector ( const int _startX, const int _startY, bool includeDiagonals );
 	
