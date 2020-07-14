@@ -3,7 +3,9 @@
 #define WILDCAT_DATA_DATA_TOOLS_HPP
 
 /* Wildcat: Data/DataTools.hpp
-   #include <Data/DataTools.hpp>
+   #include <Data/DataTools.hpp> */
+	
+/**
 
 	Library for miscellaneous common functions involving datatypes.
    
@@ -25,6 +27,32 @@
 
 namespace DataTools
 {
+
+	// find all instances of search string and replace with replace string. This modifies the passed string for
+	// performance.
+	// Stolen from https://stackoverflow.com/questions/5878775/how-to-find-and-replace-string
+	void findAndReplace(std::string* input, const std::string& search, const std::string& replace)
+	{
+		size_t pos = 0;
+		while ((pos = input->find(search, pos)) != std::string::npos)
+		{
+			input->replace(pos, search.length(), replace);
+			pos += replace.length();
+		}
+	}
+	// same but returns a modified copy of the passed string
+	// stolen from https://stackoverflow.com/questions/5878775/how-to-find-and-replace-string
+	std::string findAndReplace(std::string subject, const std::string& search, const std::string& replace)
+	{
+		size_t pos = 0;
+		while ((pos = subject.find(search, pos)) != std::string::npos)
+		{
+			subject.replace(pos, search.length(), replace);
+			pos += replace.length();
+		}
+		return subject;
+	}
+	
   // Break string up into a vector of strings split by the passed delimiters.
   // Don't forget to include \n and \r.
    //  tokenize("test,1,2,,,3,", ",") will return "test", "1", "2", and "3".
