@@ -297,9 +297,25 @@ class WTFNode
 	
 	
 	// Return values for this key
-	void getValues(std::string request)
+	Vector <std::string>* getValues(Vector <std::string>* vPath)
 	{
 		// return the value(s) of the request.
+		if (vPath->size() == 0) // this is the matching tag
+		{
+			if (vValue.size()==0)
+			{ return 0; }
+			Vector <std::string> * vRet = vValue.copy();
+			return vRet;
+		}
+		for (int i=0;i<vSubRaw.size();++i)
+		{
+			if ( (*vPath)(0) == vSubRaw(i)->getID() )
+			{
+				vPath->eraseSlot(0);
+				return vSubRaw(i)->getValues(vPath);
+			}
+		}
+		return 0;
 	}
 	// return all nodes on this namespace
 	void getAll(std::string request)
@@ -309,15 +325,12 @@ class WTFNode
 	{
 		if (vPath->size() == 0) // this is the matching tag
 		{
-			//std::cout<<"Found tag: "<<getFullID()<<"\n";
 			return true;
 		}
 		for (int i=0;i<vSubRaw.size();++i)
 		{
-			//std::cout<<"Comparing "<<(*vPath)(0)<<" and "<<vSubRaw(i)->getID()<<"\n";
 			if ( (*vPath)(0) == vSubRaw(i)->getID() )
 			{
-				//std::cout<<"Diving into "<<vSubRaw(i)->getID()<<"\n";
 				vPath->eraseSlot(0);
 				return vSubRaw(i)->hasTag(vPath);
 			}
@@ -544,37 +557,51 @@ class WTFManager
 	
 	Vector <std::string> * getValues(std::string _query)
 	{
+		if ( _query.size()==0 )
+		{ return 0; }
+	
+		//break query into delimiters.
+		Vector <std::string> * vPath = DataTools::tokenize(_query,".");
+		
+		for (int i=0;i<vRoot.size();++i)
+		{
+			if ( vRoot(i)->getID() == (*vPath)(0) )
+			{
+				vPath->eraseSlot(0);
+				Vector <std::string>* vRet = vRoot(i)->getValues(vPath);
+				delete vPath;
+				return vRet;
+			}
+		}
+		
+		delete vPath;
 		return 0;
 	}
 	// return true if the path through the tree exists.
 	bool hasTag (std::string _query)
 	{
-		//std::cout<<"Searching for tag: "<<_query<<"\n";
 		if ( _query.size()==0 )
-		{
-			return false;
-		}
-		bool ret = false;
+		{ return false; }
+	
 		//break query into delimiters.
 		Vector <std::string> * vPath = DataTools::tokenize(_query,".");
 		
-		//std::cout<<"Tokenized:\n";
-		for (int i=0;i<vPath->size();++i)
-		{
-			//std::cout<<"* "<<(*vPath)(i)<<"\n";
-		}
 		for (int i=0;i<vRoot.size();++i)
 		{
 			if ( vRoot(i)->getID() == (*vPath)(0) )
 			{
-				//std::cout<<"Diving into "<<vRoot(i)->getID()<<"\n";
 				vPath->eraseSlot(0);
-				return vRoot(i)->hasTag(vPath);
+				
+				if (vRoot(i)->hasTag(vPath))
+				{
+					delete vPath;
+					return true;
+				}
 			}
 		}
 		
 		delete vPath;
-		return ret;
+		return false;
 	}
 	
 };
