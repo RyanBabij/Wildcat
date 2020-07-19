@@ -109,6 +109,17 @@ class Vector
 		}
 	}
 	
+	Vector <T>* copy()
+	{
+		Vector <T>* copyVector = new Vector <T>;
+		
+		for ( int i=0;i<size();++i)
+		{
+			copyVector->push((*this)(i));
+		}
+		return copyVector;
+	}
+	
   /* VECTOR SHUFFLE
     Randomly shuffle the vector. Useful when you want to go through a collection
     randomly without repeating.
