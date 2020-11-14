@@ -2,15 +2,15 @@
 #ifndef WILDCAT_DATA_DATA_TOOLS_HPP
 #define WILDCAT_DATA_DATA_TOOLS_HPP
 
-/* Wildcat: Data/DataTools.hpp
-   #include <Data/DataTools.hpp> */
-	
-/**
+/*
+#include <Data/DataTools.hpp>
 
-	Library for miscellaneous common functions involving datatypes.
-   
-   For now it also includes string and vector operations, although
-   in future I may consider a String wrapper class.
+Library for miscellaneous common functions involving datatypes.
+
+For now it also includes string and vector operations, although
+in future I may consider a String wrapper class.
+
+Todo: Move datatype conversions to its own header.
 */
 
 #include <Container/Vector/Vector.hpp>
@@ -320,6 +320,15 @@ namespace DataTools
    {
       // If the string is not a valid integer, zero will be returned.
       return stoi(s);
+   }
+   inline int toInt(const char c)
+   {
+	   // convert char to int. error returns -1.
+	   if (c > 47 && c < 58)
+	   {
+		   return c-48;
+	   }
+	   return -1;
    }
    inline short int toShort(const std::string s)
    {
