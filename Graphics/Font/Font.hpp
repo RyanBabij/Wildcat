@@ -147,7 +147,7 @@ class Font
 		Coords are automatically sorted into the right order.
 		The centeredX option will center each line.
 
-    Will return the number of lines it drew. (0 for error)
+		Will return the number of lines it drew. (0 for error)
 		
 		Update: Add ability to simply render each character as it appears,
 		without trying to make it look neat.
@@ -158,9 +158,13 @@ class Font
 		Update: Added support for ANSI escape codes. Colours will automatically be rendered if ANSI
 		colour codes are provided. Currently only red is supported.
 		
+		_lineSpacing - This is in addition to normal line spacing which is the height of the font.
+		rawTextMode - what does this do lol. Probably some Terminal thing.
+		
 	*/
    int drawText(std::string text, unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2, bool centeredX = false, bool centeredY=false, bool rawTextMode=false,
-				unsigned char _colourRed=0, unsigned char _colourGreen=0,unsigned char _colourBlue=0,unsigned char _alpha=255)
+				unsigned char _colourRed=0, unsigned char _colourGreen=0,unsigned char _colourBlue=0,unsigned char _alpha=255,
+				int _lineSpacing = -1)
 	{
 		
 		if (loadSuccess == false )
@@ -230,10 +234,17 @@ class Font
 			currentX = x1+(remainderPixels/2);
 		}
 		
+		// set custom y spacing
+		int finalYSpacing = ySpacing;
+		// if ( _ySpacing >= 0 )
+		// {
+			// finalYSpacing += _ySpacing;
+		// }
+		
 		if(centeredY==true)
 		{
 			int nLines = (text.size()/charsPerLine)+1;
-			int vSpace = nLines*(nY+ySpacing)-ySpacing;
+			int vSpace = nLines*(nY+finalYSpacing)-finalYSpacing;
 			
 			int sY = y1-y2;
 			currentY = y1 - ((sY-vSpace)/2);
@@ -277,7 +288,7 @@ class Font
 				if (currentX+nX > x2 || text[i]=='\n')
 				{
 					currentX=x1;
-					currentY-=(nY+ySpacing);
+					currentY-=(nY+finalYSpacing);
 					++linesDrawn;
 					
 					
