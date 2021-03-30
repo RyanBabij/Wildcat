@@ -3,7 +3,7 @@
 #define WILDCAT_SYSTEM_TIME_TIMER_HPP
 
 /* Wildcat: Timer
-   #include <Time/Timer.hpp>
+   #include <System/Time/Timer.hpp>
    
    Linux Implementation (Seems to also work with mingw or whatever)
 
@@ -19,6 +19,20 @@
    std::cout<<"Execution time: "<<t.fullSeconds<<".\n";
    
    GetTickCount() returns milliseconds since startup
+   
+   Shorter example:
+   
+   Timer t = Timer().start();
+   std::cout<<"Execution time: "<<t.update().fullSeconds<<"\n";
+   
+   TIMER MANAGER 
+   
+   int id = timerManager.instanceStart();
+   timerManager.getSeconds(id);
+   
+   timerManager.waitUntil(id, 1000);
+   
+   
 
 */
 
@@ -44,7 +58,7 @@ class Timer
 
    long int totalUSeconds;
 
-   Timer()
+   Timer(bool autoStart = false)
    {
       init();
    }
