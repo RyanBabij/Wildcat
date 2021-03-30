@@ -236,10 +236,10 @@ class Font
 		
 		// set custom y spacing
 		int finalYSpacing = ySpacing;
-		// if ( _ySpacing >= 0 )
-		// {
-			// finalYSpacing += _ySpacing;
-		// }
+		if ( _lineSpacing >= 0 )
+		{
+			finalYSpacing += _lineSpacing;
+		}
 		
 		if(centeredY==true)
 		{
