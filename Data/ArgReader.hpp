@@ -10,7 +10,7 @@
 
 /*
 	ArgReader
-	#include <Misc/ArgReader.hpp>
+	#include <Data/ArgReader.hpp>
 
 	* PROBABLY FILE THIS IN LIB/DATA.
 
