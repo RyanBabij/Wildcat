@@ -1,8 +1,8 @@
 #ifndef FILEMANAGER_STATIC_HPP
 #define FILEMANAGER_STATIC_HPP
 
-#include <fstream>
-#include <string>
+#include <fstream> // file IO
+#include <string> // filepaths
 
 /*	FileManagerStatic
 	#include <File/FileManagerStatic.hpp>
@@ -15,9 +15,13 @@
 	+ I changed the behaviour of 'writeString(~)'. It now creates a file if one doesn't exist. This could be bad.
 	+ If you are writing thousands of lines, it is much, much faster to put the data into a string and write it with a single FileManager call.
 	+ I am changing writeString(~) to a generic write(~). This means you can also pass chars.
+	
+	Todo:
+	
+	+ Function to load file data into char array.
 
 */
-#include <iostream>
+
 
 class FileManagerStatic
 {
@@ -139,7 +143,7 @@ class FileManagerStatic
 		return fileSize;
 	}
 
-	/* 0223355067 - Check if the file contains the passed string at the given index. */
+	/* Check if the file contains the passed string at the given index. */
 	static bool matches (const std::string file, int startIndex, const std::string str)
 	{
 		return ( getData (file,startIndex,startIndex + str.size()) == str );
@@ -149,13 +153,6 @@ class FileManagerStatic
 	/* TODO: Allow backwards reading, by making startIndex larger than endIndex. */
 	static std::string getData(const std::string file, int startIndex, const int endIndex)
 	{
-		/* if the startIndex is bigger than the endIndex, or the endIndex goes out of bounds. */
-		//const int fileSize = getFileSize(file);
-
-		//if(startIndex>endIndex)
-	//	{ return ""; }
-
-
 		if(startIndex<0||endIndex<0)
 		{ return ""; }
 
@@ -217,19 +214,6 @@ class FileManagerStatic
 			file2.seekg(0, std::ios::beg);
 			strRet.assign((std::istreambuf_iterator<char>(file2)),
 						std::istreambuf_iterator<char>());
-
-				// OLD WAY WHICH DOESN"T SEEM TO BE RELIABLE.
-			// const unsigned int fileSize=file2.tellg();
-			// std::cout<<"Filesize: "<<fileSize<<".\n";
-			// char* fileData = new char[fileSize+1];
-			// file2.seekg (0, std::ios::beg);
-			// file2.read (fileData, fileSize);
-			// file2.close();
-				// // Hafta add the null terminator myself.
-			// fileData [fileSize] = '\0';
-
-			// strRet = fileData;
-
 		}
 		
 		return strRet;
@@ -241,26 +225,6 @@ class FileManagerStatic
 	static std::string load(const std::string file) { return getData(file);  }
 	static std::string getFile(const std::string file) { return getData(file);  }
 
-
-	/*TODO: Function to put all data from a file into a char array. */
-
-	/* Look for a certain byte in the file, from the given position. Will modify the position to be on the found byte, if there is one, otherwise, function will return false. */
-
-
-
-
-	/* Move the current IO position on the file object. Can use negative and positive numbers. EOF or error returns false. */
-
-	// NEEDS TO BE UPDATED FOR NON-fpos_t.
-	static bool modifyFilePosition(std::FILE* pFile, const int positionModifier)
-	{
-		//std::cout<<"Moving file pointer.\n";
-		//std::fpos_t filePosition;
-		//std::fgetpos (pFile, &filePosition);
-		//filePosition+=positionModifier;
-		//std::fsetpos (pFile, &filePosition);
-		return false;
-	}
 };
 
 #endif
