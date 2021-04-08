@@ -8,16 +8,16 @@
 	#include <File/FileManagerStatic.hpp>
 
 	Library to make file IO easier. This one has less power than FileManager, but is much easier to use. I find this one to be adequate most of the time.
-	
+
 	Notes:
 
 	+ You don't need to close the file stream if the destructor is going to be called anyway. The destructor will take care of it.
 	+ I changed the behaviour of 'writeString(~)'. It now creates a file if one doesn't exist. This could be bad.
 	+ If you are writing thousands of lines, it is much, much faster to put the data into a string and write it with a single FileManager call.
 	+ I am changing writeString(~) to a generic write(~). This means you can also pass chars.
-	
+
 	Todo:
-	
+
 	+ Function to load file data into char array.
 
 */
@@ -26,8 +26,8 @@
 class FileManagerStatic
 {
 	public:
-	
-		// Clear the file (or create it if it doesn't exist), then write the string to it.
+
+	// Clear the file (or create it if it doesn't exist), then write the string to it.
 	static bool writeFreshString ( const std::string _text, const std::string _filePath)
 	{
 		makeNewFile(_filePath);
@@ -75,8 +75,7 @@ class FileManagerStatic
 			// RETURN ERROR.
 			return false;
 		}
-
-
+		
 		std::FILE * pFile = std::fopen (_filePath.c_str(),"a");
 		if (pFile!=NULL)
 		{
@@ -88,14 +87,14 @@ class FileManagerStatic
 		return false;
 	}
 
-		/* Overwrite the file with the given string from the given position. The file will remain the same size unless the write operation extends past the EOF. */
+	/* Overwrite the file with the given string from the given position. The file will remain the same size unless the write operation extends past the EOF. */
 	static bool overwriteFromPos ( const std::string _text, const std::string _file, const int _index)
 	{
 		/* Open file in binary and append mode. */
 		std::ofstream fileStream;
-        fileStream.open(_file.c_str(),std::ios::in|std::ios::out|std::ios::binary|std::ios::ate);
-        fileStream.seekp(_index);
-        fileStream.write(_text.c_str(),_text.size());
+		fileStream.open(_file.c_str(),std::ios::in|std::ios::out|std::ios::binary|std::ios::ate);
+		fileStream.seekp(_index);
+		fileStream.write(_text.c_str(),_text.size());
 		return true;
 	}
 
@@ -105,7 +104,7 @@ class FileManagerStatic
 		std::fstream ifile(filePath.c_str());
 		// IF THE FILE DOESN'T EXIST, RETURN FALSE.
 		//if (ifile == 0) { return false; }
-			// COMPARISON TO 0 DOESN'T SEEM TO WORK ANYMORE HERE.
+		// COMPARISON TO 0 DOESN'T SEEM TO WORK ANYMORE HERE.
 		if (!ifile) { return false; }
 		return true;
 	}
@@ -134,10 +133,10 @@ class FileManagerStatic
 		/* If the file opened for reading. */
 		if (pFile!=NULL)
 		{
-			/* Get the file size. */
-			std::fseek (pFile , 0 , SEEK_END);
-			fileSize = ftell (pFile);
-			std::fclose (pFile);
+		/* Get the file size. */
+		std::fseek (pFile , 0 , SEEK_END);
+		fileSize = ftell (pFile);
+		std::fclose (pFile);
 		}
 		/* Return the file size. */
 		return fileSize;
@@ -167,15 +166,14 @@ class FileManagerStatic
 			/* Set the file position. */
 
 
-				// LINUX G++ DIDN'T LIKE THIS.
+			// LINUX G++ DIDN'T LIKE THIS.
 			//std::fpos_t filePosition = startIndex;
 			//std::fsetpos (pFile, &filePosition);
-				// APPARENTLY I NEED TO USE THIS INSTEAD, FOR INTEGER STUFF.
+			// APPARENTLY I NEED TO USE THIS INSTEAD, FOR INTEGER STUFF.
 			std::fseek(pFile,startIndex,SEEK_SET);
 
 			while (startIndex<=endIndex)
 			{
-
 				const int fileChar = std::fgetc(pFile);
 
 				/* If we're at the end of the file, return the string we have. */
@@ -195,10 +193,10 @@ class FileManagerStatic
 	}
 
 	/* Get data from the entire file, in a string. This could cause memory problems if the file is too large. */
-	
-		// There seems to be a problem loading PNGs like this. There might be an issue reading terminators or something.
-		// I used a different method which works.
-		//https://stackoverflow.com/questions/2602013/read-whole-ascii-file-into-c-stdstring
+
+	// There seems to be a problem loading PNGs like this. There might be an issue reading terminators or something.
+	// I used a different method which works.
+	//https://stackoverflow.com/questions/2602013/read-whole-ascii-file-into-c-stdstring
 	static std::string getData(const std::string file)
 	{
 		std::string strRet = "";
@@ -207,15 +205,15 @@ class FileManagerStatic
 		file2.open(file.c_str(), std::ios::in|std::ios::binary|std::ios::ate);
 		if(file2.is_open())
 		{
-				// THIS NEW WAY CONVERTS DIRECTLY INTO STRING.
+			// THIS NEW WAY CONVERTS DIRECTLY INTO STRING.
 			file2.seekg(0, std::ios::end);
-				// RESERVING MEMORY FOR THE STRING MAKES THINGS FASTER.
+			// RESERVING MEMORY FOR THE STRING MAKES THINGS FASTER.
 			strRet.reserve(file2.tellg());
 			file2.seekg(0, std::ios::beg);
 			strRet.assign((std::istreambuf_iterator<char>(file2)),
-						std::istreambuf_iterator<char>());
+			std::istreambuf_iterator<char>());
 		}
-		
+
 		return strRet;
 	}
 	// ALIASES FOR static std::string getData(const std::string file)
