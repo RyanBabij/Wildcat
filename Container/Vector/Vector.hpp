@@ -494,6 +494,19 @@ class Vector
 
 		return finalValue;
 	}
+	
+	// T average()
+	// {
+		// const double nValues = size();
+		// double sum = 0;
+
+		// for(int i=0;i<nValues;++i)
+		// {
+			// sum+=data.at(i);
+		// }
+		// double avg = sum/nValues;
+		// return avg;
+	// }
 
 
 	// bool erase(const T* item)
