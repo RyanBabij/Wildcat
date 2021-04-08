@@ -298,151 +298,151 @@ class Table_Column_Int_Pointer: public Table_Column
 };
 
 
-class Table
-{
-	public:
+// class Table
+// {
+	// public:
 	
-	Vector <Table_Column*> vColumn;
-		// PROVIDES THE CURRENT SORTING OF THE TABLE.
-	Vector <int> vID;
+	// Vector <Table_Column*> vColumn;
+		// // PROVIDES THE CURRENT SORTING OF THE TABLE.
+	// Vector <int> vID;
 	
-	Table()
-	{
-	}
-	
-		// DELETE ALL ROWS WITH THE GIVEN VALUE IN THE GIVEN COLUMN (BEST TO USE A UNIQUE ID).
-	void deleteEntry(int _column, std::string _value)
-	{
-		std::cout<<"Deleting entry.\n";
-		//int _deleteSlot = -1;
-		
-		for ( int i=0;i<nRows();++i)
-		{
-			if ( vColumn(_column)->getData(i) == _value )
-			{
-				//std::cout<<"FOUND.\n";
-				//_deleteSlot = i;
-				
-				for ( int i2=0;i2<vColumn.size();++i2)
-				{
-					vColumn(i2)->deleteSlot(i);
-				}
-				
-			}
-		}
-	std::cout<<"END Deleting entry.\n";
-	}
-	
-	void clear()
-	{
-		for ( int i=0;i<vColumn.size();++i)
-		{
-			vColumn(i)->clear();
-		}
-	}
-	
-	int nColumns()
-	{
-		return vColumn.size();
-	}
-		// ONLY COMPLETE ROWS ARE COUNTED.
-	int nRows()
-	{
-		int leastRows = -1;
-		for ( int i=0;i<vColumn.size();++i)
-		{
-			if (leastRows==-1 || vColumn(i)->size() < leastRows )
-			{
-				leastRows = vColumn(i)->size();
-			}
-		}
-		return leastRows;
-	}
-	
-	void addStringColumn()
-	{
-		Table_Column_String * c = new Table_Column_String;
-		vColumn.push(c);
-	}
-	void addIntColumn()
-	{
-		Table_Column_Int * c = new Table_Column_Int;
-		vColumn.push(c);
-	}
-	
-	void pushData(int _column, std::string _data)
-	{
-		vColumn(_column)->push(_data);
-	}
-	void pushData(int _column, int _data)
-	{
-		vColumn(_column)->push(_data);
-	}
-	
-	// void cout()
+	// Table()
 	// {
-			// std::cout<<"Printing table.\n";
-		// for ( int i2=0;i2<vColumn(0)->size();++i2)
+	// }
+	
+		// // DELETE ALL ROWS WITH THE GIVEN VALUE IN THE GIVEN COLUMN (BEST TO USE A UNIQUE ID).
+	// void deleteEntry(int _column, std::string _value)
+	// {
+		// std::cout<<"Deleting entry.\n";
+		// //int _deleteSlot = -1;
+		
+		// for ( int i=0;i<nRows();++i)
 		// {
-			// for ( int i=0;i<vColumn.size();++i)
+			// if ( vColumn(_column)->getData(i) == _value )
 			// {
-				// std::cout<<get(i,i2)<<", ";
+				// //std::cout<<"FOUND.\n";
+				// //_deleteSlot = i;
+				
+				// for ( int i2=0;i2<vColumn.size();++i2)
+				// {
+					// vColumn(i2)->deleteSlot(i);
+				// }
+				
 			// }
-			// std::cout<<"\n";
+		// }
+	// std::cout<<"END Deleting entry.\n";
+	// }
+	
+	// void clear()
+	// {
+		// for ( int i=0;i<vColumn.size();++i)
+		// {
+			// vColumn(i)->clear();
 		// }
 	// }
 	
-	void sortAscendingBy(int _column)
-	{
-		vID.clear();
-		Vector <int>* vIndex = vColumn(_column)->sortAscending();
-		vID.copy(vIndex);
+	// int nColumns()
+	// {
+		// return vColumn.size();
+	// }
+		// // ONLY COMPLETE ROWS ARE COUNTED.
+	// int nRows()
+	// {
+		// int leastRows = -1;
+		// for ( int i=0;i<vColumn.size();++i)
+		// {
+			// if (leastRows==-1 || vColumn(i)->size() < leastRows )
+			// {
+				// leastRows = vColumn(i)->size();
+			// }
+		// }
+		// return leastRows;
+	// }
+	
+	// void addStringColumn()
+	// {
+		// Table_Column_String * c = new Table_Column_String;
+		// vColumn.push(c);
+	// }
+	// void addIntColumn()
+	// {
+		// Table_Column_Int * c = new Table_Column_Int;
+		// vColumn.push(c);
+	// }
+	
+	// void pushData(int _column, std::string _data)
+	// {
+		// vColumn(_column)->push(_data);
+	// }
+	// void pushData(int _column, int _data)
+	// {
+		// vColumn(_column)->push(_data);
+	// }
+	
+	// // void cout()
+	// // {
+			// // std::cout<<"Printing table.\n";
+		// // for ( int i2=0;i2<vColumn(0)->size();++i2)
+		// // {
+			// // for ( int i=0;i<vColumn.size();++i)
+			// // {
+				// // std::cout<<get(i,i2)<<", ";
+			// // }
+			// // std::cout<<"\n";
+		// // }
+	// // }
+	
+	// void sortAscendingBy(int _column)
+	// {
+		// vID.clear();
+		// Vector <int>* vIndex = vColumn(_column)->sortAscending();
+		// vID.copy(vIndex);
 
-		delete vIndex;
-	}
-	void sortDescendingBy(int _column)
-	{
-		vID.clear();
-		Vector <int>* vIndex = vColumn(_column)->sortDescending();
-		vID.copy(vIndex);
-		delete vIndex;
-	}
+		// delete vIndex;
+	// }
+	// void sortDescendingBy(int _column)
+	// {
+		// vID.clear();
+		// Vector <int>* vIndex = vColumn(_column)->sortDescending();
+		// vID.copy(vIndex);
+		// delete vIndex;
+	// }
 	
-	bool isSafe(const int _column, const int _row)
-	{
-		if ( _column < nColumns() && _row < nRows() )
-		{
-			return true;
-		}
-		return false;
-	}
+	// bool isSafe(const int _column, const int _row)
+	// {
+		// if ( _column < nColumns() && _row < nRows() )
+		// {
+			// return true;
+		// }
+		// return false;
+	// }
 	
-	std::string get(const int _column, const int _row)
-	{
-		if ( isSafe(_column,_row)==true )
-		{
-			return vColumn(_column)->getData(vID(_row));
-		}
-		return "?";
-	}
+	// std::string get(const int _column, const int _row)
+	// {
+		// if ( isSafe(_column,_row)==true )
+		// {
+			// return vColumn(_column)->getData(vID(_row));
+		// }
+		// return "?";
+	// }
 	
-    // Returns true if any column contains filter.
-  bool matchesFilter (std::string _filter, int _row)
-  {
+    // // Returns true if any column contains filter.
+  // bool matchesFilter (std::string _filter, int _row)
+  // {
     
-    for ( int i=0;i<vColumn.size();++i)
-    {
-      if ( get(i,_row).find(_filter) )
-      {
-        return true;
-      }
-    }
+    // for ( int i=0;i<vColumn.size();++i)
+    // {
+      // if ( get(i,_row).find(_filter) )
+      // {
+        // return true;
+      // }
+    // }
 
     
-    return false;
-  }
+    // return false;
+  // }
 	
-};
+// };
 
 	// NEW IMPLEMENTATION OF TABLE USING TABLE INTERFACE OBJECTS.
 #include <Container/Table/TableInterface.hpp>
