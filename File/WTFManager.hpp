@@ -317,16 +317,14 @@ class WTFManager
 		return false;
 	}
 	
-	std::string getAll()
+	// print all raws, using full or relative path, with or without indenting
+	std::string getAll(bool fullPath=true, bool indent=true)
 	{
-		std::string strAll = "TEST\n";
-		
+		std::string strAll = "";
 		for (int i=0;i<vRoot.size();++i)
 		{
-			std::cout<<"root\n";
-			strAll+=vRoot(i)->toString(true)+"\n";
+			strAll+=vRoot(i)->getAll(fullPath,indent?0:-1)+"\n";
 		}
-		
 		return strAll;
 	}
 	

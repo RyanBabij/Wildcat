@@ -283,10 +283,6 @@ class WTFNode
 		}
 		return 0;
 	}
-	// return all nodes on this namespace
-	void getAll(std::string request)
-	{
-	}
 	bool hasTag(Vector <std::string>* vPath)
 	{
 		if (vPath->size() == 0) // this is the matching tag
@@ -302,6 +298,20 @@ class WTFNode
 			}
 		}
 		return false;
+	}
+	// return all nodes on this namespace
+	std::string getAll(bool fullPath=true, int indent=-1)
+	{
+		std::string strRet = "";
+		if (indent  > 0)
+		{ strRet.append(indent, ' '); }
+		
+		strRet += toString(fullPath)+"\n";
+		for (int i=0;i<vSubRaw.size();++i)
+		{
+			strRet+=vSubRaw(i)->getAll(fullPath,indent==-1?-1:indent+1);
+		}
+		return strRet;
 	}
 };
 
