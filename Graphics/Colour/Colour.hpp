@@ -1,12 +1,54 @@
-/* Graphics_Colour.hpp
-#include <Graphics/Colour/Colour.hpp>
-	Easier management of colours.
-	
-	// NOTE: CONSIDER STD::TUPLE.
-*/
-	
 #pragma once
+#ifndef WILDCAT_GRAPHICS_COLOUR_COLOUR_HPP
+#define WILDCAT_GRAPHICS_COLOUR_COLOUR_HPP
+
+
+/* Wildcat: Graphics_Colour.hpp
+	#include <Graphics/Colour/Colour.hpp>
 	
+	Class to store colour data. Collections of colours should use a ColourManager container.
+	
+	Todo: Look into using std::tuple
+	
+	I think I did this wrong... There should be base colour class with RGB and then extra classes
+	derive from it.
+*/
+
+
+template <class T>
+class ColourRGB
+{
+	public:
+	T red, green, blue;
+	
+	ColourRGB(T _red=255, T _green=255, T _blue=255)
+	{
+		red = _red;
+		green = _green;
+		blue = _blue;
+	}
+	
+	unsigned int distanceTo(ColourRGB colour)
+	{
+		return 0;
+	}
+};
+
+template <class T>
+class ColourManager
+{
+	public:
+	Vector <ColourRGB <T> *> vColour;
+	
+	ColourManager()
+	{
+	}
+	
+	void add(ColourRGB <T>* colour)
+	{
+	}
+};
+
 class Colour
 {
 	public:
@@ -120,3 +162,5 @@ class Colour
 	}
 	
 };
+
+#endif
