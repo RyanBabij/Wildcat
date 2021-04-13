@@ -2,7 +2,7 @@
 #ifndef WILDCAT_MATH_RANDOM_RANDOMLEHMER_HPP
 #define WILDCAT_MATH_RANDOM_RANDOMLEHMER_HPP
 
-/*
+/* Wildcat: RandomLehmer
 #include <Math/Random/RandomLehmer.hpp>
 
 Basic implementation of Lehmer random number generator, using code from
@@ -28,8 +28,12 @@ accidentally seeding multiple RNGs with the same value.
 
 */
 
-class RandomLehmer
+#include <Math/Random/RandomInterface.hpp>
+
+class RandomLehmer: public RandomInterface
 {
+	private:
+	
 	uint32_t nLehmer;
 
 	// 8 bit
@@ -61,7 +65,7 @@ class RandomLehmer
 	}
 
 	// generate a psuedorandom number from 0-4294967295
-	uint32_t rand32()
+	uint32_t rand32() override
 	{
 		nLehmer += 0xe120fc15;
 		uint64_t tmp;
@@ -71,7 +75,7 @@ class RandomLehmer
 		uint32_t m2=(tmp>>32)^tmp;
 		return m2;
 	}
-	inline uint32_t rand32(const uint32_t _max)
+	inline uint32_t rand32(const uint32_t _max) override
 	{
 		if ( _max==0 ) { return 0; }
 		return rand32()%_max;
@@ -81,7 +85,7 @@ class RandomLehmer
 
 	// return random number from 0-255. Generates 4 values at a time
 	// pulling from a 32 bit value.
-	unsigned char rand8()
+	unsigned char rand8() override
 	{
 		++currentByte;
 		if ( currentByte==4)
@@ -96,13 +100,13 @@ class RandomLehmer
 		}
 		return aByte[currentByte];
 	}
-	inline unsigned char rand8(const unsigned char max)
+	inline unsigned char rand8(const unsigned char max) override
 	{
 		return rand8()%max;
 	}
 	
 	// basically returns true 50% of the time. Uses bitmasks for performance.
-	inline bool flip()
+	inline bool flip() override
 	{
 		flipMask = flipMask << 1;
 		if (flipMask == 0)
@@ -148,11 +152,11 @@ class RandomLehmer
 	}
 
 	/* Will return true one in 'prob' times. Ie, with prob at 100, will return true roughly 1 in 100 times. */
-	inline bool oneIn(const uint16_t prob)
+	inline bool oneIn(const uint16_t prob) override
 	{ return (rand32(prob)==0); }
 
 	//Range is inclusive. Seems to work with negative values.
-	inline int32_t range32(const int32_t _min, const int32_t _max)
+	inline int32_t range32(const int32_t _min, const int32_t _max) override
 	{
 		if (_min==_max) { return _min; }
 		return (rand32(_max-_min)) + _min;
