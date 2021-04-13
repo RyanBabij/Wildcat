@@ -2,7 +2,7 @@
 #ifndef WILDCAT_DATA_DATA_TOOLS_HPP
 #define WILDCAT_DATA_DATA_TOOLS_HPP
 
-/*
+/* Wildcat: DataTools
 #include <Data/DataTools.hpp>
 
 Library for miscellaneous common functions involving datatypes.

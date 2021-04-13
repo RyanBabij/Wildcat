@@ -3,7 +3,7 @@
 #define WILDCAT_MATH_RANDOM_RANDOMLEHMER_HPP
 
 /* Wildcat: RandomLehmer
-#include <Math/Random/RandomLehmer.hpp>
+	#include <Math/Random/RandomLehmer.hpp>
 
 Basic implementation of Lehmer random number generator, using code from
 https://www.youtube.com/watch?v=ZZY9YE7rZJw (16:09).
