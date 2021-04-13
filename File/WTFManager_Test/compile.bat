@@ -1,0 +1,1 @@
+g++ WTFManager_Test.cpp -I %WILDCAT%/ -o WTFManager_Test.exe

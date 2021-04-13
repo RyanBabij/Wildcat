@@ -1,0 +1,46 @@
+Comments can go here, as long as they are not enclosed in square brackets they are ignored. Raws are built into a tree structure so you can merge as many raws as you like as long as the names don't conflict.
+
+
+[COLOUR
+	[BLACK:
+		[RGB:0,0,0]
+		[NAME:"black"]
+	]
+	[GRAY:
+		[RGB:128,128,128]
+		[NAME:"gray"]
+	]
+	[SILVER:
+		[RGB:192,192,192]
+		[NAME:"gray"]
+	]
+	[WHITE:
+		[RGB:255,255,255]
+		[NAME:"white"]
+	]
+	
+	[RED:
+		[RED:
+			[RGB:255,255,255]
+			[NAME:"red"]
+		]
+		[LIGHT_RED:
+			[RGB:255,128,128]
+			[NAME:"light red"]
+		]
+		[DARK_RED:
+			[RGB:128,0,0]
+			[NAME:"dark red"]
+		]
+	]
+	
+	[GREEN:
+		[RGB:0,255,0]
+		[NAME:"green"]
+	]
+	
+	[BLUE:
+		[RGB:0,0,255]
+		[NAME:"blue"]
+	]
+]
