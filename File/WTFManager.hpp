@@ -49,16 +49,21 @@ Future possibilities:
 
 */
 
+#include "WTFManager_Node.hpp" // WTFNode
+
+#include <Container/Vector/Vector.hpp>
+#include <Data/DataTools.hpp>
 
 //Container for collection of raws. Can parse in a string and convert it into a Raw tree.
 // RawManager is necessary to strip the data and manage the root (level 0) nodes.
 class WTFManager
 {
 	private:
-	#include "WTFManager_Node.hpp" // WTFNode
 	Vector <WTFNode*> vRoot; // vector of all root (level 0) nodes.
 	
 	public:
+	
+	
 	WTFManager()
 	{
 	}
@@ -328,7 +333,54 @@ class WTFManager
 		return strAll;
 	}
 	
-	// getRandom(tag)
+	// return random node on the given namespace.
+	// For example if we have COLOUR.RED, COLOUR.GREEN and COLOUR.BLUE
+	// and call getRandom("COLOUR"), we should get either the RED, GREEN, or BLUE nodes.
+	// namespaces should be divided using colon, eg:
+	// COLOUR:RED
+	WTFNode* getRandom(std::string nameSpace, RandomInterface& rng)
+	{
+		
+		// Top-level random
+		if (nameSpace.size() == 0)
+		{
+			// presumably the user wants a random top-level node
+			
+			if (vRoot.size() == 0)
+			{
+				return 0;
+			}
+			else
+			{
+				return vRoot(rng.rand32(vRoot.size()-1));
+			}
+		}
+		
+		//Namespaced random
+		//break query into delimiters.
+		Vector <std::string> * vPath = DataTools::tokenize(nameSpace,".");
+		
+		for (int i=0;i<vRoot.size();++i)
+		{
+			// we found matching root node, search into here.
+			if ( vRoot(i)->getID() == (*vPath)(0) )
+			{
+				//std::cout<<"Search going down to "<<vRoot(i)->getID()<<"\n";
+				vPath->eraseSlot(0);
+				
+				return vRoot(i)->getRandom(vPath,rng);
+				
+				// if (vRoot(i)->getRandom(vPath,rng))
+				// {
+					// delete vPath;
+					// return 0;
+				// }
+			}
+		}
+		
+		delete vPath;
+		return 0;
+	}
 	
 };
 

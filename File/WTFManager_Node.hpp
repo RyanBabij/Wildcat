@@ -11,6 +11,8 @@
 
 */
 
+#include <Container/Vector/Vector.hpp>
+
 class WTFNode
 {
 	private:
@@ -312,6 +314,45 @@ class WTFNode
 			strRet+=vSubRaw(i)->getAll(fullPath,indent==-1?-1:indent+1);
 		}
 		return strRet;
+	}
+	
+	// Travel down path and when null vector reached, return random subnode
+	WTFNode* getRandom(Vector <std::string>* vPath, RandomInterface& rng)
+	{
+		if (vPath->size() == 0) // this is the lowest node, return random subnode
+		{
+			//std::cout<<"vpath size 0, return random sub\n";
+			delete vPath;
+			return getRandomSub(rng);
+		}
+		// otherwise continue travelling down tree
+		for (int i=0;i<vSubRaw.size();++i)
+		{
+			if ( (*vPath)(0) == vSubRaw(i)->getID() )
+			{
+				vPath->eraseSlot(0);
+				return vSubRaw(i)->getRandom(vPath,rng);
+			}
+		}
+		// match not found.
+		delete vPath;
+		return 0;
+	}
+	
+	// Return random subnode (or 0 if no subnodes)
+	WTFNode* getRandomSub(RandomInterface& rng)
+	{
+		if ( vSubRaw.size() == 0 )
+		{
+			//std::cout<<"no subs, return null\n";
+			return 0;
+		}
+		//std::cout<<"returning rand out of "<<vSubRaw.size()<<".\n";
+		//int randIndex = rng.rand32(vSubRaw.size()-1);
+		//std::cout<<"RNG: "<<randIndex<<"\n";
+		//std::cout<<"Returning node: "<<vSubRaw(randIndex)->getID()<<"\n";
+		//return vSubRaw(randIndex);
+		return vSubRaw(rng.rand32(vSubRaw.size()-1));
 	}
 };
 
