@@ -246,6 +246,11 @@ class WTFManager
 		delete vPath;
 		return 0;
 	}
+	
+	Vector <std::string> * delimitPath(std::string _query)
+	{
+		return DataTools::tokenize(_query,".");
+	}
 
 	// return the value attached to this path. If there are multiple it will return the first.
 	// if there are none it will return empty string.
@@ -255,7 +260,7 @@ class WTFManager
 		{ return 0; }
 	
 		//break query into delimiters.
-		Vector <std::string> * vPath = DataTools::tokenize(_query,".");
+		Vector <std::string> * vPath = delimitPath(_query);
 		
 		for (int i=0;i<vRoot.size();++i)
 		{
@@ -281,7 +286,7 @@ class WTFManager
 		{ return false; }
 	
 		//break query into delimiters.
-		Vector <std::string> * vPath = DataTools::tokenize(_query,".");
+		Vector <std::string> * vPath = delimitPath(_query);
 		
 		for (int i=0;i<vRoot.size();++i)
 		{
@@ -312,12 +317,12 @@ class WTFManager
 	}
 	
 	// return all subraws from the given namespace. Blank returns everything on layer 0.
-	Vector <WTFNode*> * getAllSub(std::string nameSpace)
+	Vector <WTFNode*> * getAllSub(std::string _query)
 	{
 		//Vector <WTFNode*> vSubs = new Vector <WTFNode*> ();
 
 		// Top-level layer
-		if (nameSpace.size() == 0)
+		if (_query.size() == 0)
 		{
 			// presumably the user wants all top-level nodes
 			
@@ -333,7 +338,7 @@ class WTFManager
 		
 		//Namespaced layer
 		//break query into delimiters.
-		Vector <std::string> * vPath = DataTools::tokenize(nameSpace,".");
+		Vector <std::string> * vPath = delimitPath(_query);
 		
 		for (int i=0;i<vRoot.size();++i)
 		{
@@ -355,11 +360,11 @@ class WTFManager
 	// and call getRandom("COLOUR"), we should get either the RED, GREEN, or BLUE nodes.
 	// namespaces should be divided using colon, eg:
 	// COLOUR:RED
-	WTFNode* getRandom(std::string nameSpace, RandomInterface& rng)
+	WTFNode* getRandom(std::string _query, RandomInterface& rng)
 	{
 		
 		// Top-level random
-		if (nameSpace.size() == 0)
+		if (_query.size() == 0)
 		{
 			// presumably the user wants a random top-level node
 			
@@ -375,7 +380,7 @@ class WTFManager
 		
 		//Namespaced random
 		//break query into delimiters.
-		Vector <std::string> * vPath = DataTools::tokenize(nameSpace,".");
+		Vector <std::string> * vPath = delimitPath(_query);
 		
 		for (int i=0;i<vRoot.size();++i)
 		{

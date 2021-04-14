@@ -12,6 +12,7 @@
 */
 
 #include <Container/Vector/Vector.hpp>
+#include <Data/DataTools.hpp>
 
 class WTFNode
 {
@@ -239,6 +240,11 @@ class WTFNode
 		}
 		return parent->getFullID() + "." + id;
 	}
+
+	Vector <std::string> * delimitPath(std::string _query)
+	{
+		return DataTools::tokenize(_query,".");
+	}
 	
 	// querying:
 	// You can either get the values vector, or you can get all nodes on a layer.
@@ -265,6 +271,11 @@ class WTFNode
 		}
 		return 0;
 	}
+	// same but passed a string instead of vector path
+	Vector <std::string>* getValues(std::string _query)
+	{
+		return getValues(delimitPath(_query));
+	}
 	
 	std::string getValue(Vector <std::string>* vPath)
 	{
@@ -286,6 +297,11 @@ class WTFNode
 		}
 		// not found, return blank string
 		return "";
+	}
+	// same but passed a string instead of vector path
+	std::string getValue(std::string _query)
+	{
+		return getValue(delimitPath(_query));
 	}
 	
 	WTFNode* getSub(std::string _value)
