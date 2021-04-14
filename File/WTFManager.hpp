@@ -46,6 +46,8 @@ Future possibilities:
 		A simple timestamp system might be the best option.)
 	* Pointer handling - Pointers can be saved by giving objects unique IDs.
 	* Binary data - Probably best handled with the old "chunk" system.
+	
+	This tree data could be read normally but collapsed into a hashmap for much faster lookups.
 
 */
 
@@ -54,21 +56,18 @@ Future possibilities:
 #include <Container/Vector/Vector.hpp>
 #include <Data/DataTools.hpp>
 
-//Container for collection of raws. Can parse in a string and convert it into a Raw tree.
-// RawManager is necessary to strip the data and manage the root (level 0) nodes.
+// RawManager is necessary to parse the data and manage the root (level 0) nodes.
 class WTFManager
 {
 	private:
 	Vector <WTFNode*> vRoot; // vector of all root (level 0) nodes.
 	
 	public:
+	WTFManager() { }
 	
-	
-	WTFManager()
-	{
-	}
 	~WTFManager()
 	{
+		// clear the nodes vector.
 		for (int i=0;i<vRoot.size();++i)
 		{
 			delete vRoot(i);
@@ -97,12 +96,10 @@ class WTFManager
 		
 		if ( currentLevel != 0 )
 		{
-			std::cout<<"Error: Bad square bracket count: "<<currentLevel<<".\n";
 			return false;
 		}
 		else
 		{
-			//std::cout<<"Good square brackets count.\n";
 			return true;
 		}
 	}
@@ -127,7 +124,6 @@ class WTFManager
 				closedBracket=false;
 			}
 
-			
 			if (currentLevel > 0 && closedBracket==false)
 			{
 				if ( quotes == true || ( input[i] != ' ' && input[i] != '\n' && input[i] != '\r' && input[i] != '\t') )
@@ -135,7 +131,6 @@ class WTFManager
 					strip+=input[i];
 				}					
 			}
-			
 			
 			if (quotes == false && input[i] == ']')
 			{
@@ -157,29 +152,16 @@ class WTFManager
 	
 	bool parse(const std::string input)
 	{
-		//std::cout<<"RAW recieved\n";
-		
 		// step 1: Remove all non-relevant data. That is: everything outside of square brackets.
 		// and any whitespace outside of quotation marks.
-		
-		//std::cout<<"Verifying raw\n";
 		
 		if (verify(input) == false )
 		{
 			std::cout<<"Verification failed, parsing aborted.\n";
 		}
-		
-		//std::cout<<"Stripping raw\n";
-		//std::string input2 = strip(input);
-		
-		//std::cout<<"Stripped raw:\n"<<input2<<"\n";
-		
-		//std::cout<<"Begin building tree.\n";
-		
+
 		// read all root raws and parse them individually.
-		
 		Vector <std::string> vStrRoot;
-		
 		
 		std::string strRoot = "";
 		
@@ -198,7 +180,6 @@ class WTFManager
 				++currentLevel;
 				closedBracket=false;
 			}
-
 			
 			if (currentLevel > 0 && ( closedBracket==false || input[i]==']'))
 			{
@@ -207,7 +188,6 @@ class WTFManager
 					strRoot+=input[i];
 				}					
 			}
-			
 			
 			if (quotes == false && input[i] == ']')
 			{
@@ -221,21 +201,11 @@ class WTFManager
 					strRoot="";
 				}
 			}
-			
 		}
 		
 		// we now have all the root nodes at this point. We take the data we need and then make the subnodes.
-		//std::cout<<"   Root nodes:\n";
 		for (int i=0;i<vStrRoot.size();++i)
 		{
-			//std::cout<<vStrRoot(i)<<"\n*\n";
-		}
-		//std::cout<<"\n\n";
-		
-		for (int i=0;i<vStrRoot.size();++i)
-		{
-			//std::cout<<"Root:\n"<<vStrRoot(i)<<"\n\n";
-			
 			// create a Raw root node and let the node parse the string
 			WTFNode * rRoot = new WTFNode;
 			if (rRoot->parse(vStrRoot(i)))
@@ -250,26 +220,7 @@ class WTFManager
 				std::cout<<"ERROR: Parsing failed\n";
 				return false;
 			}
-			
-			//std::vector strRootID = "";
-			
-			// read the root id
-			
-			// std::string strCurrentRoot = vStrRoot(i);
-			// for (int i2=1;i2<strCurrentRoot.size();++i2)
-			// {
-				// if (strCurrentRoot[i] == ']') // this ID is a tag.
-				// {
-				// }
-				// else if (strCurrentRoot[i] == ':')
-				// {
-				// }
-			// }
-			
-			
 		}
-		//std::cout<<"END\n";
-		
 		return true;
 	}
 	
@@ -295,6 +246,34 @@ class WTFManager
 		delete vPath;
 		return 0;
 	}
+
+	// return the value attached to this path. If there are multiple it will return the first.
+	// if there are none it will return empty string.
+	std::string getValue(std::string _query)
+	{
+		if ( _query.size()==0 )
+		{ return 0; }
+	
+		//break query into delimiters.
+		Vector <std::string> * vPath = DataTools::tokenize(_query,".");
+		
+		for (int i=0;i<vRoot.size();++i)
+		{
+			if ( vRoot(i)->getID() == (*vPath)(0) )
+			{
+				vPath->eraseSlot(0);
+				std::string strRet = vRoot(i)->getValue(vPath);
+				delete vPath;
+				return strRet;
+			}
+		}
+		
+		delete vPath;
+		// couldn't find path, return empty string.
+		return "";
+	}
+	
+	
 	// return true if the path through the tree exists.
 	bool hasTag (std::string _query)
 	{
@@ -317,7 +296,6 @@ class WTFManager
 				}
 			}
 		}
-		
 		delete vPath;
 		return false;
 	}
@@ -331,6 +309,45 @@ class WTFManager
 			strAll+=vRoot(i)->getAll(fullPath,indent?0:-1)+"\n";
 		}
 		return strAll;
+	}
+	
+	// return all subraws from the given namespace. Blank returns everything on layer 0.
+	Vector <WTFNode*> * getAllSub(std::string nameSpace)
+	{
+		//Vector <WTFNode*> vSubs = new Vector <WTFNode*> ();
+
+		// Top-level layer
+		if (nameSpace.size() == 0)
+		{
+			// presumably the user wants all top-level nodes
+			
+			if (vRoot.size() == 0)
+			{
+				return 0;
+			}
+			else
+			{
+				return &vRoot;
+			}
+		}
+		
+		//Namespaced layer
+		//break query into delimiters.
+		Vector <std::string> * vPath = DataTools::tokenize(nameSpace,".");
+		
+		for (int i=0;i<vRoot.size();++i)
+		{
+			// we found matching root node, search into here.
+			if ( vRoot(i)->getID() == (*vPath)(0) )
+			{
+				vPath->eraseSlot(0);
+				return vRoot(i)->getAll(vPath);
+			}
+		}
+		
+		delete vPath;
+		return 0;
+
 	}
 	
 	// return random node on the given namespace.
@@ -365,16 +382,8 @@ class WTFManager
 			// we found matching root node, search into here.
 			if ( vRoot(i)->getID() == (*vPath)(0) )
 			{
-				//std::cout<<"Search going down to "<<vRoot(i)->getID()<<"\n";
 				vPath->eraseSlot(0);
-				
 				return vRoot(i)->getRandom(vPath,rng);
-				
-				// if (vRoot(i)->getRandom(vPath,rng))
-				// {
-					// delete vPath;
-					// return 0;
-				// }
 			}
 		}
 		

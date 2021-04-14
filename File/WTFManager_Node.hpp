@@ -46,8 +46,6 @@ class WTFNode
 	// the raw data should be stripped by this point by the rawmanager.
 	bool parse(std::string input, WTFNode* _parent=0)
 	{
-		//std::cout<<"Input: "<<input<<"\n";
-		
 		parent = _parent;
 		
 		Vector <std::string> vStrRoot;
@@ -92,11 +90,6 @@ class WTFNode
 						readValues=false;
 						//return true;
 					}
-					// else if (input[i]=='[') // this is a subraw
-					// {
-						// readingID=false;
-						// readValues=false;
-					// }
 					else // keep building id
 					{
 						currentID+=(char)input[i];
@@ -181,21 +174,10 @@ class WTFNode
 		
 		id = currentID;
 		
-		std::cout<<"Node built: "<<toString(true)<<"\n";
+		//std::cout<<"Node built: "<<toString(true)<<"\n";
 
-
-		if ( vStrRoot.size()==0 )
+		if ( vStrRoot.size()!=0 )
 		{
-			//std::cout<<"This leaf is finished.\n";
-		}
-		else
-		{
-			//std::cout<<"Raw parsed the following:\n";
-			// for (int i=0;i<vStrRoot.size();++i)
-			// {
-				// //std::cout<<vStrRoot(i)<<"\n***\n";
-			// }
-			//std::cout<<"Parsing sub raws:\n";
 			for (int i=0;i<vStrRoot.size();++i)
 			{
 				WTFNode* raw = new WTFNode();
@@ -262,8 +244,6 @@ class WTFNode
 	// You can either get the values vector, or you can get all nodes on a layer.
 	// I think multimap does hashmapping for performance but it's not too important either way
 	// since raws are only loaded on startup.
-	
-	
 	// Return values for this key
 	Vector <std::string>* getValues(Vector <std::string>* vPath)
 	{
@@ -285,6 +265,41 @@ class WTFNode
 		}
 		return 0;
 	}
+	
+	std::string getValue(Vector <std::string>* vPath)
+	{
+		// return the value(s) of the request.
+		if (vPath->size() == 0) // this is the matching tag
+		{
+			if (vValue.size()==0)
+			{ return ""; }
+			std::string strRet = vValue(0);
+			return strRet;
+		}
+		for (int i=0;i<vSubRaw.size();++i)
+		{
+			if ( (*vPath)(0) == vSubRaw(i)->getID() )
+			{
+				vPath->eraseSlot(0);
+				return vSubRaw(i)->getValue(vPath);
+			}
+		}
+		// not found, return blank string
+		return "";
+	}
+	
+	WTFNode* getSub(std::string _value)
+	{
+		for (int i=0;i<vSubRaw.size();++i)
+		{
+			if ( _value == vSubRaw(i)->getID() )
+			{
+				return vSubRaw(i);
+			}
+		}
+		return 0;
+	}
+	
 	bool hasTag(Vector <std::string>* vPath)
 	{
 		if (vPath->size() == 0) // this is the matching tag
@@ -316,12 +331,33 @@ class WTFNode
 		return strRet;
 	}
 	
+	// search down and get all subraws on the given path
+	Vector <WTFNode*>* getAll(Vector <std::string>* vPath)
+	{
+		if (vPath->size() == 0) // this is the lowest node, return these subnodes
+		{
+			delete vPath;
+			return &vSubRaw;
+		}
+		// otherwise continue travelling down tree
+		for (int i=0;i<vSubRaw.size();++i)
+		{
+			if ( (*vPath)(0) == vSubRaw(i)->getID() )
+			{
+				vPath->eraseSlot(0);
+				return vSubRaw(i)->getAll(vPath);
+			}
+		}
+		// match not found.
+		delete vPath;
+		return 0;
+	}
+	
 	// Travel down path and when null vector reached, return random subnode
 	WTFNode* getRandom(Vector <std::string>* vPath, RandomInterface& rng)
 	{
 		if (vPath->size() == 0) // this is the lowest node, return random subnode
 		{
-			//std::cout<<"vpath size 0, return random sub\n";
 			delete vPath;
 			return getRandomSub(rng);
 		}
@@ -347,11 +383,6 @@ class WTFNode
 			//std::cout<<"no subs, return null\n";
 			return 0;
 		}
-		//std::cout<<"returning rand out of "<<vSubRaw.size()<<".\n";
-		//int randIndex = rng.rand32(vSubRaw.size()-1);
-		//std::cout<<"RNG: "<<randIndex<<"\n";
-		//std::cout<<"Returning node: "<<vSubRaw(randIndex)->getID()<<"\n";
-		//return vSubRaw(randIndex);
 		return vSubRaw(rng.rand32(vSubRaw.size()-1));
 	}
 };
