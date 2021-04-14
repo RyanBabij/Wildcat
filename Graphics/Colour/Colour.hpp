@@ -2,7 +2,6 @@
 #ifndef WILDCAT_GRAPHICS_COLOUR_COLOUR_HPP
 #define WILDCAT_GRAPHICS_COLOUR_COLOUR_HPP
 
-
 /* Wildcat: Graphics_Colour.hpp
 	#include <Graphics/Colour/Colour.hpp>
 	
@@ -14,6 +13,8 @@
 	derive from it.
 */
 
+#include <Math/Random/RandomInterface.hpp>
+#include <Data/DataTools.hpp>
 
 template <class T>
 class ColourRGB
@@ -34,20 +35,7 @@ class ColourRGB
 	}
 };
 
-template <class T>
-class ColourManager
-{
-	public:
-	Vector <ColourRGB <T> *> vColour;
-	
-	ColourManager()
-	{
-	}
-	
-	void add(ColourRGB <T>* colour)
-	{
-	}
-};
+
 
 class Colour
 {
@@ -93,6 +81,13 @@ class Colour
 		green=colour.green;
 		blue=colour.blue;
 		alpha=colour.alpha;
+	}
+	
+	// set a random colour within given ranges
+	void setRandomRange(unsigned char minRed, unsigned char maxRed, unsigned char minGreen, unsigned char maxGreen,
+		unsigned char minBlue, unsigned char maxBlue, RandomInterface &rng)
+	{
+		set(rng.range32(minRed,maxRed), rng.range32(minGreen,maxGreen), rng.range32(minBlue,maxBlue));
 	}
 	
 	void setANSI(unsigned char _value, bool _boldModifier=false)
@@ -161,6 +156,23 @@ class Colour
 		alpha=colour.alpha;
 	}
 	
+	int distanceTo(Colour* colour)
+	{
+		// sum of absolute diffs between all colours
+		int rDiff = abs( red - colour->red );
+		int gDiff = abs( green - colour->green );
+		int bDiff = abs( blue - colour->blue );
+		
+		return rDiff+gDiff+bDiff;
+	}
+	
+	std::string toString()
+	{
+		return DataTools::toString((int)red) + ", " + DataTools::toString((int)green) + ", " +
+		DataTools::toString((int)blue);
+	}
 };
+
+
 
 #endif
