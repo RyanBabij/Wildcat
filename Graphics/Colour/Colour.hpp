@@ -11,31 +11,12 @@
 	
 	I think I did this wrong... There should be base colour class with RGB and then extra classes
 	derive from it.
+	
+	Todo: Replace this with new Colour2 library.
 */
 
 #include <Math/Random/RandomInterface.hpp>
 #include <Data/DataTools.hpp>
-
-template <class T>
-class ColourRGB
-{
-	public:
-	T red, green, blue;
-	
-	ColourRGB(T _red=255, T _green=255, T _blue=255)
-	{
-		red = _red;
-		green = _green;
-		blue = _blue;
-	}
-	
-	unsigned int distanceTo(ColourRGB colour)
-	{
-		return 0;
-	}
-};
-
-
 
 class Colour
 {
@@ -88,6 +69,11 @@ class Colour
 		unsigned char minBlue, unsigned char maxBlue, RandomInterface &rng)
 	{
 		set(rng.range32(minRed,maxRed), rng.range32(minGreen,maxGreen), rng.range32(minBlue,maxBlue));
+	}
+	// set to a completely random colour
+	void setRandom(RandomInterface& rng)
+	{
+		set(rng.rand8(), rng.rand8(), rng.rand8());
 	}
 	
 	void setANSI(unsigned char _value, bool _boldModifier=false)
