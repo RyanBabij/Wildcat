@@ -22,8 +22,8 @@ class GUI_Table: public GUI_Interface
     // TextEntry: Filter input.
     GUI_TextEntry textEntryFilter;
     
-    Colour colourNormal;
-    Colour colourSelected;
+    ColourRGB <unsigned char> colourNormal;
+    ColourRGB <unsigned char> colourSelected;
     
 	public:
 	
@@ -78,7 +78,7 @@ class GUI_Table: public GUI_Interface
 		tooltipX=0;
 		tooltipY=0;
     
-		textEntryFilter.setColours(&colourNormal,&colourSelected);
+		textEntryFilter.setColours(colourNormal,colourSelected);
 		textEntryFilter.fieldName="Filter:";
 		textEntryFilter.characterLimit=20;
 		textEntryFilter.input = "";
@@ -458,7 +458,7 @@ class GUI_Table: public GUI_Interface
 	}
   
   
-	void setColours(const Colour* cNormal, const Colour* cSelected)
+	void setColours(const ColourRGB <unsigned char>& cNormal, const ColourRGB <unsigned char>& cSelected)
 	{
 		colourNormal.set(cNormal);
 		colourSelected.set(cSelected);

@@ -17,7 +17,7 @@ class GUI_Link: public GUI_Interface
 	public:
 	std::string text;
 	//Font* font;
-	Colour boxColour;
+	ColourRGBA <unsigned char> boxColour;
 
 	bool centeredX, centeredY;
 	
@@ -53,7 +53,7 @@ class GUI_Link: public GUI_Interface
 		regionButtonArea.move(_moveX,_moveY);
 	}
 
-	void setColours(const Colour* bColour)
+	void setColours(const ColourRGBA <unsigned char>* bColour)
 	{
 		//boxColour.set(bColour);
 	}

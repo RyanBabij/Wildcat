@@ -145,10 +145,10 @@ class ANSI_Code
 	}
 	
 	// Returns white if there is no colour specification.
-	Colour getForegroundColour()
+	ColourRGBA <unsigned char> getForegroundColour()
 	{
 		
-		Colour c;
+		ColourRGBA <unsigned char> c;
 		
 		if ( finalByte == 'm' )
 		{
@@ -221,14 +221,14 @@ class ANSI
 	Vector <ANSI_Code*> vCode;
 	
 	std::string ansiString; /* STRIPPED ANSI STRING */
-	Vector <Colour> vForegroundColour; /* Colour of each character */
-	Vector <Colour> vBackgroundColour; /* Colour of each character */
+	Vector <ColourRGBA <unsigned char>> vForegroundColour; /* Colour of each character */
+	Vector <ColourRGBA <unsigned char>> vBackgroundColour; /* Colour of each character */
 	
-	Colour defaultForegroundColour;
-	Colour defaultBackgroundColour;
+	ColourRGBA <unsigned char> defaultForegroundColour;
+	ColourRGBA <unsigned char> defaultBackgroundColour;
 	
-	Colour currentForegroundColour;
-	Colour currentBackgroundColour;
+	ColourRGBA <unsigned char> currentForegroundColour;
+	ColourRGBA <unsigned char> currentBackgroundColour;
 	
 	ANSI()
 	{
@@ -243,7 +243,7 @@ class ANSI
 		std::cout<<"Printing colours:\n";
 		for (int i=0;i<vForegroundColour.size();++i)
 		{
-			Colour c = vForegroundColour(i);
+			ColourRGBA <unsigned char> c = vForegroundColour(i);
 			std::cout<<"("<<(int)c.red<<","<<(int)c.green<<","<<(int)c.blue<<")";
 		}std::cout<<"\n";
 	}
@@ -372,14 +372,14 @@ class ANSI_Grid
 	//Vector <Colour> vForegroundColour; /* Colour of each character */
 	//Vector <Colour> vBackgroundColour; /* Colour of each character */
 	
-	Colour defaultForegroundColour;
-	Colour defaultBackgroundColour;
+	ColourRGBA <unsigned char> defaultForegroundColour;
+	ColourRGBA <unsigned char> defaultBackgroundColour;
 	
-	Colour currentForegroundColour;
-	Colour currentBackgroundColour;
+	ColourRGBA <unsigned char> currentForegroundColour;
+	ColourRGBA <unsigned char> currentBackgroundColour;
 	
 	char aGlyph [48][64]; /* Final output goes here */
-	Colour aColour [48][64];
+	ColourRGBA <unsigned char> aColour [48][64];
 	
 	int cursorX, cursorY;
 	

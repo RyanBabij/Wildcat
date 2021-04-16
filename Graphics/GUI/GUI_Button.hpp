@@ -16,9 +16,9 @@ class GUI_Button: public GUI_Interface
 
 	std::string text; /* The text that is displayed on the button, indicating it's function. (optional) */
 
-	Colour cDisabled; /* The texture that is used for the button when the user is unable to click it. (optional) */
-	Colour cNormal;
-	Colour cHovered; /* The colour to be used if the player is hovering the mouse cursor over the button. (optional) */
+	ColourRGB <unsigned char> cDisabled; /* The texture that is used for the button when the user is unable to click it. (optional) */
+	ColourRGB <unsigned char> cNormal;
+	ColourRGB <unsigned char> cHovered; /* The colour to be used if the player is hovering the mouse cursor over the button. (optional) */
 
 
 	bool clicked;
@@ -45,7 +45,9 @@ class GUI_Button: public GUI_Interface
 	}
 	
 	
-	void init (const std::string _text, Texture* const _texture, const Colour* const _cNormal, const Colour* const _cHovered, const Colour* const _cDisabled, const bool _active)
+	void init (const std::string _text, Texture* const _texture, const ColourRGB <unsigned char>& _cNormal,
+	const ColourRGB <unsigned char>& _cHovered, const ColourRGB <unsigned char>& _cDisabled,
+	const bool _active)
 	{
 		text=_text;
 		texture=_texture;
@@ -94,7 +96,8 @@ class GUI_Button: public GUI_Interface
 		regionButtonArea.set(panelX1,panelY1,panelX2,panelY2);
 	}
 
-	void setColours(const Colour* const _cNormal, const Colour* const _cHovered, const Colour* const _cDisabled)
+	void setColours(const ColourRGB <unsigned char>& _cNormal, const ColourRGB <unsigned char>& _cHovered,
+		const ColourRGB <unsigned char> _cDisabled)
 	{
 		cNormal.set(_cNormal);
 		cHovered.set(_cHovered);
@@ -109,10 +112,10 @@ class GUI_Button: public GUI_Interface
 
 			/* If the mouse is hovering over the button, and we have a hovered texture for the button. */
 			if (hovered==true)
-			{ Renderer::placeColour4(&cHovered,panelX1,panelY1,panelX2,panelY2);
+			{ Renderer::placeColour4(cHovered,panelX1,panelY1,panelX2,panelY2);
 			}
 			else
-			{ Renderer::placeColour4(&cNormal,panelX1,panelY1,panelX2,panelY2);
+			{ Renderer::placeColour4(cNormal,panelX1,panelY1,panelX2,panelY2);
 			}
 
 			if ( clicked==true && clickedTexture!=0)

@@ -35,10 +35,10 @@ class GUI_DropList: public GUI_Interface
 	//GLuint texHoveredItem;
 	//GLuint texDropDownBackground;
 
-	Colour colourNormal;
-	Colour colourSelected;
-	Colour colourDropDown;
-	Colour colourOptionHighlight;
+	ColourRGB <unsigned char> colourNormal;
+	ColourRGB <unsigned char> colourSelected;
+	ColourRGB <unsigned char> colourDropDown;
+	ColourRGB <unsigned char> colourOptionHighlight;
 
 	Wildcat::Region regionDropDownButton;
 	Wildcat::Font* font;
@@ -71,7 +71,8 @@ class GUI_DropList: public GUI_Interface
 		regionDropDownButton.move(moveX,moveY);
 	}
 
-	void setColours(const Colour* cNormal, const Colour* cSelected, const Colour* cDropDown, const Colour* cHighlight)
+	void setColours(const ColourRGB <unsigned char>& cNormal, const ColourRGB <unsigned char>& cSelected,
+		const ColourRGB <unsigned char>& cDropDown, const ColourRGB <unsigned char>& cHighlight)
 	{
 		colourNormal.set(cNormal);
 		colourSelected.set(cSelected);
@@ -100,11 +101,11 @@ class GUI_DropList: public GUI_Interface
 		//Renderer::placeTexture4(x1,y1,x2,y2,texNormal);
 		if (selected==false)
 		{
-			Renderer::placeColour4(&colourNormal,panelX1,panelY1,panelX2,panelY2);
+			Renderer::placeColour4(colourNormal,panelX1,panelY1,panelX2,panelY2);
 		}
 		else
 		{
-			Renderer::placeColour4(&colourSelected,panelX1,panelY1,panelX2,panelY2);
+			Renderer::placeColour4(colourSelected,panelX1,panelY1,panelX2,panelY2);
 		}
 
 
@@ -123,7 +124,7 @@ class GUI_DropList: public GUI_Interface
 
 			/* Draw text background texture. */
 			//Renderer::placeTexture4(x1,y1-dropListSizePixels,x2,y1,texDropDownBackground);
-			Renderer::placeColour4(&colourDropDown,panelX1,panelY1-dropListSizePixels,panelX2,panelY1);
+			Renderer::placeColour4(colourDropDown,panelX1,panelY1-dropListSizePixels,panelX2,panelY1);
 
 			/* Draw text for selection options. */
 			int currentY = panelY1-1;
@@ -134,7 +135,7 @@ class GUI_DropList: public GUI_Interface
 				/* If this list option is being hovered by the mouse, highlight it. */
 				if (hoveredItem==i)
 				{
-					Renderer::placeColour4(&colourOptionHighlight,panelX1,currentY-(font->nY+1),panelX2,currentY+1);
+					Renderer::placeColour4(colourOptionHighlight,panelX1,currentY-(font->nY+1),panelX2,currentY+1);
 					//Renderer::placeTexture4(x1,currentY-(font->nY+1),x2,currentY+1,texHoveredItem);
 				}
 

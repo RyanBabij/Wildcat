@@ -392,7 +392,7 @@ class Font
 	}
 	
 	// Draw a single character from this top-left point. Useful for drawing text in grids (eg Terminals)
-	void putChar(unsigned char _char, const int _x, const int _y, Colour _colour)
+	void putChar(unsigned char _char, const int _x, const int _y, ColourRGBA <unsigned char> _colour)
 	{
 		if ( _char == '\n' || _char == '\r' ) { return; }
 		

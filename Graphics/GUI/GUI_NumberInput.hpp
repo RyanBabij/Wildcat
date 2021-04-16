@@ -26,9 +26,9 @@ class GUI_NumberInput: public GUI_Interface
 		bool regionIncrement10hovered;
 		bool regionIncrement100hovered;
 
-		Colour cNormal;
-		Colour cHovered;
-		Colour cSelected;
+		ColourRGB <unsigned char> cNormal;
+		ColourRGB <unsigned char> cHovered;
+		ColourRGB <unsigned char> cSelected;
 
 		Wildcat::Region regionDecrement1;
 		Wildcat::Region regionDecrement10;
@@ -125,7 +125,8 @@ class GUI_NumberInput: public GUI_Interface
 		// //regionTextEntry.set(panelX1,panelY1,panelX2,panelY2);
 	// }
 
-	void setColours(const Colour* _cNormal, const Colour* _cSelected, const Colour* _cHovered)
+	void setColours(const ColourRGB <unsigned char>& _cNormal, const ColourRGB <unsigned char>& _cSelected,
+		const ColourRGB <unsigned char>& _cHovered)
 	{
 		cNormal.set(_cNormal);
 		cSelected.set(_cSelected);
@@ -143,9 +144,9 @@ class GUI_NumberInput: public GUI_Interface
 			}
 
 			if(selected==false)
-			{ Renderer::placeColour4(&cNormal,panelX1,panelY1,panelX2,panelY2); }
+			{ Renderer::placeColour4(cNormal,panelX1,panelY1,panelX2,panelY2); }
 			else
-			{ Renderer::placeColour4(&cSelected,panelX1,panelY1,panelX2,panelY2); }
+			{ Renderer::placeColour4(cSelected,panelX1,panelY1,panelX2,panelY2); }
 
 			/* Draw decrement buttons, on the left side of the control. */
 			int squareSize = panelY1-panelY2;
@@ -156,9 +157,9 @@ class GUI_NumberInput: public GUI_Interface
 			{
 				/* Decrement 100. */
 				if ( regionDecrement100hovered == true )
-				{ Renderer::placeColour4(&cHovered,posX,panelY1,posX+squareSize,panelY2); }
+				{ Renderer::placeColour4(cHovered,posX,panelY1,posX+squareSize,panelY2); }
 				else
-				{ Renderer::placeColour4(&cNormal,posX,panelY1,posX+squareSize,panelY2); }
+				{ Renderer::placeColour4(cNormal,posX,panelY1,posX+squareSize,panelY2); }
 				Renderer::placeTexture4(posX,panelY1,posX+squareSize,panelY2,texDecrement);
 				regionDecrement100.set(posX,panelY1,posX+squareSize,panelY2);
 				posX+=squareSize;
@@ -168,9 +169,9 @@ class GUI_NumberInput: public GUI_Interface
 			{
 				/* Decrement 10. */
 				if ( regionDecrement10hovered == true )
-				{ Renderer::placeColour4(&cHovered,posX,panelY1,posX+squareSize,panelY2); }
+				{ Renderer::placeColour4(cHovered,posX,panelY1,posX+squareSize,panelY2); }
 				else
-				{ Renderer::placeColour4(&cNormal,posX,panelY1,posX+squareSize,panelY2); }
+				{ Renderer::placeColour4(cNormal,posX,panelY1,posX+squareSize,panelY2); }
 				Renderer::placeTexture4(posX,panelY1,posX+squareSize,panelY2,texDecrement);
 				regionDecrement10.set(posX,panelY1,posX+squareSize,panelY2);
 				posX+=squareSize;
@@ -180,9 +181,9 @@ class GUI_NumberInput: public GUI_Interface
 			{
 				/* Decrement 1. */
 				if ( regionDecrement1hovered == true )
-				{ Renderer::placeColour4(&cHovered,posX,panelY1,posX+squareSize,panelY2); }
+				{ Renderer::placeColour4(cHovered,posX,panelY1,posX+squareSize,panelY2); }
 				else
-				{ Renderer::placeColour4(&cNormal,posX,panelY1,posX+squareSize,panelY2); }
+				{ Renderer::placeColour4(cNormal,posX,panelY1,posX+squareSize,panelY2); }
 				Renderer::placeTexture4(posX,panelY1,posX+squareSize,panelY2,texDecrement);
 				regionDecrement1.set(posX,panelY1,posX+squareSize,panelY2);
 				posX+=squareSize;
@@ -195,9 +196,9 @@ class GUI_NumberInput: public GUI_Interface
 			{
 				/* Increment 100. */
 				if ( regionIncrement100hovered == true )
-				{ Renderer::placeColour4(&cHovered,posX-squareSize,panelY1,posX,panelY2); }
+				{ Renderer::placeColour4(cHovered,posX-squareSize,panelY1,posX,panelY2); }
 				else
-				{ Renderer::placeColour4(&cNormal,posX-squareSize,panelY1,posX,panelY2); }
+				{ Renderer::placeColour4(cNormal,posX-squareSize,panelY1,posX,panelY2); }
 				Renderer::placeTexture4(posX-squareSize,panelY1,posX,panelY2,texIncrement);
 				regionIncrement100.set(posX-squareSize,panelY1,posX,panelY2);
 				posX-=squareSize;
@@ -207,9 +208,9 @@ class GUI_NumberInput: public GUI_Interface
 			{
 				/* Increment 10. */
 				if ( regionIncrement10hovered == true )
-				{ Renderer::placeColour4(&cHovered,posX-squareSize,panelY1,posX,panelY2); }
+				{ Renderer::placeColour4(cHovered,posX-squareSize,panelY1,posX,panelY2); }
 				else
-				{ Renderer::placeColour4(&cNormal,posX-squareSize,panelY1,posX,panelY2); }
+				{ Renderer::placeColour4(cNormal,posX-squareSize,panelY1,posX,panelY2); }
 				Renderer::placeTexture4(posX-squareSize,panelY1,posX,panelY2,texIncrement);
 				regionIncrement10.set(posX-squareSize,panelY1,posX,panelY2);
 				posX-=squareSize;
@@ -219,9 +220,9 @@ class GUI_NumberInput: public GUI_Interface
 			{
 				/* Increment 1. */
 				if ( regionIncrement1hovered == true )
-				{ Renderer::placeColour4(&cHovered,posX-squareSize,panelY1,posX,panelY2); }
+				{ Renderer::placeColour4(cHovered,posX-squareSize,panelY1,posX,panelY2); }
 				else
-				{ Renderer::placeColour4(&cNormal,posX-squareSize,panelY1,posX,panelY2); }
+				{ Renderer::placeColour4(cNormal,posX-squareSize,panelY1,posX,panelY2); }
 				Renderer::placeTexture4(posX-squareSize,panelY1,posX,panelY2,texIncrement);
 				regionIncrement1.set(posX-squareSize,panelY1,posX,panelY2);
 			}

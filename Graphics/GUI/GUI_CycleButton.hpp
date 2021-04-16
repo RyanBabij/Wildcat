@@ -28,9 +28,9 @@ class GUI_CycleButton: public GUI_Interface
 	Wildcat::Region regionCyclePrevious;
 	Wildcat::Region regionCycleNext;
 
-	Colour cNormal;
-	Colour cHovered;
-	Colour cSelected;
+	ColourRGB <unsigned char> cNormal;
+	ColourRGB <unsigned char> cHovered;
+	ColourRGB <unsigned char> cSelected;
 
 	bool wrap;
 
@@ -54,7 +54,8 @@ class GUI_CycleButton: public GUI_Interface
 		regionCycleNext.move(moveX,moveY);
 	}
 
-	void setColours(const Colour* _cNormal, const Colour* _cSelected, const Colour* _cHovered)
+	void setColours(const ColourRGB <unsigned char>& _cNormal, const ColourRGB <unsigned char>& _cSelected,
+		const ColourRGB <unsigned char>& _cHovered)
 	{
 		cNormal.set(_cNormal);
 		cSelected.set(_cSelected);
@@ -105,7 +106,7 @@ class GUI_CycleButton: public GUI_Interface
 
 		//	std::cout<<"Trying to render.\n";
 
-			Renderer::placeColour4(&cNormal,panelX1,panelY1,panelX2,panelY2);
+			Renderer::placeColour4(cNormal,panelX1,panelY1,panelX2,panelY2);
 
 			/* Draw text background texture. */
 			//Renderer::placeTexture4(panelX1,panelY1,panelX2,panelY2,texNormal);

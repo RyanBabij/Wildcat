@@ -17,7 +17,7 @@ class GUI_TextBox: public GUI_Interface
 	public:
 	std::string text;
 	//Font* font;
-	Colour boxColour;
+	ColourRGB <unsigned char> boxColour;
 
 	bool centeredX, centeredY;
 
@@ -34,7 +34,7 @@ class GUI_TextBox: public GUI_Interface
 		drawBox=true;
 	}
 
-	void setColours(const Colour* bColour)
+	void setColours(const ColourRGB <unsigned char> bColour)
 	{
 		boxColour.set(bColour);
 	}
@@ -44,7 +44,7 @@ class GUI_TextBox: public GUI_Interface
 		if(active==true)
 		{
 			if ( drawBox==true)
-			{ Renderer::placeColour4(&boxColour, panelX1, panelY1, panelX2, panelY2); }
+			{ Renderer::placeColour4(boxColour, panelX1, panelY1, panelX2, panelY2); }
 
 			font8x8.drawText(text,panelX1,panelY2,panelX2,panelY1,centeredX,centeredY);
 		}

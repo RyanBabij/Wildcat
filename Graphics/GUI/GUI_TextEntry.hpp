@@ -26,8 +26,8 @@ class GUI_TextEntry: public GUI_Interface
 	//Font* font;
 	//GLuint backgroundTexture;
 
-	Colour colourNormal;
-	Colour colourSelected;
+	ColourRGB <unsigned char> colourNormal;
+	ColourRGB <unsigned char> colourSelected;
 
 	bool active; /* Whether the control is visible and recieves input. */
 
@@ -66,7 +66,7 @@ class GUI_TextEntry: public GUI_Interface
 		regionTextEntry.set(panelX1,panelY1,panelX2,panelY2);
 	}
 
-	void setColours(const Colour* cNormal, const Colour* cSelected)
+	void setColours(const ColourRGB <unsigned char>& cNormal, const ColourRGB <unsigned char>& cSelected)
 	{
 		colourNormal.set(cNormal);
 		colourSelected.set(cSelected);
@@ -96,11 +96,11 @@ class GUI_TextEntry: public GUI_Interface
 
 			if (selected==false)
 			{
-				Renderer::placeColour4(&colourNormal,panelX1,panelY1,panelX2,panelY2);
+				Renderer::placeColour4(colourNormal,panelX1,panelY1,panelX2,panelY2);
 			}
 			else
 			{
-				Renderer::placeColour4(&colourSelected,panelX1,panelY1,panelX2,panelY2);
+				Renderer::placeColour4(colourSelected,panelX1,panelY1,panelX2,panelY2);
 			}
 			font8x8.drawText(fieldName+" "+input, panelX1+2, panelY2, panelX2-2, panelY1, false, true);
 		}
