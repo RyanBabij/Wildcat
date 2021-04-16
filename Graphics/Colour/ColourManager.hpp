@@ -34,6 +34,10 @@ class ColourManager
 	{
 		return getClosestTo(colour->red, colour->green, colour->blue);
 	}
+	ColourRGB <T> * getClosestTo(ColourRGB <T>& colour)
+	{
+		return getClosestTo(colour.red, colour.green, colour.blue);
+	}
 	
 	ColourRGB <T> * getClosestTo(T _red, T _green, T _blue)
 	{	
