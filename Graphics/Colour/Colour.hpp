@@ -70,6 +70,14 @@ class ColourRGB
 		return abs(red-colour.red)+abs(green-colour.green)+abs(blue-colour.blue);
 	}
 	
+	unsigned int distanceTo(const ColourRGB* colour)
+	{
+		if (colour==0) // handle null ptr
+		{ return UINT_MAX; }
+		// sum of absolute diffs between all colours
+		return abs(red-colour->red)+abs(green-colour->green)+abs(blue-colour->blue);
+	}
+	
 	std::string toString()
 	{
 		return DataTools::toString((int)red) + ", " + DataTools::toString((int)green) + ", " +

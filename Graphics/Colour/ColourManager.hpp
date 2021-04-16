@@ -27,43 +27,82 @@ class ColourManager
 	void makeColour(const T _red,const  T _green, const T _blue, const std::string _name)
 	{
 		vColour.push( new ColourRGB <T>(_red,_green,_blue) );
-		//vColour.push( new Colour(1,1,1) );
 		vName.push(_name);
 	}
 	
-	std::string getNameOfColour(ColourRGB <T> & colour)
+	ColourRGB <T> * getClosestTo(ColourRGB <T>* colour)
 	{
-		return "Black";
+		return getClosestTo(colour->red, colour->green, colour->blue);
+	}
+	
+	ColourRGB <T> * getClosestTo(T _red, T _green, T _blue)
+	{	
+		ColourRGB <T> colour(_red, _green, _blue);
+		
+		
+		unsigned int closestDiff = UINT_MAX;
+		ColourRGB <T> * closestColour = 0;
+		for (int i=0;i<vColour.size(); ++i)
+		{
+			if ( closestColour == 0 || colour.distanceTo(vColour(i)) < closestDiff )
+			{
+				closestDiff = colour.distanceTo(vColour(i));
+				closestColour = vColour(i);
+			}
+		}
+		return closestColour;
+	}
+	
+	
+	std::string getNameOfColour(unsigned char _red, unsigned char _green, unsigned char _blue)
+	{
+		//return "Black";
+		
+		if ( vName.size() == 0 )
+		{ return ""; }
+	
+		// get closest index and then print name
+		ColourRGB <T> colour(_red, _green, _blue);
+		
+		unsigned int closestDiff = UINT_MAX;
+		int closestIndex = 0;
+		for (int i=0;i<vColour.size(); ++i)
+		{
+			if ( closestDiff == UINT_MAX || colour.distanceTo(vColour(i)) < closestDiff )
+			{
+				closestDiff = colour.distanceTo(vColour(i));
+				closestIndex = i;
+			}
+		}
+		return vName(closestIndex);
+	}
+	std::string getNameOfColour(ColourRGB <T>& colour)
+	{
+		return getNameOfColour(colour.red,colour.green,colour.blue);
 	}
 	
 	std::string toString()
 	{
-		return "TEST";
+		std::string strRet = "";
+		for (int i=0;i<vColour.size();++i)
+		{
+			strRet+=vName(i)+": "+vColour(i)->toString()+"\n";
+		}	
+		return strRet;
+	}
+
+	void getRandom()
+	{
+		// return a random named colour
 	}
 	
-	ColourRGB <T> * getClosestTo(ColourRGB <T>& colour)
+	// return random colour in the given ranges. Might be useful for generating types of red for example.
+	// or skin colours or flower colours as they tend to all fall within certain ranges.
+	void getRandomInRange(const unsigned char minRed, const unsigned char maxRed, const unsigned char minGreen,
+		const unsigned char maxGreen, const unsigned char minBlue, const unsigned char maxBlue)
 	{
-		return getClosestTo(colour.red, colour.green, colour.blue);
 	}
-	ColourRGB <T> * getClosestTo(T _red, T _green, T _blue)
-	{
-		return 0;
-		
-		// ColourRGB <T> colour(_red, _green, _blue);
-		
-		
-		// int closestDiff = -1;
-		// Colour * closestColour = 0;
-		// for (int i=0;i<vColour.size(); ++i)
-		// {
-			// if ( closestColour == 0 || colour.distanceTo(vColour(i)) < closestDiff )
-			// {
-				// closestDiff = colour.distanceTo(vColour(i));
-				// closestColour = vColour(i);
-			// }
-		// }
-		// return closestColour;
-	}
+	
 };
 
 #endif
