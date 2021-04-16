@@ -18,7 +18,7 @@ class ColourManager
 {
 	public:
 	
-	Vector <Colour*> vColour;
+	Vector <ColourRGB*> vColour;
 	Vector <std::string> vName;
 	
 	ColourManager()
