@@ -11,102 +11,58 @@
 	However for now I think maintaining a big list should be fine
 */
 
-//#include <Math/Random/RandomInterface.hpp>
-
-
+template <class T>
 class ColourManager
 {
-	public:
-	
-	Vector <ColourRGB*> vColour;
+	Vector <ColourRGB <T> * > vColour;
 	Vector <std::string> vName;
+	
+	public:
 	
 	ColourManager()
 	{
 	}
 	
-	void makeColour(unsigned char _red, unsigned char _green, unsigned char _blue, std::string _name)
+	// construct this colour and push it to the vector
+	void makeColour(const T _red,const  T _green, const T _blue, const std::string _name)
 	{
-		vColour.push( new Colour(_red,_green,_blue) );
+		vColour.push( new ColourRGB <T>(_red,_green,_blue) );
 		//vColour.push( new Colour(1,1,1) );
 		vName.push(_name);
 	}
 	
-	// void add(Colour * colour)
-	// {
-		// vColour.push(colour);
-	// }
-	
-	Colour* getClosestTo(Colour* colour)
+	std::string getNameOfColour(ColourRGB <T> & colour)
 	{
-		return getClosestTo(colour->red, colour->green, colour->blue);
+		return "Black";
 	}
-	Colour* getClosestTo(unsigned char _red, unsigned char _green, unsigned char _blue)
-	{
-		Colour colour(_red, _green, _blue);
-		
-		
-		int closestDiff = -1;
-		Colour * closestColour = 0;
-		for (int i=0;i<vColour.size(); ++i)
-		{
-			if ( closestColour == 0 || colour.distanceTo(vColour(i)) < closestDiff )
-			{
-				closestDiff = colour.distanceTo(vColour(i));
-				closestColour = vColour(i);
-			}
-		}
-		return closestColour;
-	}
-	
-	std::string getNameOfColour(unsigned char _red, unsigned char _green, unsigned char _blue)
-	{
-		if ( vName.size() == 0 )
-		{ return ""; }
-	
-		// get closest index and then print name
-		Colour colour(_red, _green, _blue);
-		
-		int closestDiff = -1;
-		int closestIndex = 0;
-		for (int i=0;i<vColour.size(); ++i)
-		{
-			if ( closestDiff == -1 || colour.distanceTo(vColour(i)) < closestDiff )
-			{
-				closestDiff = colour.distanceTo(vColour(i));
-				closestIndex = i;
-			}
-		}
-		return vName(closestIndex);
-	}
-	std::string getNameOfColour(Colour& colour)
-	{
-		return getNameOfColour(colour.red,colour.green,colour.blue);
-	}
-	
-	void getRandom()
-	{
-		// return a random named colour
-	}
-	
-	// return random colour in the given ranges. Might be useful for generating types of red for example.
-	// or skin colours or flower colours as they tend to all fall within certain ranges.
-	void getRandomInRange(const unsigned char minRed, const unsigned char maxRed, const unsigned char minGreen,
-		const unsigned char maxGreen, const unsigned char minBlue, const unsigned char maxBlue)
-	{
-	}
-		
-	//void get
 	
 	std::string toString()
 	{
-		std::string strRet = "";
-		for (int i=0;i<vColour.size();++i)
-		{
-			strRet+=vName(i)+": "+vColour(i)->toString()+"\n";
-		}
+		return "TEST";
+	}
+	
+	ColourRGB <T> * getClosestTo(ColourRGB <T>& colour)
+	{
+		return getClosestTo(colour.red, colour.green, colour.blue);
+	}
+	ColourRGB <T> * getClosestTo(T _red, T _green, T _blue)
+	{
+		return 0;
 		
-		return strRet;
+		// ColourRGB <T> colour(_red, _green, _blue);
+		
+		
+		// int closestDiff = -1;
+		// Colour * closestColour = 0;
+		// for (int i=0;i<vColour.size(); ++i)
+		// {
+			// if ( closestColour == 0 || colour.distanceTo(vColour(i)) < closestDiff )
+			// {
+				// closestDiff = colour.distanceTo(vColour(i));
+				// closestColour = vColour(i);
+			// }
+		// }
+		// return closestColour;
 	}
 };
 

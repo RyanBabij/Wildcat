@@ -1,6 +1,6 @@
 #pragma once
-#ifndef WILDCAT_GRAPHICS_COLOUR_COLOUR_HPP
-#define WILDCAT_GRAPHICS_COLOUR_COLOUR_HPP
+#ifndef WILDCAT_GRAPHICS_COLOUR_COLOUR_OLD_HPP
+#define WILDCAT_GRAPHICS_COLOUR_COLOUR_OLD_HPP
 
 /* Wildcat: Graphics_Colour.hpp
 	#include <Graphics/Colour/Colour.hpp>
