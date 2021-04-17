@@ -12,6 +12,8 @@ Class to store an expandable list of items. Currently just a wrapper of std::vec
 #include <numeric> /* iota */
 #include <iterator> /* for std::iterator */
 
+#include <Math/Random/RandomInterface.hpp> // Random interface. All other randoms should be replaced by this.
+
 #include <random> // for vector shuffle (only with seed).
 #include <Math/Random/GlobalRandom.hpp> // Used for getting random entries.
 #include <Math/Random/RandomLehmer.hpp> // Faster RNG
@@ -156,8 +158,8 @@ class Vector
    }
   
   //Get a random entry. (must pass an rng)
-	inline T& getRandom(RandomNonStatic& rng)
-	{ return data.at(rng.randomInt(size()-1)); }
+	inline T& getRandom(RandomInterface& rng)
+	{ return data.at(rng.rand32(size()-1)); }
 
 		// RETURN THE SLOT WITH THE PASSED VALUE. OTHERWISE RETURN -1.
 	int findSlot(T _value)
