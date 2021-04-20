@@ -1,6 +1,6 @@
 #pragma once
-#ifndef GRAPHICS_FONT_FONT_HPP
-#define GRAPHICS_FONT_FONT_HPP
+#ifndef WILDCAT_GRAPHICS_FONT_FONT_HPP
+#define WILDCAT_GRAPHICS_FONT_FONT_HPP
 
 /* Wildcat: Font
 	#include <Graphics/Font/Font.hpp>
@@ -28,6 +28,9 @@
 //#include <Graphics/Colour/Palette.hpp> // For basic font colours.
 
 #include <Container/String/ANSI.hpp> // For processing ANSI escape codes.
+
+#include <Graphics/Png/Png.hpp>
+#include <Graphics/Texture/Texture.hpp>
 
 // Font conflicts with an X11 class, so we need to namespace this.
 namespace Wildcat
