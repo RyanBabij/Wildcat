@@ -16,6 +16,10 @@
 
 #include <cmath>
 
+#ifdef WILDCAT_USE_OPENGL
+	#include <Graphics/OpenGL/glew-typedefs.hpp>
+#endif
+
 /* Max texture dimensions: 2^16 * 2^16 */
 class Texture: public CanLoadSave, public HasTexture
 {
@@ -29,7 +33,11 @@ class Texture: public CanLoadSave, public HasTexture
 	unsigned char averageRed, averageGreen, averageBlue;
 
 	/* OpenGL pointer/reference to the texture. */
+	// This reliance on OpenGL libs is kind of an issue because we can't really forward-declare typedefs like GLUint.
+	// And glew.h is a pretty big header.
+#ifdef WILDCAT_USE_OPENGL
 	GLuint textureID;
+#endif
 
 		// LINUX G++ GIVES WARNING IF I TRY TO DELETE A POLYMORPHIC OBJECT WITHOUT A VIRTUAL DESTRUCTOR.
 	virtual ~Texture()
