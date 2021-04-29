@@ -5,8 +5,8 @@
 /* Wildcat: Calendar
 	#include "Time/WorldSimCalendar.hpp"
 
-	Calendar system revised for WorldSim conventions. Scales down to about 8% of realtime in total, with individual days
-	scaled down to about 25% of realtime, and individual years scaled down to about 30% of realtime.
+	Calendar system revised for WorldSim conventions. Scales down to about 9% of realtime in total, with individual days
+	scaled down to about 33% of realtime, and individual years scaled down to about 30% of realtime.
 
 	Summary of units:
 
@@ -85,9 +85,10 @@ class WorldSimCalendar
 		year=c->year;
 	}
 	
-	void increment(unsigned long int nTick)
+	void increment(unsigned long int nTick=1)
 	{
 		// todo: optimise
+		totalTick+= nTick;
 		tick += nTick;
 		while (tick > 59)
 		{
@@ -121,15 +122,63 @@ class WorldSimCalendar
 		}
 	}
 	
+	// set date based on absolute tick amount (basically increment from 0)
+	void setTotal(int nTick)
+	{
+	}
+	
 	// find distance between 2 calendars in ticks.
 	long int distanceTo(WorldSimCalendar c)
 	{
 		return 0;
 	}
 	
+	// get/set
+	
+	int getTick()
+	{
+		return tick;
+	}
+	int getMinute()
+	{
+		return minute;
+	}
+	int getHour()
+	{
+		return hour;
+	}
+	std::string getHourName()
+	{
+		return "hour";
+	}
+	int getDay()
+	{
+		return day;
+	}
+	int getWeek()
+	{
+		return week;
+	}
+	int getSeason()
+	{
+		return season;
+	}
+	std::string getSeasonName()
+	{
+		return "";
+	}
+	int getYear()
+	{
+		return year;
+	}
+	
+	
+	// add formatting options
 	std::string toString( /* format */ )
 	{
-		return DataTools::toString(tick);
+		return DataTools::toString(year)+":"+DataTools::toString(season)+":"+DataTools::toString(week)+":"+
+		DataTools::toString(day)+":"+DataTools::toString(hour)+":"+DataTools::toString(minute)+":"+
+		DataTools::toString(tick);
 	}
 };
 
