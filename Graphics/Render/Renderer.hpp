@@ -8,7 +8,9 @@
 */
 
 class Texture;
-class Colour;
+//class Colour;
+template <typename> class ColourRGBA;
+template <typename> class ColourRGB;
 
 #include <Interface/HasTexture.hpp>
 
