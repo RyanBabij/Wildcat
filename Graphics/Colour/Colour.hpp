@@ -3,7 +3,7 @@
 #define WILDCAT_GRAPHICS_COLOUR_COLOUR_2_HPP
 
 /* Wildcat: Graphics_Colour2.hpp
-	#include <Graphics/Colour/Colour2.hpp>
+	#include <Graphics/Colour/Colour.hpp>
 	
 	Colour but an attempt to do it properly using polymorphism and templates, about as complex as things get.
 	
