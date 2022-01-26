@@ -110,15 +110,13 @@ public:
 	Texture texScreen; // dynamically generated texture
 	Texture texOverlay; // dynamically generated texture. Text/hud overlay
 
-	double scalingFactor; // how many times the standard resolution to scale up
-
-	// EFFECTS
-	bool enableEffects;
+	double scalingFactor; // how many times the standard resolution to scale up. Currently seems to affect only some
+	// aspects of the render.
 
 	int fadeSpeed; // max rgb value change per frame
 	double updatesPerSecond; // amount of times to update screen state per second
 	bool scanLines;
-	bool charLayer;
+	bool charLayer; // important: Charlayer is text mode.
 	// I might want to just link it with the global idleTick speed.
 	// Or have a postRender() function which preps for the next render.
 
@@ -129,6 +127,7 @@ public:
 	PixelScreen(const unsigned short int _nX, const unsigned short int _nY) // define the size in pixels
 	{
 		init (_nX,_nY);
+		scalingFactor=2;
 	}
 
 	void init(const unsigned short int _nX, const unsigned short int _nY)
@@ -156,10 +155,9 @@ public:
 		updateTimer.init();
 		updateTimer.start();
 
-		enableEffects=false;
 		updatesPerSecond=60;
-		scanLines=false;
-		charLayer=false;
+		scanLines=true;
+		charLayer=true;
 		amountStatic=0;
 
 		mouseX=-1;
@@ -362,66 +360,62 @@ public:
 		bindNearestNeighbour(&texScreen);
 		Renderer::placeTexture4(panelX1,panelY1,panelX2,panelY2,&texScreen,false);
 		unbind(&texScreen);
-
-		if (enableEffects)
+		
+		for (int i=0;i<vSprite.size();++i)
 		{
-			for (int i=0;i<vSprite.size();++i)
+			// OpenGL uses different coordinates from pixel screen so we need to flip the y.
+			Sprite* const sprite = vSprite(i);
+			if ( sprite != 0 )
 			{
-				// OpenGL uses different coordinates from pixel screen so we need to flip the y.
-				//int drawY1 = 
-				Sprite* const sprite = vSprite(i);
-				if ( sprite != 0 )
-				{
-					Renderer::placeTexture4(panelX1+(sprite->x1*scalingFactor),panelY1+(sprite->y1*scalingFactor),
-					panelX1+(sprite->x2*scalingFactor),panelY1+(sprite->y2*scalingFactor),sprite->currentTexture(),false);
-				}
+				Renderer::placeTexture4(panelX1+(sprite->x1*scalingFactor),panelY1+(sprite->y1*scalingFactor),
+				panelX1+(sprite->x2*scalingFactor),panelY1+(sprite->y2*scalingFactor),sprite->currentTexture(),false);
 			}
-			
-			//simple text overlay for now.
+		}
+		
+		//simple text overlay for now.
 
-			texOverlay.fill(0);
+		texOverlay.fill(0);
 
 
-			if ( charLayer )
+		if ( charLayer )
+		{
+			// draw font as an overlay
+			for (int _y=0;_y<nCharY;++_y)
 			{
-				// draw font as an overlay
-				for (int _y=0;_y<nCharY;++_y)
+				for (int _x=0;_x<nCharX;++_x)
 				{
-					for (int _x=0;_x<nCharX;++_x)
+					if ( aCharMode(_x,_y) != ' ' )
 					{
-						if ( aCharMode(_x,_y) != ' ' )
-						{
-							// For now I'll just overlay the font with the normal render call.
-							// I'd like this option in future for easy text overlays
-
-							texOverlay.copyDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],font->nX*_x,font->nY*_y);
-							//texScreen.morphDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],font->nX*_x,font->nY*_y,100);
-						}
-						//texRuntime.morphDown(font8x8.aTexFont[(unsigned char)aGlyph[_y][_x]],8*_x,8*_y,22);
-
-						//texScreen.morphDown(font->aTexFont['A'],8*_x,8*_y,25);
+						// For now I'll just overlay the font with the normal render call.
+						// I'd like this option in future for easy text overlays
+						
+						texOverlay.copyDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],(font->nX)*_x,(font->nY)*_y);
+						// I believe this slowly fades a char onto the screen.
+						// doesn't seem to work atm but I don't really use it anyway
+						//texScreen.morphDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],font->nX*_x,font->nY*_y,100);
+						
+						// This just blits a font directly onto the screen for debug purposes.
+						//font8x8.putChar(aGlyph[_y][_x],panelX1+(10*_x),panelY2-(10*_y),foregroundColour[_y][_x]);
 					}
 				}
 			}
-			bindNearestNeighbour(&texOverlay);
-			Renderer::placeTexture4(panelX1,panelY1,panelX2,panelY2,&texOverlay,false);
-			unbind(&texOverlay);
-
-			//return;
-
-			if (scanLines)
+		}
+		bindNearestNeighbour(&texOverlay);
+		Renderer::placeTexture4(panelX1,panelY1,panelX2,panelY2,&texOverlay,false);
+		unbind(&texOverlay);
+		
+		if (scanLines)
+		{
+			// this looks quite bad with non-integer scaling factors. I reckon a
+			// texture overlay will probably look better.
+			for (double _y=panelY2-(scalingFactor);_y>=panelY1;_y-=scalingFactor)
 			{
-				// this looks quite bad with non-integer scaling factors. I reckon a
-				// texture overlay will probably look better.
-				for (double _y=panelY2-(scalingFactor);_y>=panelY1;_y-=scalingFactor)
-				{
-					Renderer::placeLineAlpha(0,0,0,80,panelX1,_y,panelX2,_y,scalingFactor/2);
-				}
-				// for (int _x=panelX1;_x<panelX1+320*scalingFactor;_x+=scalingFactor)
-				// {
-				// //Renderer::placeLineAlpha(0,0,0,80,_x,panelY1,_x,panelY1+200*scalingFactor);
-				// }
+				Renderer::placeLineAlpha(0,0,0,80,panelX1,_y,panelX2,_y,scalingFactor/2);
 			}
+			// for (int _x=panelX1;_x<panelX1+320*scalingFactor;_x+=scalingFactor)
+			// {
+			// //Renderer::placeLineAlpha(0,0,0,80,_x,panelY1,_x,panelY1+200*scalingFactor);
+			// }
 		}
 	}
 
