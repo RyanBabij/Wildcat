@@ -25,13 +25,22 @@ EASI::EASI()
    vInputVar.clear();
 }
 
+#define EASI_LOAD_VERBOSE
+
 std::string EASI::load(std::string _code)
 {
    //EASI CODE MUST ALWAYS BE IN  U P P E R C A S E
    _code = DataTools::toUpper(_code);
    
-   std::cout<<"EASI:load\n\n";
-   std::cout<<_code<<"\n\n";
+	#ifdef EASI_LOAD_VERBOSE
+   std::cout<<"EASI::load(~)\n\n";
+	std::cout<<"Raw input:\n\n";
+	
+	std::string _strFormatted = "\t" + _code;
+	DataTools::findAndReplace(&_strFormatted,"\n","\n\t");
+	
+   std::cout<<_strFormatted<<"\n***\n\n";
+	#endif
    
    terminated=false;
    
@@ -56,11 +65,21 @@ std::string EASI::load(std::string _code)
       currentLine=0;
       return "";
    }
+	
+	std::cout<<"Stripped input:\n\n";
 
    // Load up each line.
    for (int i=0;i<vLine->size();++i)
    {
-      vCodeLine.push(new CodeLine((*vLine)(i)));
+		if ( (*vLine)(i) != "\n" && (*vLine)(i) != "\r" )
+		{
+			vCodeLine.push(new CodeLine((*vLine)(i)));
+			std::cout<<"\t"<<(*vLine)(i)<<"\n";
+		}
+		else
+		{
+			std::cout<<"REJECT\n";
+		}
    }
    
    // Debug output of each CodeLine
@@ -158,7 +177,7 @@ std::string EASI::evaluate(CodeLine* _codeLine)
       return "ERROR: Null CodeLine ptr\n";
    }
 
-   //std::cout<<"Executing line: "<<_codeLine->strLineStripped<<"\n";
+   std::cout<<"Evaluating line: "<<_codeLine->strLineStripped<<"\n";
 
    // 1: Sub all variables into expressions, replace uninitialized vars with 0 or null string.
    // 2: Evaluate expression, assign if necessary.
@@ -177,6 +196,7 @@ std::string EASI::evaluate(CodeLine* _codeLine)
    Vector <std::string> vSubbedToken = _codeLine->vExpressionToken;
    for (int i=0;i<vSubbedToken.size();++i)
    {
+		std::cout<<"Checking sub: "<<vSubbedToken(i)<<"\n";
       if ( varTable.hasVar(vSubbedToken(i)) )
       {
          if ( varTable.isRealVar(vSubbedToken(i)) ) // get variable as-is
