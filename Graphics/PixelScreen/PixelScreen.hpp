@@ -92,6 +92,10 @@ private:
 	ArrayS3 <unsigned char> aScreenDataBuffer; // Desired state of screen
 	//ArrayS3 <unsigned char> aScreenDataReal; // Actual state of screen after effects
 	ArrayS2 <unsigned char> aCharMode; // Grid for drawing fonts onto screen.
+	
+	ArrayS2 <unsigned char> textRed;
+	ArrayS2 <unsigned char> textGreen;
+	ArrayS2 <unsigned char> textBlue;
 
 	unsigned char rngPool [1000]; // for generating static
 
@@ -144,6 +148,9 @@ public:
 		aScreenDataBuffer.init(nX,nY,4,0); // RGBA
 		//aScreenDataReal.init(nX,nY,4,0); // RGBA
 		aCharMode.init(0,0,' ');
+		textRed.init(nX,nY,255);
+		textGreen.init(nX,nY,255);
+		textBlue.init(nX,nY,255);
 
 
 		texScreen.create(nX,nY,1,true); // we might instead use this as render
@@ -178,6 +185,9 @@ public:
 		aScreenDataBuffer.fill(0); // RGBA
 		//aScreenDataReal.fill(0); // RGBA
 		aCharMode.fill(' ');
+		textRed.fill(255);
+		textGreen.fill(255);
+		textBlue.fill(255);
 	}
 
 	void fill (unsigned char _r, unsigned char _g, unsigned char _b, unsigned char _a)
@@ -193,9 +203,13 @@ public:
 		texScreen.fillChannel(3,_a);
 	}
 
-	void putChar (const unsigned short int _x, const unsigned short int _y, const unsigned char _char)
+	void putChar (const unsigned short int _x, const unsigned short int _y, const unsigned char _char, ColourRGBA <unsigned char> foregroundColour)
 	{
 		aCharMode(_x,_y)=_char;
+		
+			textRed(_x,_y)=foregroundColour.red;
+			textGreen(_x,_y)=foregroundColour.green;
+			textBlue(_x,_y)=foregroundColour.blue;
 	}
 	void putString (unsigned short int _x, const unsigned short int _y, std::string _str)
 	{
@@ -204,6 +218,9 @@ public:
 			if ( aCharMode.isSafe(_x,_y))
 			{
 				aCharMode(_x,_y)=_str[i];
+				textRed(_x,_y)=255;
+				textGreen(_x,_y)=255;
+				textBlue(_x,_y)=255;
 				++_x;
 			}
 		}
@@ -389,7 +406,8 @@ public:
 						// For now I'll just overlay the font with the normal render call.
 						// I'd like this option in future for easy text overlays
 						
-						texOverlay.copyDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],(font->nX)*_x,(font->nY)*_y);
+						//texOverlay.copyDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],(font->nX)*_x,(font->nY)*_y);
+						texOverlay.copyDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],(font->nX)*_x,(font->nY)*_y,textRed(_x,_y),textGreen(_x,_y),textBlue(_x,_y));
 						// I believe this slowly fades a char onto the screen.
 						// doesn't seem to work atm but I don't really use it anyway
 						//texScreen.morphDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],font->nX*_x,font->nY*_y,100);
