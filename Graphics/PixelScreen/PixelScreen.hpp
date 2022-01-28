@@ -5,23 +5,13 @@
 /* Wildcat: PixelScreen
 #include <Graphics/PixelScreen/PixelScreen.hpp>
 
-A PixelScreen is an array of pixels which can be converted
-to a texture and then rendered to a set of screen coordinates.
-It can also have textures like fonts merged onto it.
-The main purpose is to create a faux-retro screen monitor.
+A PixelScreen is an array of pixels which can be converted to a texture and then rendered to a set of screen
+coordinates. It can also have textures like fonts merged onto it. The main purpose is to create a faux-retro screen
+monitor, however some other uses for it could come up, you could even make pixelshit games with it.
 
-The main issue is how to size the pixels correctly, however
-we could probably just let OpenGL handle it.
-
-Additionally we need to worry about the performance of binding
-textures at render. This has significant performance cost, but
-fortunately there is a thing called Pixel Buffer Object which
-apparently is designed for this sort of thing. Basically it's
-like having a shader effect.
-
-However for now the performance loss of binding a 320x200 texture
-at runtime is acceptable, achieving about 70FPS on my dev builds.
-Binding larger textures however becomes significantly more costly.
+Currently it creates and binds a new texture at runtime, which is not optimal but works well enough. The performance of
+binding a 320x200 texture at runtime is acceptable, achieving about 70FPS on my dev builds. Binding larger textures
+however becomes significantly more costly.
 
 PixelScreen also has some effects it can do like basic glare effects
 and whatnot.
@@ -31,22 +21,19 @@ in any order. PixelScreen_Filter class with an execute function.
 
 Filters can be blended, merged, or copied directly.
 
-
-
 Todo:
 
 * State updates should be decoupled from render calls.
+* Pixel Buffer Object support
 
 */
 
 #include <Container/ArrayS3/ArrayS3.hpp>
-
 #include <Math/Random/RandomLehmer.hpp>
-
 #include <Interface/HasTexture.hpp>
-// Sprite is an object which has a texture which is drawn to the screen.
-// We don't bother blitting it or whatever, just render it with OpenGL.
-// This means you should make sure the pixels match up
+
+// Sprites are not currently blitted, but rather directly rendered at the full resolution. Therefore you should
+// manually ensure that the pixels line up if making pixelshit unless you are trolling.
 class Sprite: public HasTexture
 {
 public:
@@ -82,17 +69,36 @@ public:
 	}
 };
 
+// Custom algorithms for filters and effects designed to be overlaid on the main screen
+class PixelScreen_Filter
+{
+
+
+};
+
 #include <Graphics/GUI/GUI_Interface.hpp>
+
+// The actual pixelscreen canvas thing. You can draw individual pixels just like the good old VGA days.
+
+// Todo:
+//		* Custom layered filtering (scanlines, bloom)
+//		* Temporal effects (fading, glitches, etc)
 
 class PixelScreen: public GUI_Interface, public IdleTickInterface
 {
 private:
 	RandomLehmer rngLehmer;
 
+	// Currently pixels are only directly blitted, in future we will probably have the input and output (after effects)
+	// state.
 	ArrayS3 <unsigned char> aScreenDataBuffer; // Desired state of screen
 	//ArrayS3 <unsigned char> aScreenDataReal; // Actual state of screen after effects
+	
+	// Text mode array.
 	ArrayS2 <unsigned char> aCharMode; // Grid for drawing fonts onto screen.
 	
+	
+	// The current colour layer system. Probably could be better.
 	ArrayS2 <unsigned char> textRed;
 	ArrayS2 <unsigned char> textGreen;
 	ArrayS2 <unsigned char> textBlue;
@@ -104,34 +110,38 @@ private:
 	unsigned short int nX, nY; // number of pixels (not size of panel)
 	unsigned short int nCharX, nCharY;
 
+	// vector of sprites to "blit"
 	Vector <Sprite*> vSprite;
 
 
 public:
-	std::string strOverlay; // simple text overlay for hud or help menus.
+	std::string strOverlay; // simple text overlay for hud or help menus, immune from screen clears.
 	// in future I'll probably replace it with a separate char array.
 
 	Texture texScreen; // dynamically generated texture
 	Texture texOverlay; // dynamically generated texture. Text/hud overlay
 
 	double scalingFactor; // how many times the standard resolution to scale up. Currently seems to affect only some
-	// aspects of the render.
+	// aspects of the render. We should probably support decimal values although it would not look perfect.
 
 	int fadeSpeed; // max rgb value change per frame
 	double updatesPerSecond; // amount of times to update screen state per second
-	bool scanLines;
-	bool charLayer; // important: Charlayer is text mode.
+	
+	
+	bool scanLines; // enable scanlines filter. Currently pretty hardcoded but looks fine anyway.
+	
+	bool charLayer; // important: Charlayer is text mode. Text mode can be switched off.
+	
 	// I might want to just link it with the global idleTick speed.
 	// Or have a postRender() function which preps for the next render.
 
 	unsigned char amountStatic; // maximum static val. 0 = disabled.
 
-	short int mouseX,mouseY; //pixel coords
+	short int mouseX,mouseY; // these are the pixel coords, not screen coords.
 
 	PixelScreen(const unsigned short int _nX, const unsigned short int _nY) // define the size in pixels
 	{
 		init (_nX,_nY);
-		scalingFactor=2;
 	}
 
 	void init(const unsigned short int _nX, const unsigned short int _nY)
@@ -147,11 +157,10 @@ public:
 		font=0;
 		aScreenDataBuffer.init(nX,nY,4,0); // RGBA
 		//aScreenDataReal.init(nX,nY,4,0); // RGBA
-		aCharMode.init(0,0,' ');
+		aCharMode.init(nX,nY,' ');
 		textRed.init(nX,nY,255);
 		textGreen.init(nX,nY,255);
 		textBlue.init(nX,nY,255);
-
 
 		texScreen.create(nX,nY,1,true); // we might instead use this as render
 		texScreen.fill(0);
@@ -164,8 +173,9 @@ public:
 
 		updatesPerSecond=60;
 		scanLines=true;
-		charLayer=true;
+		charLayer=true; // should be enabled by default to prevent confusion.
 		amountStatic=0;
+		scalingFactor=1;
 
 		mouseX=-1;
 		mouseY=-1;
@@ -179,6 +189,21 @@ public:
 			rngPool[i]=rngLehmer.rand8();
 		}
 	}
+	
+	void setFont (Wildcat::Font* _font) override
+	{
+		if ( _font == 0 )
+		{
+			font=0;
+			return;
+		}
+		font = _font;
+
+		// adjust text mode array size based on font size.
+		nCharX = nX / _font->nX;
+		nCharY = nY / _font->nY;
+		aCharMode.init(nCharX,nCharY,' ');
+	}
 
 	void clear()
 	{
@@ -188,6 +213,7 @@ public:
 		textRed.fill(255);
 		textGreen.fill(255);
 		textBlue.fill(255);
+		aCharMode.fill(' ');
 	}
 
 	void fill (unsigned char _r, unsigned char _g, unsigned char _b, unsigned char _a)
@@ -203,15 +229,16 @@ public:
 		texScreen.fillChannel(3,_a);
 	}
 
+	// write a character to the given row and column with the specified colour.
 	void putChar (const unsigned short int _x, const unsigned short int _y, const unsigned char _char, ColourRGBA <unsigned char> foregroundColour)
 	{
 		aCharMode(_x,_y)=_char;
-		
-			textRed(_x,_y)=foregroundColour.red;
-			textGreen(_x,_y)=foregroundColour.green;
-			textBlue(_x,_y)=foregroundColour.blue;
+		textRed(_x,_y)=foregroundColour.red;
+		textGreen(_x,_y)=foregroundColour.green;
+		textBlue(_x,_y)=foregroundColour.blue;
 	}
-	void putString (unsigned short int _x, const unsigned short int _y, std::string _str)
+	// write an entire string to the screen from the given coordinate. Wrapping should be done automatically.
+	void putString (unsigned short int _x, const unsigned short int _y, std::string _str, bool wordBreak=false)
 	{
 		for (unsigned int i=0;i<_str.size();++i)
 		{
@@ -353,20 +380,13 @@ public:
 
 	void eventResize() override
 	{
-		//std::cout<<"PIXELSCREEN RESIZED: "<<panelX1<<", "<<panelY1<<", "<<panelX2<<", "<<panelY2<<".\n";
+		std::cout<<"PIXELSCREEN RESIZED: "<<panelX1<<", "<<panelY1<<", "<<panelX2<<", "<<panelY2<<".\n";
 	}
 
 	bool keyboardEvent(Keyboard* _keyboard) override
 	{
 		return false;
 	}
-
-	// void Terminal::placeTexture4(const int _x1, const int _y1, const int _x2, const int _y2, HasTexture* _texture, const bool preserveAspectRatio)
-	// {
-
-	// Renderer::placeTexture4(_x1*scalingFactor,_y1*scalingFactor,_x2*scalingFactor,_y2*scalingFactor,_texture,true);
-	// }
-
 
 	void render() override 
 	{
@@ -437,20 +457,6 @@ public:
 		}
 	}
 
-	void setFont (Wildcat::Font* _font) override
-	{
-		if ( _font == 0 )
-		{
-			font=0;
-			return;
-		}
-		font = _font;
-
-		nCharX = nX / _font->nX;
-		nCharY = nY / _font->nY;
-		aCharMode.init(nCharX,nCharY,' ');
-	}
-
 	void fillStatic(const unsigned char maxValue=255)
 	{
 		if ( maxValue == 0 )
@@ -489,13 +495,6 @@ public:
 	{
 		vSprite.erase(sprite);
 	}
-
-};
-
-// Custom algorithms for filters and effects designed to be overlaid on the main screen
-class PixelScreen_Filter
-{
-
 
 };
 
