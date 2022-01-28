@@ -307,6 +307,42 @@ class Texture: public CanLoadSave, public HasTexture
          ++y2;
       }
    }
+	
+   //copy with RGB value.
+	// This copies any pixel of the passed texture down to this texture, but sets every pixel to the given RGB values.
+	// Useful for example if you are blitting some text that you want in a certain colour.
+   void copyDown ( Texture * _tex, const int startX, const int startY, unsigned char red, unsigned char green, unsigned char blue)
+   {
+      if ( _tex==0 )
+      {
+         std::cout<<"WARNING: Texture::copyDown nullptr.\n";
+         return;
+      }
+      int endX = startX+_tex->nX;
+      int endY = startY+_tex->nY;
+      
+      int x2 = 0;
+      int y2 = 0;
+      
+      for (int y=startY;y<endY;++y)
+      {
+         for (int x=startX;x<endX;++x)
+         {
+            if ( _tex->uPixel(x2,y2,3) != 0 )
+            {
+               setPixel(x,y,0,red);
+               setPixel(x,y,1,green);
+               setPixel(x,y,2,blue);
+               setPixel(x,y,3,_tex->uPixel(x2,y2,3));
+            }
+            
+            ++x2;
+         }
+         
+         x2=0;
+         ++y2;
+      }
+   }
    // same as copydown but average the source and target pixel. (need to account for alpha)
    void blendDown ( Texture * _tex, const int startX, const int startY)
    {
