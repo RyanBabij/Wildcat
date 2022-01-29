@@ -9,6 +9,9 @@ A PixelScreen is an array of pixels which can be converted to a texture and then
 coordinates. It can also have textures like fonts merged onto it. The main purpose is to create a faux-retro screen
 monitor, however some other uses for it could come up, you could even make pixelshit games with it.
 
+PixelScreen is mostly to deal with rendering. Advanced functionality like scrolling should be handled by an external
+class.
+
 Currently it creates and binds a new texture at runtime, which is not optimal but works well enough. The performance of
 binding a 320x200 texture at runtime is acceptable, achieving about 70FPS on my dev builds. Binding larger textures
 however becomes significantly more costly.
@@ -20,6 +23,10 @@ PixelScreen should have filters which can be customised and overlaid
 in any order. PixelScreen_Filter class with an execute function.
 
 Filters can be blended, merged, or copied directly.
+
+PixelScreen supports a text layer but only the grid for rendering it. It does not support advanced things like
+scrolling, these are implemented in Terminal. Obviously things could be done differently by adding a
+PixelScreen_TextMode class but that is outside of the project scope.
 
 Todo:
 
@@ -108,13 +115,14 @@ private:
 	Timer updateTimer;
 
 	unsigned short int nX, nY; // number of pixels (not size of panel)
-	unsigned short int nCharX, nCharY;
 
 	// vector of sprites to "blit"
 	Vector <Sprite*> vSprite;
 
 
 public:
+	unsigned short int nCharX, nCharY;
+
 	std::string strOverlay; // simple text overlay for hud or help menus, immune from screen clears.
 	// in future I'll probably replace it with a separate char array.
 
@@ -149,15 +157,15 @@ public:
 		nX=_nX;
 		nY=_nY;
 
-		nCharX=0;
-		nCharY=0;
+		nCharX=0; nCharY=0;
 
 		active=false;
 		panelX1=0; panelY1=0; panelX2=0; panelY2=0;
 		font=0;
 		aScreenDataBuffer.init(nX,nY,4,0); // RGBA
 		//aScreenDataReal.init(nX,nY,4,0); // RGBA
-		aCharMode.init(nX,nY,' ');
+		
+		aCharMode.init(0,0,' '); // aCharMode is initialised when the font is set.
 		textRed.init(nX,nY,255);
 		textGreen.init(nX,nY,255);
 		textBlue.init(nX,nY,255);
@@ -480,11 +488,6 @@ public:
 			++i2;
 			if ( i2>=1000) { i2 = rngLehmer.rand8(); }
 		}
-	}
-
-	void shiftCharUp(int amount)
-	{
-
 	}
 
 	void addSprite(Sprite *sprite)
