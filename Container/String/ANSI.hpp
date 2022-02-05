@@ -378,8 +378,11 @@ class ANSI_Grid
 	ColourRGBA <unsigned char> currentForegroundColour;
 	ColourRGBA <unsigned char> currentBackgroundColour;
 	
-	char aGlyph [48][64]; /* Final output goes here */
-	ColourRGBA <unsigned char> aColour [48][64];
+	ArrayS2 <char> aGlyph;
+	ArrayS2 <ColourRGBA <unsigned char> > aColour;
+	
+	//char aGlyph [48][64]; /* Final output goes here */
+	//ColourRGBA <unsigned char> aColour [48][64];
 	
 	int cursorX, cursorY;
 	
@@ -395,41 +398,79 @@ class ANSI_Grid
 		currentForegroundColour = defaultForegroundColour;
 		currentBackgroundColour = defaultBackgroundColour;
 		
-		for (int _y=0;_y<48;++_y)
+		aGlyph.init(nX,nY,' ');
+		
+		
+		aColour.init(nX,nY,defaultForegroundColour);
+		
+		for (int _y=0;_y<nY;++_y)
 		{
-			for (int _x=0;_x<64;++_x)
+			for (int _x=0;_x<nX;++_x)
 			{
-					aGlyph[_y][_x] = ' ';
-					aColour[_y][_x]=currentForegroundColour;
+					aGlyph(_x,_y) = ' ';
+					aColour(_x,_y)=currentForegroundColour;
 			}
 		}
 		
 
 	}
 	
+	void clear()
+	{
+		for (int _y=0;_y<aGlyph.nY;++_y)
+		{
+			for (int _x=0;_x<aGlyph.nX;++_x)
+			{
+					aGlyph(_x,_y) = ' ';
+					aColour(_x,_y)=currentForegroundColour;
+			}
+		}
+	}
+	
 	bool isSafe(int _x, int _y)
 	{
-		return (_x >= 0 && _x < 40 && _y >= 0 && _y < 25);
+		return (_x >= 0 && _x < aGlyph.nX && _y >= 0 && _y < aGlyph.nY);
 		//return (_x >= 0 && _x < 64 && _y >= 0 && _y < 48);
 	}
    
    void shiftUp()
    {
+		//std::cout<<"Shifup:\n";
       //shift all lines up
-      for (int _x=0;_x<64;++_x)
-      {
-         for (int _y=0;_y<47;++_y)
-         {
-            aGlyph[_y][_x] = aGlyph[_y+1][_x];
-            aColour[_y][_x] = aColour[_y+1][_x];
-         }
-      }
+		for (int _y=0;_y<aGlyph.nY-1;++_y)
+		{
+			for (int _x=0;_x<aGlyph.nX;++_x)
+			{
+				//std::cout<<aGlyph(_x,_y);
+				aGlyph(_x,_y) = aGlyph(_x,_y+1);
+				//aGlyph(_x,_y) = '@';
+				aColour(_x,_y) = aColour(_x,_y+1);
+			}
+			//std::cout<<"\n";
+		}
+		//std::cout<<"\n\n";
       //blank lowest line
-      for (int _x=0;_x<64;++_x)
+      for (int _x=0;_x<aGlyph.nX;++_x)
       {
-         aGlyph[47][_x] = ' ';
-         aColour[47][_x].set(255,255,255,255);
+         aGlyph(_x,aGlyph.nY-1) = ' ';
+         aColour(_x,aGlyph.nY-1).set(255,255,255,255);
       }
+		
+		//std::cout<<"Result:\n";
+		
+      //shift all lines up
+		for (int _y=0;_y<aGlyph.nY-1;++_y)
+		{
+			for (int _x=0;_x<aGlyph.nX;++_x)
+			{
+				//std::cout<<aGlyph(_x,_y);
+				//aGlyph(_x,_y) = aGlyph(_x,_y+1);
+				//aGlyph(_x,_y) = '@';
+				//aColour(_x,_y) = aColour(_x,_y+1);
+			}
+			//std::cout<<"\n";
+		}
+		std::cout<<"\n\n";
    }
 	
 	// Move cursor one space right, or to beginning of new line.
@@ -474,6 +515,10 @@ class ANSI_Grid
 	
 	void read(std::string _str)
 	{
+		// check that output has changed before re-reading.
+		
+		
+		clear();
       //_str="TEST1\nTEST2\nTEST3\n\n\n\n\\n\n\n\n\nn\n\n\n\n\n\n\n\n\n\n\n\ntest4\n\n\n\n\n\n\n\n\n\n\n\ntest5\n\n\n\n\n\n\n\n\nTEST^\nTEST7\n\n\nTEST8\ntest9\ntest10\n\n\n\n\n";
 		for (unsigned int i=0;i<_str.size();++i)
 		{
@@ -516,8 +561,8 @@ class ANSI_Grid
          }
 			else
 			{
-				aGlyph[cursorY][cursorX] = _str[i];
-				aColour[cursorY][cursorX] = currentForegroundColour;
+				aGlyph(cursorX,cursorY) = _str[i];
+				aColour(cursorX,cursorY) = currentForegroundColour;
 				
 				advanceCursor();
 			}
@@ -532,15 +577,15 @@ class ANSI_Grid
       if (isSafe(cursorX-1,cursorY))
       {
          --cursorX;
-         aGlyph[cursorY][cursorX] = ' ';
-         aColour[cursorY][cursorX] = defaultForegroundColour;
+         aGlyph(cursorX,cursorY) = ' ';
+         aColour(cursorX,cursorY) = defaultForegroundColour;
       }
       else if (isSafe(0,cursorY-1))
       { // backspacing up a row is considered erasing the \n.
          cursorX=63; // this should be fixed, but we need to implement null chars.
          --cursorY;
-         aGlyph[cursorY][cursorX] = ' ';
-         aColour[cursorY][cursorX] = defaultForegroundColour;
+         aGlyph(cursorX,cursorY) = ' ';
+         aColour(cursorX,cursorY) = defaultForegroundColour;
       }
    }
 };
