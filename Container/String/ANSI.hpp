@@ -435,6 +435,18 @@ class ANSI_Grid
    
    void shiftUp()
    {
+		//remove the first line from the ansi buffer
+		for (unsigned int i=0; i<ansiBuf.length() ; ++i)
+		{
+			if ( ansiBuf[i] == '\n' )
+			{
+				//ansiBuf.erase(0,i);
+				break;
+			}
+		}
+		//std::cout<<"AnsiBuf:\n"<<ansiBuf<<"\n\n";
+		
+		
 		//std::cout<<"Shifup:\n";
       //shift all lines up
 		for (int _y=0;_y<aGlyph.nY-1;++_y)
@@ -458,19 +470,19 @@ class ANSI_Grid
 		
 		//std::cout<<"Result:\n";
 		
-      //shift all lines up
-		for (int _y=0;_y<aGlyph.nY-1;++_y)
-		{
-			for (int _x=0;_x<aGlyph.nX;++_x)
-			{
-				//std::cout<<aGlyph(_x,_y);
-				//aGlyph(_x,_y) = aGlyph(_x,_y+1);
-				//aGlyph(_x,_y) = '@';
-				//aColour(_x,_y) = aColour(_x,_y+1);
-			}
-			//std::cout<<"\n";
-		}
-		std::cout<<"\n\n";
+      // //shift all lines up
+		// for (int _y=0;_y<aGlyph.nY-1;++_y)
+		// {
+			// for (int _x=0;_x<aGlyph.nX;++_x)
+			// {
+				// //std::cout<<aGlyph(_x,_y);
+				// //aGlyph(_x,_y) = aGlyph(_x,_y+1);
+				// //aGlyph(_x,_y) = '@';
+				// //aColour(_x,_y) = aColour(_x,_y+1);
+			// }
+			// //std::cout<<"\n";
+		// }
+		// //std::cout<<"\n\n";
    }
 	
 	// Move cursor one space right, or to beginning of new line.
@@ -516,7 +528,7 @@ class ANSI_Grid
 	void read(std::string _str)
 	{
 		// check that output has changed before re-reading.
-		
+		//std::cout<<"wl\n";
 		
 		clear();
       //_str="TEST1\nTEST2\nTEST3\n\n\n\n\\n\n\n\n\nn\n\n\n\n\n\n\n\n\n\n\n\ntest4\n\n\n\n\n\n\n\n\n\n\n\ntest5\n\n\n\n\n\n\n\n\nTEST^\nTEST7\n\n\nTEST8\ntest9\ntest10\n\n\n\n\n";
@@ -568,6 +580,38 @@ class ANSI_Grid
 			}
 
 		}
+	}
+	
+	//  we need 2 functions: addChar and addLine.
+	// char will ignore ANSI escapes, line will obey them.
+	
+	std::string ansiBuf;
+	
+	// Add a character to the screen. Ignore ANSI escape codes as we assume this is for typing.
+	void addChar(unsigned char _char)
+	{
+		//std::cout<<"ac\n";
+		
+		
+		if (_char == '\n')
+		{
+			newLine();
+		}
+		else if (_char == '\b')
+		{
+			backspace();
+		}
+		else
+		{
+			ansiBuf+=_char;
+			aGlyph(cursorX,cursorY) = _char;
+			aColour(cursorX,cursorY) = currentForegroundColour;
+			
+			
+			advanceCursor();
+		}
+		
+		//read(ansiBuf);
 	}
    
    void backspace() // Could be \b or an ANSI code.
