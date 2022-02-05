@@ -91,7 +91,7 @@ class PixelScreen_Filter
 //		* Custom layered filtering (scanlines, bloom)
 //		* Temporal effects (fading, glitches, etc)
 
-class PixelScreen: public GUI_Interface, public IdleTickInterface
+class PixelScreen: public GUI_Interface, public LogicTickInterface
 {
 private:
 	RandomLehmer rngLehmer;
@@ -287,7 +287,7 @@ public:
 
 
 	// This needs to be converted to logic ticks as screen updates are inconsistent using this.
-	void idleTick() override
+	void logicTick() override
 	{ // I'm not sure if we should have an independent timer for this,
 		// or just use logic ticks instead.
 		// update state if conditions met
