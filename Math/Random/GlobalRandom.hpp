@@ -113,6 +113,11 @@ class Random
 		return 7;
 		//std::normal_distribution<double> distribution(5.0,2.0);
 	}
+	
+	static std::mt19937 getRNG()
+	{
+		return r2;
+	}
 
 };
 //MTRand Random::r;

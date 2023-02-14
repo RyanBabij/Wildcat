@@ -8,7 +8,8 @@ Class to store an expandable list of items. Currently just a wrapper of std::vec
 
 #include <iostream>
 #include <vector>
-#include <algorithm> /* std::random_shuffle */
+#include <algorithm> /* std::random_shuffle (updated to std::shuffle) */
+#include <algorithm> /* std::random_shuffle (updated to std::shuffle) */
 #include <numeric> /* iota */
 #include <iterator> /* for std::iterator */
 
@@ -132,9 +133,12 @@ class Vector
         want predictable output).
   */
   
+	/* std::random_shuffle is deprecated therefore now we must init our own rng here
+		or use globalrandom */
 	void shuffle ()
 	{
-		std::random_shuffle(begin(),end());
+		//std::random_shuffle(begin(),end());
+		std::shuffle(begin(),end(), Random::getRNG());
 	}
     /* To shuffle vector in a predictable way. */
 	void shuffle (int _seed)
