@@ -1,20 +1,20 @@
 #pragma once
-#ifndef WILDCAT_NameGenerator_NameGenerator_CPP
-#define WILDCAT_NameGenerator_NameGenerator_CPP
+#ifndef WILDCAT_LANGUAGE_NAME_GENERATOR_CPP
+#define WILDCAT_LANGUAGE_NAME_GENERATOR_CPP
 
 /* Wildcat: NameGenerator
-#include <Game/NameGenerator/NameGenerator.cpp> */
+#include <Game/Language/NameGenerator.cpp> */
 
 /**
-	Class that generates random names. Works off of a basic vowel/consonant alternation principle, with minor modifications. The names should generally be pronouncable. It still needs tweaks to make aesthetically-pleasing
-	names, but it's good enough for now.
+	Implementation of NameGenerator.hpp
 */
 
-#include <string>
+#include <Game/Language/NameGenerator.hpp>
 #include <Math/Random/RandomLehmer.hpp>
+
+#include <string>
 #include <cctype> // For toupper()
 
-#include <Game/NameGenerator/NameGenerator.hpp>
 
 NameGenerator::NameGenerator()
 {
@@ -78,7 +78,7 @@ std::string NameGenerator::generateName()
 		//Alternate between vowels and consonants
 		startingSound = !startingSound;
 	}
-	  return _name;
+	return _name;
 }
 
 void NameGenerator::addSingleVowel()
@@ -307,5 +307,5 @@ std::string NameGenerator::vowels()
 	return nameSegment;
 }
 
-#endif
+#endif // WILDCAT_LANGUAGE_NAME_GENERATOR_CPP
 
