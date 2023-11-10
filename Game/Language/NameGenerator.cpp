@@ -28,57 +28,19 @@ void NameGenerator::seed(RandomLehmer& rng)
 
 std::string NameGenerator::generate(unsigned char minLength, unsigned char maxLength, bool capitalise)
 {
-	name="";
-	//Name length... Using a normal distribution.
-	unsigned char length=random.multiRoll8(3,4);
-	if(length<minLength) { length=minLength; }
-	if(length>maxLength) { length=maxLength; }
+	name.clear();
+	int nameLength = generateNameLength(minLength,maxLength);
 
 	bool sound=SOFT;
 	if(random.rand8(2)==0) { sound=HARD; }
-
-	unsigned char length2=0;
-	while(length2<length)
+	
+	for (int i=0;i<nameLength;++i)
 	{
 		addSound(sound);
 		sound=!sound;
-		length2++;
 	}
-	if ( capitalise==true )
-	{
-		name[0]=toupper(name[0]);
-	}
+
 	return name;
-}
-
-std::string NameGenerator::generateName()
-{
-	std::string _name="";
-	//Starting sound... Biased towards starting with a consonant.
-	bool startingSound = true;
-	if (random.rand8(2) == 0)
-	{
-		startingSound = false;
-	}
-
-	//male or female name?
-
-	//Find how long the name should be.
-	unsigned char nameLength = getNameLength();
-	for (unsigned char a = 0; a < nameLength; a++)
-	{
-		if (startingSound)
-		{
-			_name += consonants(a);
-		}
-		if (!startingSound)
-		{
-			_name += vowels();
-		}
-		//Alternate between vowels and consonants
-		startingSound = !startingSound;
-	}
-	return _name;
 }
 
 void NameGenerator::addSingleVowel()
@@ -205,21 +167,17 @@ void NameGenerator::addSound(bool sound)
 	}
 }
 
-int NameGenerator::getNameLength()
+// Generate a name length as a normal distribution between min and max.
+int NameGenerator::generateNameLength(unsigned short int minLength, unsigned short int maxLength)
 {
-	unsigned char nameLength = 3;
+	const unsigned short int nameVariance = maxLength-minLength;
+	unsigned char nameLength = minLength;
 
-	/* Shift bellcurve over by 1. */
-	nameLength+=random.rand8(1);
-
-	for (unsigned char i=0;i<5;++i)
+	for (unsigned short int i=0;i<nameVariance;++i)
 	{
-		if(random.flip())
-		{ ++nameLength;
-		}
-		else
+		if (random.flip())
 		{
-			return nameLength;
+			++nameLength;
 		}
 	}
 	return nameLength;

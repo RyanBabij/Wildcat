@@ -16,29 +16,30 @@
 
 class NameGenerator
 {
-	static const unsigned char SOFT = 0;
-	static const unsigned char HARD = 1;
+		static const unsigned char SOFT = 0;
+		static const unsigned char HARD = 1;
 
-	RandomLehmer random;
-	std::string name;
+		RandomLehmer random;
+		std::string name;
 
-public:
-	NameGenerator();
-	
-	void seed(RandomLehmer& rng);
-	
-	std::string generate
-	(unsigned char minLength = 1, unsigned char maxLength = 100, bool capitalise = true);
-	
-	std::string generateName();
-	void addSingleVowel();
-	void addSingleConsonant();
-	void addDoubleConsonant();
-	void addSound(bool sound);
-	int getNameLength();
-	std::string consonants(unsigned short int a);
-	int makeEven(int number);
-	std::string vowels();
+	public:
+		NameGenerator();
+		
+		void seed(RandomLehmer& rng);
+		
+		std::string generate
+		(unsigned char minLength = 3, unsigned char maxLength = 8, bool capitalise = true);
+
+		void addSingleVowel();
+		void addSingleConsonant();
+		void addDoubleConsonant();
+		void addSound(bool sound);
+		int generateNameLength(unsigned short int minLength=3, unsigned short int maxLength=8);
+		std::string consonants(unsigned short int a);
+		int makeEven(int number);
+		std::string vowels();
+		
+		std::string toString();
 };
 
 #endif // WILDCAT_LANGUAGE_NAME_GENERATOR_HPP
