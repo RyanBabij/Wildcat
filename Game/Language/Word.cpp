@@ -10,9 +10,10 @@
 	for example simulating a word evolving over time.
 */
 
-#include <string>
+#include <Game/Language/LanguageTools.cpp>
 #include <Math/Random/RandomLehmer.hpp>
 
+#include <string>
 
 class Word
 {
@@ -76,6 +77,37 @@ class Word
 			result += phoneme;
 		}
 		return result;
+	}
+	
+	void mutate(int minLength=3, int maxLength=8)
+	{
+		// pick a random phoneme and then alter it
+		// To start with we'll make it simple and just replace the vowel or consonant with a different vowel or consonant.
+		
+		int iPhoneme = random.rand8(vPhoneme.size()-1);
+		std::string randomPhoneme = vPhoneme(iPhoneme);
+		//std::cout<<"Mutate "<<randomPhoneme<<"\n";
+		
+		// For now we will only change single letter phonemes
+		if ( vPhoneme(iPhoneme).length() == 1 )
+		{
+			char c = vPhoneme(iPhoneme)[0];
+			
+			
+			if (LanguageTools::isVowel(c))
+			{
+				// mutate vowel
+				vPhoneme(iPhoneme)=std::string(1, LanguageTools::randomVowelExcept(random,c));
+			}
+			else
+			{
+				// mutate consonant
+				vPhoneme(iPhoneme)=std::string(1, LanguageTools::randomConsonantExcept(random,c));
+			}
+			
+			
+		}
+		
 	}
 	
 
