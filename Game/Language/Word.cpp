@@ -17,25 +17,26 @@
 
 class Word
 {
-	RandomLehmer random;
-	
 	Vector <std::string> vPhoneme; // stores the phonemes of the word.
 
 	public:
 
 	Word()
 	{
-		random.seed();
+	}
+	
+	Word(std::string _word)
+	{
+		//for now if a word is passed we will just break it down into letters
+	  for (char letter : _word)
+	  {
+			vPhoneme.push(std::string(1, letter));
+	  }
 	}
 	
 	void clear()
 	{
 		vPhoneme.clear();
-	}
-	
-	void seed(RandomLehmer& rng)
-	{
-		random.seed(rng);
 	}
 	
 	void addPhoneme(std::string phoneme)
@@ -79,12 +80,17 @@ class Word
 		return result;
 	}
 	
-	void mutate(int minLength=3, int maxLength=8)
+	void mutate(RandomLehmer& random, int minLength=3, int maxLength=8)
 	{
 		// pick a random phoneme and then alter it
 		// To start with we'll make it simple and just replace the vowel or consonant with a different vowel or consonant.
 		
-		int iPhoneme = random.rand8(vPhoneme.size()-1);
+		int iPhoneme=0;
+		if (vPhoneme.size()>1)
+		{
+			iPhoneme = random.rand8(vPhoneme.size()-1);
+		}
+		
 		std::string randomPhoneme = vPhoneme(iPhoneme);
 		//std::cout<<"Mutate "<<randomPhoneme<<"\n";
 		
@@ -109,7 +115,6 @@ class Word
 		}
 		
 	}
-	
 
 };
 

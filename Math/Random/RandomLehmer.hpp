@@ -100,6 +100,7 @@ class RandomLehmer: public RandomInterface
 		}
 		return aByte[currentByte];
 	}
+	// Note: Don't pass 0.
 	inline unsigned char rand8(const unsigned char max) override
 	{
 		return rand8()%max;
