@@ -18,6 +18,15 @@ class NameGenerator
 {
 		static const unsigned char SOFT = 0;
 		static const unsigned char HARD = 1;
+		
+		static const char VOWELS[];
+		static const size_t NUM_VOWELS;
+		
+		static const char CONSONANTS[];
+		static const size_t NUM_CONSONANTS;
+		
+		static const std::string DOUBLE_CONSONANTS[];
+		static const size_t NUM_DOUBLE_CONSONANTS;
 
 		RandomLehmer random;
 		std::string name;
@@ -35,10 +44,6 @@ class NameGenerator
 		void addDoubleConsonant();
 		void addSound(bool sound);
 		int generateNameLength(unsigned short int minLength=3, unsigned short int maxLength=8);
-		std::string consonants(unsigned short int a);
-		int makeEven(int number);
-		std::string vowels();
-		
 		std::string toString();
 };
 
