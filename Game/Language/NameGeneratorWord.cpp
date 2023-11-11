@@ -15,22 +15,6 @@
 #include <string>
 #include <cctype> // For toupper()
 
-// Initialize the static constant array
-const char NameGeneratorWord::VOWELS[] = {'a', 'e', 'i', 'o', 'u', 's', 'y'};
-const size_t NameGeneratorWord::NUM_VOWELS = sizeof(NameGeneratorWord::VOWELS) / sizeof(NameGeneratorWord::VOWELS[0]);
-
-// Initialize the static constant array of consonants
-const char NameGeneratorWord::CONSONANTS[] =
-{'b','c','d','f','g','h','j','k','l','m','n','p','r','s','t','v','w','y'};
-const size_t NameGeneratorWord::NUM_CONSONANTS =
-sizeof(NameGeneratorWord::CONSONANTS)/sizeof(NameGeneratorWord::CONSONANTS[0]);
-
-const std::string NameGeneratorWord::DOUBLE_CONSONANTS[] =
-{"ch", "sh", "ph", "rh", "wh", "ck", "st", "ll", "qu", "ss", "nz", "ld", "hn", "gg", "gh", "fr", "rx", "rm"};
-
-const size_t NameGeneratorWord::NUM_DOUBLE_CONSONANTS =
-sizeof(NameGeneratorWord::DOUBLE_CONSONANTS) / sizeof(NameGeneratorWord::DOUBLE_CONSONANTS[0]);
-
 NameGeneratorWord::NameGeneratorWord()
 {
 	random.seed();
@@ -67,18 +51,18 @@ Word NameGeneratorWord::generate(unsigned char minLength, unsigned char maxLengt
 void NameGeneratorWord::addSingleVowel()
 {
 	// //Evenly weighted vowels.
-   name += VOWELS[random.rand8(NUM_VOWELS)];
+   name += LanguageTools::VOWELS[random.rand8(LanguageTools::NUM_VOWELS)];
 }
 
 void NameGeneratorWord::addSingleConsonant()
 {
-	name += CONSONANTS[random.rand8(NUM_CONSONANTS)];
+	name += LanguageTools::CONSONANTS[random.rand8(LanguageTools::NUM_CONSONANTS)];
 }
 
 void NameGeneratorWord::addDoubleConsonant()
 {
 	//chshphrhwhckstllqussnzldhnggghfrrxrm
-	name += DOUBLE_CONSONANTS[random.rand8(NUM_DOUBLE_CONSONANTS)];
+	name += LanguageTools::DOUBLE_CONSONANTS[random.rand8(LanguageTools::NUM_DOUBLE_CONSONANTS)];
 }
 
 void NameGeneratorWord::addSound()

@@ -10,26 +10,12 @@
 */
 
 #include <Game/Language/NameGenerator.hpp>
+
+#include <Game/Language/LanguageTools.cpp>
 #include <Math/Random/RandomLehmer.hpp>
 
 #include <string>
 #include <cctype> // For toupper()
-
-// Initialize the static constant array
-const char NameGenerator::VOWELS[] = {'a', 'e', 'i', 'o', 'u', 's', 'y'};
-const size_t NameGenerator::NUM_VOWELS = sizeof(NameGenerator::VOWELS) / sizeof(NameGenerator::VOWELS[0]);
-
-// Initialize the static constant array of consonants
-const char NameGenerator::CONSONANTS[] =
-{'b','c','d','f','g','h','j','k','l','m','n','p','r','s','t','v','w','y'};
-const size_t NameGenerator::NUM_CONSONANTS =
-sizeof(NameGenerator::CONSONANTS)/sizeof(NameGenerator::CONSONANTS[0]);
-
-const std::string NameGenerator::DOUBLE_CONSONANTS[] =
-{"ch", "sh", "ph", "rh", "wh", "ck", "st", "ll", "qu", "ss", "nz", "ld", "hn", "gg", "gh", "fr", "rx", "rm"};
-
-const size_t NameGenerator::NUM_DOUBLE_CONSONANTS =
-sizeof(NameGenerator::DOUBLE_CONSONANTS) / sizeof(NameGenerator::DOUBLE_CONSONANTS[0]);
 
 
 NameGenerator::NameGenerator()
@@ -68,18 +54,18 @@ std::string NameGenerator::generate(unsigned char minLength, unsigned char maxLe
 void NameGenerator::addSingleVowel()
 {
 	// //Evenly weighted vowels.
-   name += VOWELS[random.rand8(NUM_VOWELS)];
+   name += LanguageTools::VOWELS[random.rand8(LanguageTools::NUM_VOWELS)];
 }
 
 void NameGenerator::addSingleConsonant()
 {
-	name += CONSONANTS[random.rand8(NUM_CONSONANTS)];
+	name += LanguageTools::CONSONANTS[random.rand8(LanguageTools::NUM_CONSONANTS)];
 }
 
 void NameGenerator::addDoubleConsonant()
 {
 	//chshphrhwhckstllqussnzldhnggghfrrxrm
-	name += DOUBLE_CONSONANTS[random.rand8(NUM_DOUBLE_CONSONANTS)];
+	name += LanguageTools::DOUBLE_CONSONANTS[random.rand8(LanguageTools::NUM_DOUBLE_CONSONANTS)];
 }
 
 void NameGenerator::addSound()

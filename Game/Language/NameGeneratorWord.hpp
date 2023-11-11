@@ -20,15 +20,6 @@
 class NameGeneratorWord
 {
 		bool useVowel=true;
-		
-		static const char VOWELS[];
-		static const size_t NUM_VOWELS;
-		
-		static const char CONSONANTS[];
-		static const size_t NUM_CONSONANTS;
-		
-		static const std::string DOUBLE_CONSONANTS[];
-		static const size_t NUM_DOUBLE_CONSONANTS;
 
 		RandomLehmer random;
 		Word name;
