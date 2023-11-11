@@ -25,14 +25,37 @@ class Word
 	{
 	}
 	
+	// Phonemes are found by pushing either a vowel by itself, a consonant by itself, or a group of consonants.
 	Word(std::string _word)
 	{
-		//for now if a word is passed we will just break it down into letters
-	  for (char letter : _word)
-	  {
-			vPhoneme.push(std::string(1, letter));
-	  }
+		std::string currentPhoneme = "";
+
+		for (char letter : _word)
+		{
+			if (LanguageTools::isVowel(letter))
+			{
+				// If the letter is a vowel, add the current phoneme (if not empty) and start a new phoneme with the vowel
+				if (!currentPhoneme.empty())
+				{
+					vPhoneme.push(currentPhoneme);
+					currentPhoneme.clear();
+				}
+				vPhoneme.push(std::string(1, letter));
+			}
+			else
+			{
+				// If the letter is a consonant, add it to the current phoneme
+				currentPhoneme += letter;
+			}
+		}
+
+		// Add the last phoneme if it's not empty and if it's a consonant
+		if (!currentPhoneme.empty())
+		{
+			vPhoneme.push(currentPhoneme);
+		}
 	}
+	
 	
 	void clear()
 	{
@@ -88,16 +111,15 @@ class Word
 		int iPhoneme=0;
 		if (vPhoneme.size()>1)
 		{
-			iPhoneme = random.rand8(vPhoneme.size()-1);
+			iPhoneme = random.rand8(vPhoneme.size());
 		}
 		
 		std::string randomPhoneme = vPhoneme(iPhoneme);
-		//std::cout<<"Mutate "<<randomPhoneme<<"\n";
 		
 		// For now we will only change single letter phonemes
 		if ( vPhoneme(iPhoneme).length() == 1 )
 		{
-			char c = vPhoneme(iPhoneme)[0];
+			char c = std::tolower(vPhoneme(iPhoneme)[0]);
 			
 			
 			if (LanguageTools::isVowel(c))

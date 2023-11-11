@@ -32,6 +32,11 @@ class Language
 		errorWord.addPhoneme("<ERROR>");
 	}
 	
+	void seed(RandomLehmer& rng)
+	{
+		random.seed(rng);
+	}
+	
 	Word& operator()(const std::string& original)
 	{
 		for (int i = 0; i < vOriginal.size(); ++i)
@@ -42,11 +47,6 @@ class Language
 			}
 		}
 		return errorWord;
-	}
-	
-	void seed(RandomLehmer& rng)
-	{
-		random.seed(rng);
 	}
 	
 	void add(Word word, std::string original)
