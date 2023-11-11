@@ -51,6 +51,14 @@ class Word
 		addPhoneme(phoneme);
 		return *this;
 	}
+	
+	// Overload the += operator for a single char
+	Word& operator+=(char phonemeChar)
+	{
+		std::string phoneme(1, phonemeChar); // Convert char to string
+		addPhoneme(phoneme);
+		return *this;
+	}
 
 	// Overload the assignment operator
 	Word& operator=(const std::string& phoneme)
