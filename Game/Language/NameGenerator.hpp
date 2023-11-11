@@ -16,8 +16,7 @@
 
 class NameGenerator
 {
-		static const unsigned char SOFT = 0;
-		static const unsigned char HARD = 1;
+		bool useVowel=true;
 		
 		static const char VOWELS[];
 		static const size_t NUM_VOWELS;
@@ -42,7 +41,7 @@ class NameGenerator
 		void addSingleVowel();
 		void addSingleConsonant();
 		void addDoubleConsonant();
-		void addSound(bool sound);
+		void addSound();
 		int generateNameLength(unsigned short int minLength=3, unsigned short int maxLength=8);
 		std::string toString();
 };

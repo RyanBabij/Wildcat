@@ -48,13 +48,12 @@ std::string NameGenerator::generate(unsigned char minLength, unsigned char maxLe
 	name.reserve(minLength);
 	unsigned int nameLength = generateNameLength(minLength,maxLength);
 
-	bool sound=SOFT;
-	if(random.rand8(2)==0) { sound=HARD; }
+	if(random.rand8(2)==0) { useVowel=false; }
 	
 	for (size_t i=0;i<nameLength;++i)
 	{
-		addSound(sound);
-		sound=!sound;
+		addSound();
+		useVowel=!useVowel;
 	}
 	
 	if (capitalise && !name.empty())
@@ -83,9 +82,9 @@ void NameGenerator::addDoubleConsonant()
 	name += DOUBLE_CONSONANTS[random.rand8(NUM_DOUBLE_CONSONANTS)];
 }
 
-void NameGenerator::addSound(bool sound)
+void NameGenerator::addSound()
 {
-	if(sound==SOFT)
+	if(useVowel)
 	{
 		addSingleVowel();
 	}
