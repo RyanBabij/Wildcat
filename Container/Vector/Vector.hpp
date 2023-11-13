@@ -41,6 +41,7 @@ class Vector
 	inline int size()
 	{ return data.size(); }
 	int length() { return size(); }
+	bool empty() { return size()==0; }
 
 	inline T& operator() (const int i)
 	{ return data[i]; }
