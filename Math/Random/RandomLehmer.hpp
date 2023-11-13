@@ -118,6 +118,19 @@ class RandomLehmer: public RandomInterface
 		}
 		return aByte[currentByte] & flipMask;
 	}
+	// returns value 0-nFlip inclusive.
+	inline char multiFlip(char nFlip)
+	{
+		char total=0;
+		for (;nFlip>0;--nFlip)
+		{
+			if (flip())
+			{
+				++total;
+			}
+		}
+		return total;
+	}
 	
 	inline uint32_t multiRoll8(const uint16_t nDices, const unsigned char diceMax, const bool allowZeroRoll=false)
 	{
