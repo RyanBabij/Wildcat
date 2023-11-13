@@ -64,7 +64,8 @@ class RandomLehmer: public RandomInterface
 		nLehmer = seeder.rand32();
 	}
 
-	// generate a psuedorandom number from 0-4294967295
+	// generate a psuedorandom number from 0-4294967294 inclusive
+	// using this avoids the modulo operation, for what it's worth
 	uint32_t rand32() override
 	{
 		nLehmer += 0xe120fc15;
