@@ -14,6 +14,8 @@
 
 WrappingUChar::WrappingUChar(unsigned char _value) : value(_value) {}
 
+WrappingUChar::WrappingUChar(const WrappingUChar& _other) : value(_other.value) {}
+
 void WrappingUChar::setValue(unsigned char _newValue)
 {
 	value = _newValue;

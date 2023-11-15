@@ -14,6 +14,7 @@ class WrappingUChar
 {
 public:
 	WrappingUChar(unsigned char _value = 0);
+	WrappingUChar(const WrappingUChar& _other);
 
 	void setValue(unsigned char _newValue);
 	unsigned char getValue() const;
