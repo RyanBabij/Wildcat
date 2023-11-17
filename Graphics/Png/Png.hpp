@@ -182,6 +182,24 @@ class Png
 		setPixel3D(_x,_y,2, std::get<2> (tColour));
 	}
 	
+	// set all non-transparent pixels to white
+	void makeWhite()
+	{
+		for(int _y=0;_y<nY;++_y)
+		{
+			for(int _x=0;_x<nX;++_x)
+			{
+				if (getPixel3D(_x,_y,3) != 0)
+				{
+					setPixel3D(_x,_y,0, 255 );
+					setPixel3D(_x,_y,1, 255 );
+					setPixel3D(_x,_y,2, 255 );
+				}
+
+			}
+		}
+	}
+	
 	std::tuple <unsigned char, unsigned char, unsigned char> getTuple (const int _x, const int _y)
 	{
 		return std::tuple <unsigned char, unsigned char, unsigned char> (getPixel3D(_x,_y,0),getPixel3D(_x,_y,1),getPixel3D(_x,_y,2));

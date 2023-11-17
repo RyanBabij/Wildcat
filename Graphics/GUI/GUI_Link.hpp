@@ -53,9 +53,13 @@ class GUI_Link: public GUI_Interface
 		regionButtonArea.move(_moveX,_moveY);
 	}
 
-	void setColours(const ColourRGBA <unsigned char>* bColour)
+	// void setColours(const ColourRGBA <unsigned char>* bColour)
+	// {
+		// boxColour.set(bColour);
+	// }
+	void setRGB(unsigned char r, unsigned char g, unsigned char b)
 	{
-		//boxColour.set(bColour);
+		boxColour.set(r,g,b);
 	}
 
 	void render()
@@ -65,7 +69,7 @@ class GUI_Link: public GUI_Interface
 			//if ( drawBox==true)
 			//{ Renderer::placeColour4(&boxColour, panelX1, panelY1, panelX2, panelY2); }
 
-			font8x8.drawText(text,panelX1,panelY2,panelX2,panelY1,centeredX,centeredY,20,20,200);
+			font8x8White.drawText(text,panelX1,panelY2,panelX2,panelY1,centeredX,centeredY, false, 20,20,255);
 		}
 	}
 	
