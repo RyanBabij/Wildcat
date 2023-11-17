@@ -10,7 +10,7 @@
     60 seconds per minute.
     60 minutes per hour.
     24 hours per day.
-    30 days per month.
+    28 days per month.
     12 months per year.
     
     Some scaling can be implemented by lowering seconds per minute.
@@ -155,11 +155,11 @@ class Calendar
 			hour-=(nDays*24);
 		}
 		/* Turn excess days into months. */
-		if(day>=30)
+		if(day>=28)
 		{
-			int nMonths = day/30;
+			int nMonths = day/28;
 			month+=nMonths;
-			day-=(nMonths*30);
+			day-=(nMonths*28);
 		}
 		/* Turn excess months into years. */
 		if(month>=12)
