@@ -80,6 +80,16 @@ bool WrappingUChar::operator==(unsigned char _other) const
 	return value == _other;
 }
 
+std::ostream& operator<<(std::ostream& os, const WrappingUChar& c)
+{
+	return os << static_cast<int>(c.value);
+}
+
+bool WrappingUChar::isCloser(const WrappingUChar& wrap1, const WrappingUChar& wrap2) const
+{
+	return this->distanceTo(wrap1) < this->distanceTo(wrap2);
+}
+
 // Helper function for calculating distance
 int WrappingUChar::calculateDistance(unsigned char _other) const
 {

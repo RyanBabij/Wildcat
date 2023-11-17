@@ -32,6 +32,10 @@ public:
 
 	bool operator==(const WrappingUChar& _other) const;
 	bool operator==(unsigned char _other) const;
+	
+	friend std::ostream& operator<<(std::ostream& os, const WrappingUChar& c);
+	
+	bool isCloser(const WrappingUChar& wrap1, const WrappingUChar& wrap2) const;
 
 private:
 	unsigned char value;
