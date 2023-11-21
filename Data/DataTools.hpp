@@ -31,28 +31,52 @@ namespace DataTools
 	// find all instances of search string and replace with replace string. This modifies the passed string for
 	// performance.
 	// Stolen from https://stackoverflow.com/questions/5878775/how-to-find-and-replace-string
+	// GPT optimised
 	void findAndReplace(std::string* input, const std::string& search, const std::string& replace)
 	{
 		size_t pos = 0;
+		const size_t searchLen = search.length();
+		const size_t replaceLen = replace.length();
+
 		while ((pos = input->find(search, pos)) != std::string::npos)
 		{
-			input->replace(pos, search.length(), replace);
-			pos += replace.length();
+			input->replace(pos, searchLen, replace);
+			pos += replaceLen;
 		}
 	}
+	
+	
 	// same but returns a modified copy of the passed string
 	// stolen from https://stackoverflow.com/questions/5878775/how-to-find-and-replace-string
+	// GPT optimised
 	std::string findAndReplace(std::string subject, const std::string& search, const std::string& replace)
 	{
 		size_t pos = 0;
+		const size_t searchLen = search.length();
+		const size_t replaceLen = replace.length();
+
+		if (replaceLen > searchLen)
+		{
+			// Estimate the size of the resultant string and reserve memory
+			size_t occurrences = 0;
+			size_t startPos = 0;
+			while ((startPos = subject.find(search, startPos)) != std::string::npos)
+			{
+				++occurrences;
+				startPos += searchLen;
+			}
+			subject.reserve(subject.length() + occurrences * (replaceLen - searchLen));
+		}
+
 		while ((pos = subject.find(search, pos)) != std::string::npos)
 		{
-			subject.replace(pos, search.length(), replace);
-			pos += replace.length();
+			subject.replace(pos, searchLen, replace);
+			pos += replaceLen;
 		}
+
 		return subject;
 	}
-	
+
   // Break string up into a vector of strings split by the passed delimiters.
   // Don't forget to include \n and \r.
    //  tokenize("test,1,2,,,3,", ",") will return "test", "1", "2", and "3".
