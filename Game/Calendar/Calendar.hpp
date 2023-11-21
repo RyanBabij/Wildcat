@@ -5,28 +5,24 @@
 /* Wildcat: Calendar
   #include "Time/Calendar.hpp"
 
-    I'm going with the following simple approach:
-
-    60 seconds per minute.
-    60 minutes per hour.
-    24 hours per day.
-    28 days per month.
-    12 months per year.
-    
-    Some scaling can be implemented by lowering seconds per minute.
-    
-    You can pass the calendar which will basically represent a date.
+	Tracks Calendar for games. Useful for knowing what day/time it is, and also event chronology.
 */
+
+
 
 class Calendar
 {
 	public:
 	
+	int MONTHS_PER_YEAR;
+	int DAYS_PER_MONTH;
+	int HOURS_PER_DAY;
+	int MINUTES_PER_HOUR;
+	int SECONDS_PER_MINUTE;
 	
 	int year, month, day, hour, minute, second;
 	Vector <std::string> vMonthName;
-  
-  int secondsPerMinute;
+
 	
 	Calendar(int _year=0, int _month=0, int _day=0, int _hour=0, int _minute=0, int _second=0)
 	{
@@ -36,8 +32,22 @@ class Calendar
 		hour=_hour;
 		minute=_minute;
 		second=_second;
-    
-    secondsPerMinute=60;
+	 
+		MONTHS_PER_YEAR = 4;
+		DAYS_PER_MONTH = 28;
+		HOURS_PER_DAY = 24;
+		MINUTES_PER_HOUR = 60;
+		SECONDS_PER_MINUTE = 1;
+	}
+	
+	void configure
+	( int _SECONDS_PER_MINUTE, int _MINUTES_PER_HOUR, int _HOURS_PER_DAY, int _DAYS_PER_MONTH, int _MONTHS_PER_YEAR )
+	{
+		SECONDS_PER_MINUTE = _SECONDS_PER_MINUTE;
+		MINUTES_PER_HOUR = _MINUTES_PER_HOUR;
+		HOURS_PER_DAY = _HOURS_PER_DAY;
+		DAYS_PER_MONTH = _DAYS_PER_MONTH;
+		MONTHS_PER_YEAR = _MONTHS_PER_YEAR;
 	}
   
 	bool operator < (Calendar * date)
@@ -134,39 +144,39 @@ class Calendar
 	void normalise()
 	{
 		/* Turn excess seconds into minutes. */
-		if(second>=secondsPerMinute)
+		if(second>=SECONDS_PER_MINUTE)
 		{
-			int nMinutes = second/secondsPerMinute;
+			int nMinutes = second/SECONDS_PER_MINUTE;
 			minute+=nMinutes;
-			second-=(nMinutes*secondsPerMinute);
+			second-=(nMinutes*SECONDS_PER_MINUTE);
 		}
 		/* Turn excess minutes into hours. */
-		if(minute>=60)
+		if(minute>=MINUTES_PER_HOUR)
 		{
-			int nHours = minute/60;
+			int nHours = minute/MINUTES_PER_HOUR;
 			hour+=nHours;
-			minute-=(nHours*60);
+			minute-=(nHours*MINUTES_PER_HOUR);
 		}
 		/* Turn excess hours into days. */
-		if(hour>=24)
+		if(hour>=HOURS_PER_DAY)
 		{
-			int nDays = hour/24;
+			int nDays = hour/HOURS_PER_DAY;
 			day+=nDays;
-			hour-=(nDays*24);
+			hour-=(nDays*HOURS_PER_DAY);
 		}
 		/* Turn excess days into months. */
-		if(day>=28)
+		if(day>=DAYS_PER_MONTH)
 		{
-			int nMonths = day/28;
+			int nMonths = day/DAYS_PER_MONTH;
 			month+=nMonths;
-			day-=(nMonths*28);
+			day-=(nMonths*DAYS_PER_MONTH);
 		}
 		/* Turn excess months into years. */
-		if(month>=12)
+		if(month>=MONTHS_PER_YEAR)
 		{
-			int nYears = month/12;
+			int nYears = month/MONTHS_PER_YEAR;
 			year+=nYears;
-			month-=(nYears*12);
+			month-=(nYears*MONTHS_PER_YEAR);
 		}
 	}
 	
