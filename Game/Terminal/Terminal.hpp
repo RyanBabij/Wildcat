@@ -36,6 +36,8 @@
 
 #include <string>
 
+#include <Audio/Sound.hpp>
+
 /* Dial tones. */
 Sound * dialTone[10];
 Sound* sRing;

@@ -12,6 +12,8 @@
    Note that WILDCAT_AUDIO must be defined in order for any audio to play.
 */
 
+#include <Audio/Sound.hpp>
+
 class AudioPlayer
 {
 	public:
