@@ -224,6 +224,8 @@ public:
 		textGreen.fill(255);
 		textBlue.fill(255);
 		aCharMode.fill(' ');
+		
+		texOverlay.fill(0);
 	}
 
 	void fill (unsigned char _r, unsigned char _g, unsigned char _b, unsigned char _a)
@@ -240,6 +242,14 @@ public:
 	}
 
 	// write a character to the given row and column with the specified colour.
+	void putChar (const unsigned short int _x, const unsigned short int _y, const unsigned char _char)
+	{
+		aCharMode(_x,_y)=_char;
+		textRed(_x,_y)=255;
+		textGreen(_x,_y)=0;
+		textBlue(_x,_y)=0;
+	}
+	
 	void putChar (const unsigned short int _x, const unsigned short int _y, const unsigned char _char, ColourRGBA <unsigned char> foregroundColour)
 	{
 		aCharMode(_x,_y)=_char;
@@ -302,80 +312,10 @@ public:
 
 		if ( updateTimer.totalUSeconds > uUPS)
 		{
-			texScreen.fill(0);
-			texOverlay.fill(0);
-			//fillStatic(amountStatic);
-			fillStatic(80);
-			//fill(255,0,0,255);
-
-			//merge down the pixel buffer
-			const int nPixel = nX*nY*4;
-			for (int i=0;i<nPixel;++i)
-			{
-				// texScreen.data[i]=aScreenDataBuffer.data[i];
-			}
-
-			// update screen state
-			//texScreen.fillChannel(Random::randomInt(3),Random::randomInt(255));
-
-			// draw font
-			for (int _y=0;_y<nCharY;++_y)
-			{
-				for (int _x=0;_x<nCharX;++_x)
-				{
-					if ( aCharMode(_x,_y) != ' ' )
-					{
-						// For now I'll just overlay the font with the normal render call.
-						// I'd like this option in future for easy text overlays
-
-						// texScreen.copyDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],font->nX*_x,font->nY*_y);
-						//texScreen.morphDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],font->nX*_x,font->nY*_y,100);
-					}
-					//texRuntime.morphDown(font8x8.aTexFont[(unsigned char)aGlyph[_y][_x]],8*_x,8*_y,22);
-
-					//texScreen.morphDown(font->aTexFont['A'],8*_x,8*_y,25);
-				}
-			}
-			
-		if ( charLayer )
-		{
-			// draw font as an overlay
-			for (int _y=0;_y<nCharY;++_y)
-			{
-				for (int _x=0;_x<nCharX;++_x)
-				{
-					if ( aCharMode(_x,_y) != ' ' )
-					{
-						// For now I'll just overlay the font with the normal render call.
-						// I'd like this option in future for easy text overlays
-						
-						//texOverlay.copyDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],(font->nX)*_x,(font->nY)*_y);
-						texOverlay.copyDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],(font->nX)*_x,(font->nY)*_y,textRed(_x,_y),textGreen(_x,_y),textBlue(_x,_y));
-						// I believe this slowly fades a char onto the screen.
-						// doesn't seem to work atm but I don't really use it anyway
-						//texScreen.morphDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],font->nX*_x,font->nY*_y,100);
-						
-						// This just blits a font directly onto the screen for debug purposes.
-						//font8x8.putChar(aGlyph[_y][_x],panelX1+(10*_x),panelY2-(10*_y),foregroundColour[_y][_x]);
-					}
-				}
-			}
-		}
-		
-
-
-			// scanlines use OpenGL lines, so it's handled by Terminal
-			//draw scanlines
-			// this doesn't work as the scanlines are too wide. they must be rendered.
-			for (int y=0;y<nY;y+=2)
-			{
-				for(int x=0;x<nX;++x)
-				{
-					// texOverlay.setPixel(x,y,0,texOverlay.uPixel(x,y,2)/2);
-					// texOverlay.setPixel(x,y,1,texOverlay.uPixel(x,y,2)/2);
-					// texOverlay.setPixel(x,y,2,texOverlay.uPixel(x,y,2)/2);
-				}
-			}
+			//texScreen.fill(0);
+			//texOverlay.fill(0);
+			//fillStatic(80);
+			//render();
 			updateTimer.init();
 			updateTimer.start();
 		}
@@ -409,6 +349,17 @@ public:
 			return texScreen.uPixel(_x,_y,_channel);
 		}
 		return 0;
+	}
+	
+	void shiftCharUp(int amount)
+	{
+		// This was removed for some reason, not sure why.
+	}
+	
+	void idleTick()
+	{
+		//render();
+		logicTick();
 	}
 
 	bool isSafe(const short int _x, const short int _y)
@@ -452,11 +403,45 @@ public:
 		// force an idle tick to update screen.
 		//idleTick();
 		
+		
+		// Note that this prevents any persistence on the screen when updating, therefore stuff like trailing is gone.
+		//clear();
+		
+		if ( charLayer )
+		{
+			// draw font as an overlay
+			for (int _y=0;_y<nCharY;++_y)
+			{
+				for (int _x=0;_x<nCharX;++_x)
+				{
+					if ( aCharMode(_x,_y) != ' ' )
+					{
+						// For now I'll just overlay the font with the normal render call.
+						// I'd like this option in future for easy text overlays
+						//std::cout<<"DRAWING "<<aCharMode(_x,_y)<<"\n";
+						//texOverlay.copyDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],(font->nX)*_x,(font->nY)*_y);
+						texOverlay.copyDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],(font->nX)*_x,(font->nY)*_y,textRed(_x,_y),textGreen(_x,_y),textBlue(_x,_y));
+						// I believe this slowly fades a char onto the screen.
+						// doesn't seem to work atm but I don't really use it anyway
+						//texScreen.morphDown(font->aTexFont[(unsigned char)aCharMode(_x,_y)],font->nX*_x,font->nY*_y,100);
+						
+						// This just blits a font directly onto the screen for debug purposes.
+						//font8x8.putChar(aGlyph[_y][_x],panelX1+(10*_x),panelY2-(10*_y),foregroundColour[_y][_x]);
+					}
+					else
+					{
+						//texOverlay.copyDown(font->aTexFont['8'],(font->nX)*_x,(font->nY)*_y,textRed(_x,_y),textGreen(_x,_y),textBlue(_x,_y));
+					}
+				}
+			}
+		}
 
 		
 		bindNearestNeighbour(&texOverlay);
 		Renderer::placeTexture4(panelX1,panelY1,panelX2,panelY2,&texOverlay,false);
 		unbind(&texOverlay);
+		
+
 		
 		// post-processing goes here
 		
@@ -470,7 +455,7 @@ public:
 			// grid mode
 			for (double _x=panelX2-(scalingFactor);_x>=panelX1;_x-=(scalingFactor*2))
 			{
-				Renderer::placeLineAlpha(0,0,0,45,_x,panelY1,_x,panelY2,scalingFactor);
+				//Renderer::placeLineAlpha(0,0,0,45,_x,panelY1,_x,panelY2,scalingFactor);
 			}
 		}
 	}
