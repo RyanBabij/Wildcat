@@ -2,3 +2,4 @@
 *.dll
 zzzOld/
 Private/
+__pycache__/
