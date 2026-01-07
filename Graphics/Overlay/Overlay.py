@@ -2,7 +2,48 @@
 Overlay.py
 Wildcat/Graphics/Overlay/Overlay.py
 Wildcat.Graphics.Overlay
+
+TextOverlay implements a lightweight Win32 topmost text overlay with a typewriter-style renderer.
+
+Key features
+- Topmost, layered overlay using a colorkey background (magenta) for transparency.
+- Click-through window except for two hotspots:
+    * Drag handle (top-left square) to move the overlay.
+    * Resize grip (bottom-right square) to resize (minimum dimensions enforced).
+- Typewriter output:
+    * feed(text, rgb): enqueue text chunks and render at a configurable characters-per-minute rate.
+    * instant(text, rgb): flush pending output and render immediately (still uses wrapping).
+- Word-aware wrapping:
+    * whitespace is deferred and emitted as a single space when the next word begins
+    * avoids trailing spaces at line ends
+    * long words are split across lines as needed
+- Color runs:
+    * each emitted chunk is tagged with a Win32 COLORREF; adjacent runs of the same color are merged.
+- Resize-safe layout:
+    * canonical history of emitted runs is retained and reflowed on WM_SIZE so wrapping stays correct.
+
+Threading / lifecycle
+- Creates its own Win32 window message loop on a dedicated thread.
+- Runs a feeder thread that emits characters at CPM pacing.
+- Call close() to stop the feeder; the window thread exits when the window is destroyed.
+
+Notes
+- Requires pywin32 (win32api/win32con/win32gui/win32ui).
+- Rendering is double-buffered in WM_PAINT and invalidation is throttled to reduce flicker.
+
+TextOverlay.feed(text, rgb) - Queue text for typewriter-style output at the current CPM rate.
+
+TextOverlay.instant(text, rgb) - Flush any pending output and render text immediately (still wrapped).
+
+TextOverlay.set_cpm(cpm) - Change characters-per-minute pacing for the feeder thread.
+
+TextOverlay.clear() - Clear all buffered text, history, and pending output.
+
+TextOverlay.show() / hide() / toggle() - Control overlay visibility.
+
+TextOverlay.close() - Stop background threads and signal shutdown.
 """
+
 
 from __future__ import annotations
 
@@ -110,6 +151,9 @@ class TextOverlay:
 
         self.hwnd: Optional[int] = None
         self._visible: bool = True
+        
+        self._paint_font = None      # will be created on window thread
+        self._paint_font_lock = threading.Lock()
 
         # Rolling buffer of lines; last line is the current editable line.
         self._lines: Deque[List[Run]] = deque(maxlen=self.max_lines)
@@ -171,6 +215,13 @@ class TextOverlay:
             "quality": win32con.ANTIALIASED_QUALITY,
         })
         self._measure_dc.SelectObject(self._measure_font)
+        
+        self._char_px: dict[str, int] = {}
+        # Optional prewarm ASCII for speed + predictability
+        for code in range(32, 127):
+            c = chr(code)
+            self._char_px[c] = self._text_px(c)
+
 
         # padding must match paint()
         self._pad_left = 5
@@ -298,29 +349,47 @@ class TextOverlay:
     # -------------------------
 
     def _feeder_loop(self) -> None:
-        next_tick = time.monotonic()
+        # Fixed paint cadence
+        frame_dt = 1.0 / 60.0  # 60 FPS; try 30 FPS if you prefer
+        last = time.monotonic()
+        carry = 0.0  # fractional char accumulator
 
         while not self._stop_event.is_set():
             if not self._has_pending():
                 self._pending_event.wait(timeout=0.25)
                 self._pending_event.clear()
+                last = time.monotonic()
+                carry = 0.0
                 continue
 
-            seconds_per_char = 60.0 / max(1, self._cpm)
             now = time.monotonic()
-            if now < next_tick:
-                time.sleep(min(0.05, next_tick - now))
+            dt = now - last
+            last = now
+
+            cps = max(1.0, self._cpm / 60.0)  # chars per second
+            carry += dt * cps
+
+            n = int(carry)
+            if n <= 0:
+                time.sleep(min(frame_dt, 0.01))
                 continue
+            carry -= n
 
-            item = self._pop_next_char()
-            if item is None:
-                continue
+            emitted_any = False
+            for _ in range(n):
+                item = self._pop_next_char()
+                if item is None:
+                    break
+                ch, col = item
+                self._emit_char(ch, col)
+                emitted_any = True
 
-            ch, col = item
-            self._emit_char(ch, col)
-            self._invalidate()
+            if emitted_any:
+                self._invalidate()
 
-            next_tick = time.monotonic() + seconds_per_char
+            # Limit loop rate (doesn't limit chars, just CPU churn)
+            time.sleep(min(frame_dt, 0.005))
+
 
     def _has_pending(self) -> bool:
         with self._pending_lock:
@@ -580,7 +649,11 @@ class TextOverlay:
             self._space_pending = False
 
         # Measure this char
-        ch_px = self._text_px(ch)
+        ch_px = self._char_px.get(ch)
+        if ch_px is None:
+            ch_px = self._text_px(ch)
+            self._char_px[ch] = ch_px
+
         max_px = self._max_text_px()
 
         # Would this char overflow the line?
@@ -624,32 +697,17 @@ class TextOverlay:
             return
 
         now = time.monotonic()
-        min_interval = 0.05  # 50 ms
-        due_in = (self._last_paint + min_interval) - now
+        min_interval = 1.0 / 60.0  # match your frame cadence; 60 FPS
 
-        if due_in <= 0:
-            self._last_paint = now
-            try:
-                win32gui.PostMessage(self.hwnd, WM_APP_SET_TEXT, 0, 0)
-            except Exception:
-                pass
+        if now - self._last_paint < min_interval:
             return
 
-        if self._pending_paint:
-            return
+        self._last_paint = now
+        try:
+            win32gui.PostMessage(self.hwnd, WM_APP_SET_TEXT, 0, 0)
+        except Exception:
+            pass
 
-        self._pending_paint = True
-
-        def _fire():
-            try:
-                self._pending_paint = False
-                self._last_paint = time.monotonic()
-                if self.hwnd:
-                    win32gui.PostMessage(self.hwnd, WM_APP_SET_TEXT, 0, 0)
-            except Exception:
-                self._pending_paint = False
-
-        threading.Timer(due_in, _fire).start()
 
     # -------------------------
     # Window thread + WndProc
@@ -698,6 +756,21 @@ class TextOverlay:
             220,  # 0–255
             win32con.LWA_COLORKEY | win32con.LWA_ALPHA,
         )
+                
+        # Create paint font on the window thread before any WM_PAINT can occur
+        try:
+            with self._paint_font_lock:
+                if self._paint_font is None:
+                    self._paint_font = win32ui.CreateFont({
+                        "name": self._font_name,
+                        "height": self._font_height,
+                        "weight": 400,
+                        "quality": win32con.ANTIALIASED_QUALITY,
+                    })
+        except Exception:
+            # If this fails, WM_PAINT should fall back gracefully (see fix B)
+            self._paint_font = None
+
 
         win32gui.ShowWindow(self.hwnd, win32con.SW_SHOW)
         win32gui.UpdateWindow(self.hwnd)
@@ -776,15 +849,18 @@ class TextOverlay:
                     dc = win32ui.CreateDCFromHandle(hdc_mem)
                     dc.SetBkMode(win32con.TRANSPARENT)
 
-                    font = win32ui.CreateFont(
-                        {
-                            "name": self._font_name,
-                            "height": self._font_height,
-                            "weight": 400,
-                            "quality": win32con.ANTIALIASED_QUALITY,
-                        }
-                    )
-                    dc.SelectObject(font)
+                    font_obj = getattr(self, "_paint_font", None)
+                    if font_obj is not None:
+                        dc.SelectObject(font_obj)
+                    else:
+                        # Last-resort fallback: use a stock font (avoid creating/leaking fonts here)
+                        try:
+                            stock = win32gui.GetStockObject(win32con.DEFAULT_GUI_FONT)
+                            if stock:
+                                win32gui.SelectObject(hdc_mem, stock)
+                        except Exception:
+                            pass
+
 
                     tm = dc.GetTextMetrics()
                     line_h = tm["tmHeight"] + tm["tmExternalLeading"] + 2

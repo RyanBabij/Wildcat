@@ -22,7 +22,7 @@ def random_rgb():
 
 
 def main():
-    cpm = 2000  # characters per minute (5 chars/sec). Adjust to taste.
+    cpm = 4000  # characters per minute (5 chars/sec). Adjust to taste.
 
     overlay = TextOverlay(
         x=None,
@@ -46,13 +46,9 @@ def main():
             overlay.feed(word, color)
             overlay.feed(" ", color)
 
-            # Occasionally feed a newline (not instant)
-            #if random.random() < 0.12:
-                #overlay.feed("\n", (220, 220, 220))
-
             # This sleep controls how fast you enqueue words, not how fast they render.
             # You can enqueue quickly; the overlay will still type at CPM.
-            time.sleep(random.uniform(0.02, 0.12))
+            time.sleep(0.00001)
 
     except KeyboardInterrupt:
         overlay.close()
