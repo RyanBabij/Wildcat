@@ -39,7 +39,6 @@ Notes
 - All socket operations are blocking and respect timeout_s.
 """
 
-
 from __future__ import annotations
 
 import base64
