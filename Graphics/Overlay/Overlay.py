@@ -42,6 +42,16 @@ import win32con
 import win32gui
 import win32ui
 
+from PIL import Image
+import threading
+import time
+from pathlib import Path
+
+from pathlib import Path
+import traceback
+
+
+
 WM_APP_SET_TEXT = win32con.WM_APP + 1
 
 def _lparam_to_xy(lparam: int) -> Tuple[int, int]:
@@ -124,22 +134,19 @@ class TextOverlay:
 
         self.hwnd: Optional[int] = None
         self._visible: bool = True
-        
-        self._paint_font = None      # will be created on window thread
+
+        # Fonts (paint font created on window thread)
+        self._paint_font = None
         self._paint_font_lock = threading.Lock()
 
-        # Rolling buffer of lines; last line is the current editable line.
+        # Rolling buffer of lines; last line is current editable line.
         self._lines: Deque[List[Run]] = deque(maxlen=self.max_lines)
         self._lines.append([])  # will be built from history via _reflow_from_history()
         self._lines.append([])  # current editable line placeholder
 
-        # Canonical token history for reflow (list of Run-like chunks).
-        # This is the "source of truth" for what is currently displayed.
+        # Canonical token history for reflow (source of truth)
         self._history: List[Run] = []
         self._history_lock = threading.Lock()
-
-        # Seed history with initial message and newline to match _lines
-        # self._history.append(Run("Overlay ready.\n", win32api.RGB(230, 230, 255)))
 
         # Typewriter emission queue (text, colorref)
         self._pending: Deque[Tuple[str, int]] = deque()
@@ -160,24 +167,54 @@ class TextOverlay:
         # Paint throttling
         self._last_paint: float = 0.0
         self._pending_paint: bool = False
+        
+        # -------------------------
+        # Debug status (drawn on overlay)
+        # -------------------------
+        self._debug_status_lock = threading.Lock()
+        self._debug_status: str = ""
+
 
         # -------------------------
-        # Interaction hotspots (must exist before any WM_PAINT)
+        # Interaction hotspots (MUST exist before any WM_NCHITTEST / WM_PAINT)
         # -------------------------
         self._drag_handle_px = 18   # square size (top-left)
         self._grip_px = 18          # square size (bottom-right)
         self._min_w = 220
         self._min_h = 120
 
-        # Window thread
+        # -------------------------
+        # Optional image layer (MUST exist before WM_PAINT)
+        # -------------------------
+        self._img_lock = threading.Lock()
+        self._img_hbmp: Optional[int] = None  # HBITMAP handle
+        self._img_w: int = 0
+        self._img_h: int = 0
+        self._img_until: float = 0.0
+        self._img_timer: Optional[threading.Timer] = None
+
+        # -------------------------
+        # Word tracking for rollback
+        # -------------------------
+        self._word_active = False
+        self._word_chars_since_start = 0
+        self._word_px_since_start = 0
+        self._word_start_line_px = 0
+        self._word_start_line_charpos = 0  # char count position in line when word began
+
+        # -------------------------
+        # Window thread (start AFTER all WndProc-used fields exist)
+        # -------------------------
         self._thread = threading.Thread(target=self._thread_main, daemon=True)
         self._thread.start()
-
 
         # Wait until window is created
         while self.hwnd is None:
             time.sleep(0.01)
 
+        # -------------------------
+        # Measurement DC (used for wrapping metrics)
+        # -------------------------
         self._measure_lock = threading.Lock()
         self._measure_hdc = win32gui.GetDC(self.hwnd)
         self._measure_dc = win32ui.CreateDCFromHandle(self._measure_hdc)
@@ -188,33 +225,223 @@ class TextOverlay:
             "quality": win32con.ANTIALIASED_QUALITY,
         })
         self._measure_dc.SelectObject(self._measure_font)
-        
+
+        # Character width cache
         self._char_px: dict[str, int] = {}
-        # Optional prewarm ASCII for speed + predictability
         for code in range(32, 127):
             c = chr(code)
             self._char_px[c] = self._text_px(c)
 
-
-        # padding must match paint()
+        # Padding must match paint()
         self._pad_left = 5
         self._pad_right = 5
 
-        # current line pixel width cache
+        # Current line pixel width cache
         self._cur_line_px = 0
 
-        # word tracking for rollback
-        self._word_active = False
-        self._word_chars_since_start = 0
-        self._word_px_since_start = 0
-        self._word_start_line_px = 0
-        self._word_start_line_charpos = 0  # char count position in line when word began (incl. leading space if inserted)
+        # -------------------------
         # Feeder thread (typewriter)
+        # -------------------------
         self._feeder_thread = threading.Thread(target=self._feeder_loop, daemon=True)
         self._feeder_thread.start()
-        
+
+        # Build initial layout and paint
         self._reflow_from_history()
         self._invalidate()
+            
+    def _set_debug_status(self, msg: str) -> None:
+        with self._debug_status_lock:
+            self._debug_status = (msg or "")[:500]  # keep bounded
+        self._invalidate(force=True)
+
+    def _resolve_image_path(self, path: str) -> str:
+        """
+        Resolve image path robustly.
+        Tries:
+          1) as-given (relative to cwd)
+          2) next to this Overlay.py file
+          3) current working directory absolute
+        Returns absolute string path if found; otherwise "".
+        """
+        raw = (path or "").strip().strip('"').strip("'")
+        if not raw:
+            return ""
+
+        candidates: list[Path] = []
+
+        p = Path(raw)
+        candidates.append(p)
+
+        try:
+            here = Path(__file__).resolve().parent
+            candidates.append(here / raw)
+        except Exception:
+            pass
+
+        try:
+            candidates.append(Path.cwd() / raw)
+        except Exception:
+            pass
+
+        for c in candidates:
+            try:
+                if c.exists() and c.is_file():
+                    return str(c.resolve())
+            except Exception:
+                continue
+
+        return ""
+
+            
+    def set_font_height(self, height: int) -> None:
+        """
+        Change the overlay font height (pixels). Rebuilds measure + paint fonts,
+        resets cached character widths, reflows history, and repaints.
+        """
+        h = int(height)
+        if h < 8:
+            h = 8
+        if h > 96:
+            h = 96
+
+        self._font_height = h
+
+        # Rebuild measure DC/font (used for wrapping metrics)
+        try:
+            with self._measure_lock:
+                try:
+                    if getattr(self, "_measure_font", None) is not None:
+                        try:
+                            self._measure_font.DeleteObject()
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+
+                self._measure_font = win32ui.CreateFont({
+                    "name": self._font_name,
+                    "height": self._font_height,
+                    "weight": 400,
+                    "quality": win32con.ANTIALIASED_QUALITY,
+                })
+                self._measure_dc.SelectObject(self._measure_font)
+
+                # Rebuild char width cache for predictable wrapping
+                self._char_px.clear()
+                for code in range(32, 127):
+                    c = chr(code)
+                    tw, _ = self._measure_dc.GetTextExtent(c)
+                    self._char_px[c] = int(tw)
+        except Exception:
+            # If measurement fails, don't crash; painting will still use old metrics
+            pass
+
+        # Rebuild paint font (used for WM_PAINT)
+        try:
+            with self._paint_font_lock:
+                try:
+                    if getattr(self, "_paint_font", None) is not None:
+                        try:
+                            self._paint_font.DeleteObject()
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+
+                self._paint_font = win32ui.CreateFont({
+                    "name": self._font_name,
+                    "height": self._font_height,
+                    "weight": 400,
+                    "quality": win32con.ANTIALIASED_QUALITY,
+                })
+        except Exception:
+            pass
+
+        # Reflow and repaint with new metrics
+        try:
+            self._reflow_from_history()
+            self._invalidate(force=True)
+        except Exception:
+            pass
+
+
+    def _free_image(self) -> None:
+        """Release current HBITMAP (if any)."""
+        with self._img_lock:
+            if self._img_timer is not None:
+                try:
+                    self._img_timer.cancel()
+                except Exception:
+                    pass
+                self._img_timer = None
+
+            if self._img_hbmp:
+                try:
+                    win32gui.DeleteObject(self._img_hbmp)
+                except Exception:
+                    pass
+            self._img_hbmp = None
+            self._img_w = 0
+            self._img_h = 0
+            self._img_until = 0.0
+
+
+    def _to_temp_bmp(self, src_path: str) -> str:
+        """
+        Convert any image format PIL can read into a 24-bit BMP on disk.
+        Returns path to the BMP.
+        """
+        src = Path(src_path)
+        out_dir = Path("logs") / "overlay_tmp"
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        # Stable-ish name so repeated calls overwrite instead of leaking files
+        out = out_dir / (src.stem + "_overlay.bmp")
+
+        img = Image.open(src_path).convert("RGB")  # 24-bit BMP is fine for SRCCOPY path
+        img.save(str(out), format="BMP")
+        return str(out)
+
+
+    def _load_image_hbitmap(self, path: str) -> Tuple[Optional[int], int, int]:
+        """
+        Load an image as an HBITMAP via Win32 LoadImage, forcing a DIBSection.
+
+        This path works even when win32gui.CreateDIBSection and PyCBitmap.CreateDIBSection
+        are unavailable in the local pywin32 build.
+
+        Returns (hbmp_handle, w, h). Caller owns hbmp_handle and must DeleteObject() it.
+        """
+        # LoadImageW wants an absolute/normalized path for reliability
+        p = str(Path(path).resolve())
+
+        flags = (
+            win32con.LR_LOADFROMFILE
+            | win32con.LR_CREATEDIBSECTION
+            | win32con.LR_DEFAULTSIZE
+        )
+
+        # IMAGE_BITMAP loads BMPs. For PNG/JPG, you must either:
+        #   A) convert to a temp BMP first (recommended, see below), OR
+        #   B) use GDI+ (more code).
+        hbmp = win32gui.LoadImage(
+            0,              # hInstance
+            p,              # file path
+            win32con.IMAGE_BITMAP,
+            0, 0,           # use file's size
+            flags,
+        )
+
+        if not hbmp:
+            raise RuntimeError(f"LoadImage failed for: {p}")
+
+        # Query size from the bitmap
+        bmpinfo = win32gui.GetObject(hbmp)
+        w = int(bmpinfo.bmWidth)
+        h = int(bmpinfo.bmHeight)
+
+        return int(hbmp), w, h
+
 
 
     # -------------------------
@@ -316,6 +543,135 @@ class TextOverlay:
     def close(self) -> None:
         self._stop_event.set()
         self._pending_event.set()
+        try:
+            self._free_image()
+        except Exception:
+            pass
+
+
+    def show_image(self, path: str, duration_s: float = 10.0) -> bool:
+        """
+        Display an image inside the overlay for `duration_s` seconds.
+        Returns True if loaded; False otherwise.
+
+        This version is designed to work on pywin32 builds that do NOT expose:
+          - win32gui.CreateDIBSection
+          - PyCBitmap.CreateDIBSection
+
+        Approach:
+          1) Resolve the input path robustly
+          2) Convert to a temporary BMP (LoadImage can reliably load BMPs as IMAGE_BITMAP)
+          3) Load HBITMAP via win32gui.LoadImage(... LR_CREATEDIBSECTION ...)
+          4) Swap it into the overlay state and schedule an auto-expire timer
+          5) Force a repaint
+        """
+        if not self.hwnd:
+            self._set_debug_status("show_image(): hwnd not ready")
+            return False
+
+        resolved = self._resolve_image_path(path)
+        if not resolved:
+            self._set_debug_status(
+                f"show_image(): not found: {path!r} (cwd={Path.cwd()})"
+            )
+            return False
+
+        # --- helper: convert any PIL-readable image to a BMP on disk ---
+        def _to_temp_bmp(src_path: str) -> str:
+            try:
+                src = Path(src_path)
+                out_dir = Path("logs") / "overlay_tmp"
+                out_dir.mkdir(parents=True, exist_ok=True)
+
+                # overwrite deterministically to avoid leaking files
+                out = out_dir / f"{src.stem}_overlay.bmp"
+
+                # SRCCOPY path ignores alpha anyway; RGB is sufficient and widely supported
+                img = Image.open(src_path).convert("RGB")
+                img.save(str(out), format="BMP")
+                return str(out)
+            except Exception as e:
+                raise RuntimeError(f"BMP conversion failed: {type(e).__name__}: {e}") from e
+
+        # --- helper: LoadImage-based bitmap loader (DIBSection) ---
+        def _load_hbmp_from_bmp(bmp_path: str) -> Tuple[int, int, int]:
+            p = str(Path(bmp_path).resolve())
+
+            flags = (
+                win32con.LR_LOADFROMFILE
+                | win32con.LR_CREATEDIBSECTION
+                | win32con.LR_DEFAULTSIZE
+            )
+
+            hbmp = win32gui.LoadImage(
+                0,                      # hInstance
+                p,                      # filename
+                win32con.IMAGE_BITMAP,  # load as bitmap
+                0, 0,                   # use file size
+                flags,
+            )
+
+            if not hbmp:
+                raise RuntimeError(f"LoadImage failed for: {p}")
+
+            info = win32gui.GetObject(hbmp)
+            w = int(info.bmWidth)
+            h = int(info.bmHeight)
+            return int(hbmp), w, h
+
+        # --- load image ---
+        try:
+            bmp_path = _to_temp_bmp(resolved)
+            hbmp, w, h = _load_hbmp_from_bmp(bmp_path)
+        except Exception as e:
+            self._set_debug_status(
+                "show_image(): load failed\n"
+                f"path={resolved}\n"
+                f"err={type(e).__name__}: {e}"
+            )
+            return False
+
+        # --- swap in bitmap + schedule expiry ---
+        with self._img_lock:
+            # cancel any existing timer
+            if self._img_timer is not None:
+                try:
+                    self._img_timer.cancel()
+                except Exception:
+                    pass
+                self._img_timer = None
+
+            # delete previous bitmap
+            if self._img_hbmp:
+                try:
+                    win32gui.DeleteObject(self._img_hbmp)
+                except Exception:
+                    pass
+
+            self._img_hbmp = hbmp
+            self._img_w = int(w)
+            self._img_h = int(h)
+            self._img_until = time.monotonic() + float(duration_s)
+
+            def _expire() -> None:
+                try:
+                    self._free_image()
+                    self._invalidate(force=True)
+                except Exception:
+                    pass
+
+            self._img_timer = threading.Timer(float(duration_s), _expire)
+            self._img_timer.daemon = True
+            self._img_timer.start()
+
+        self._set_debug_status(f"show_image(): OK {resolved} ({w}x{h}) for {duration_s:.1f}s")
+        self._invalidate(force=True)
+        return True
+
+
+    def clear_image(self) -> None:
+        self._free_image()
+        self._invalidate(force=True)
 
     # -------------------------
     # Internal: feeder loop
@@ -796,11 +1152,9 @@ class TextOverlay:
                 self.w, self.h = int(w), int(h)
             except Exception:
                 pass
-
             self._reflow_from_history()
             self._invalidate()
             return 0
-
 
         if msg == win32con.WM_PAINT:
             hdc, ps = win32gui.BeginPaint(hwnd)
@@ -918,6 +1272,45 @@ class TextOverlay:
                         win32gui.LineTo(hdc_mem, w - 1, h - 1 - i)
                     win32gui.SelectObject(hdc_mem, old_pen2)
                     win32gui.DeleteObject(pen2)
+                    
+                    # ---- optional image layer ----
+                    now = time.monotonic()
+                    with self._img_lock:
+                        hbmp = self._img_hbmp
+                        iw = self._img_w
+                        ih = self._img_h
+                        until = self._img_until
+
+                    if hbmp and iw > 0 and ih > 0 and now < until:
+                        # Fit image into client rect with margins (contain)
+                        margin = 10
+                        avail_w = max(1, w - 2 * margin)
+                        avail_h = max(1, h - 2 * margin)
+
+                        sx = avail_w / float(iw)
+                        sy = avail_h / float(ih)
+                        scale = min(sx, sy)
+
+                        dw = max(1, int(iw * scale))
+                        dh = max(1, int(ih * scale))
+                        dx = margin + (avail_w - dw) // 2
+                        dy = margin + (avail_h - dh) // 2
+
+                        src_dc = win32gui.CreateCompatibleDC(hdc_mem)
+                        old = win32gui.SelectObject(src_dc, hbmp)
+                        try:
+                            win32gui.SetStretchBltMode(hdc_mem, win32con.HALFTONE)
+                            win32gui.StretchBlt(
+                                hdc_mem,
+                                dx, dy, dw, dh,
+                                src_dc,
+                                0, 0, iw, ih,
+                                win32con.SRCCOPY,
+                            )
+                        finally:
+                            win32gui.SelectObject(src_dc, old)
+                            win32gui.DeleteDC(src_dc)
+
 
 
                     win32gui.BitBlt(hdc, 0, 0, w, h, hdc_mem, 0, 0, win32con.SRCCOPY)
