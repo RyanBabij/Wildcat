@@ -246,8 +246,34 @@ class TTSClient:
     # Lifecycle
     # -------------------------
 
-    def close(self) -> None:
+    def close(self, *, stop_and_clear: bool = True, timeout_s: float = 1.0) -> None:
+        """
+        Shutdown the client cleanly.
+
+        - Stops background poller thread.
+        - Optionally asks the server to stop_and_clear() to wipe any backlog.
+
+        Never raises. Safe to call multiple times.
+        """
+        # Idempotent stop signal
         self._stop.set()
+
+        # Best-effort: wipe server queues so we don't leave speech hanging after exit.
+        # Do this BEFORE join so we don't depend on the poller.
+        if stop_and_clear:
+            try:
+                # Don't take playback_lock here; close() may be called from shutdown paths
+                # where other threads might be stuck holding it.
+                self._call("stop_and_clear", timeout=min(self._request_timeout_s, max(0.1, float(timeout_s))))
+            except Exception:
+                pass
+
+        # Ensure the poll thread exits
+        try:
+            self._poll_thread.join(timeout=max(0.0, float(timeout_s)))
+        except Exception:
+            pass
+
 
     # -------------------------
     # Internal helpers
