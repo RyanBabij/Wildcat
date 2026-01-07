@@ -1,3 +1,4 @@
+
 """
 Overlay.py
 Wildcat/Graphics/Overlay/Overlay.py
@@ -16,6 +17,7 @@ Public functions:
     TextOverlay.close() - Stop background threads and signal shutdown.
 
 Key features
+
     * Always on top click-through overlay using a colorkey background (magenta) for transparency.
     * Drag and resize hotspots.
     * Adjustable typewriter output with RGB support.
@@ -26,7 +28,6 @@ Notes
     * Requires pywin32 (win32api/win32con/win32gui/win32ui).
     * Rendering is double-buffered in WM_PAINT and invalidation is throttled to reduce flicker.
 """
-
 
 from __future__ import annotations
 
