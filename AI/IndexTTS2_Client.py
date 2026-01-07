@@ -5,6 +5,8 @@ Wildcat/AI/IndexTTS2_Client.py
 Wildcat.AI.IndexTTS2_Client
 AI Code
 
+Client to interface with my TTS Server.
+
 ===============================================================================
 PUBLIC API (Client-side)
 ===============================================================================
@@ -18,62 +20,99 @@ Constructor
         *,
         poll_interval_s: float = 0.15,
         request_timeout_s: float = 3.0,
-        speak_timeout_s: float = 10.0,
     )
 
-playback_lock: threading.RLock - External mutual exclusion for audio operations.
-is_playing: bool - Best-effort mirror of remote playback state.
-voice_prompt_wav: str - Best-effort mirror of currently selected voice prompt.
+Attributes
+    playback_lock: threading.RLock - External mutual exclusion for audio operations.
+    is_playing: bool - Best-effort mirror of remote playback state.
+    voice_prompt_wav: str - Best-effort mirror of currently selected voice prompt.
+    pending_audio: int - Number of queued audio items on the server.
+    pending_synth: int - Number of queued synthesis jobs.
+    active_streams: int - Number of active streaming sessions.
 
-close() - Stop background poller thread.
-get_state() -> RemoteState- Query authoritative playback state from server.
-stop_all() - Stop playback immediately.
-stop_and_clear() - Stop playback and clear queued audio.
-set_voice_prompt(wav_path: str) - Change active voice prompt on the server.
-speak(text: str) - Blocking call. Sends text to server and waits for completion.
-begin_stream() -> TTSClient.Stream - Start a streaming TTS session.
+Lifecycle
+    close() - Stop background poller thread.
+
+Health / State
+    ping() - Health check. Raises on failure.
+    get_state() -> RemoteState - Query authoritative playback and queue state from server.
+
+Control
+    stop_all() - Stop current playback immediately.
+    stop_and_clear() - Hard reset: stop playback, clear queues, abort all streams.
+
+Voice
+    set_voice_prompt(wav_path: str) - Set speaker prompt WAV for future synthesis.
+    set_voice(wav_path: str) - Alias for set_voice_prompt using {"cmd":"set_voice"}.
+
+Speech
+    speak(text: str) -> int
+        Asynchronous server-side TTS.
+        Returns number of segmented units accepted into the synth queue.
+        Raises RuntimeError if server is busy.
+
+Streaming
+    begin_stream(stream_id: Optional[str] = None) -> TTSClient.Stream
+        Start a streaming TTS session.
 
 ---------------------------------------------------------------------------
 TTSClient.Stream
 ---------------------------------------------------------------------------
 
-push(sentence: str) - Non-blocking. Enqueue a sentence for streaming playback.
-finish() - Signal end of stream. Best-effort, non-blocking.
-wait(timeout: Optional[float] = None) -> bool - Poll server until stream is complete or timeout expires.
+push(text: str) -> None
+    Non-blocking. Enqueue text for streaming synthesis.
+
+finish() -> None
+    Close the stream for input and flush remaining buffered text.
+
+abort() -> None
+    Abort the stream session and clear buffered text on the server.
+
+wait_gone(timeout: Optional[float] = None) -> bool
+    Poll stream_status until done==True.
+    NOTE: done only means the stream session no longer exists;
+          it does NOT guarantee audio playback has finished.
 
 ===============================================================================
 WIRE PROTOCOL (Client ⇄ Server)
 ===============================================================================
 
-Transport
-    Newline-delimited JSON over TCP.
+Newline-delimited JSON over TCP.
 
-General form
-    Request:  {"cmd": "...", ...}\\n
-    Response: {"ok": true, ...}\\n
+Request:  {"cmd": "...", ...}\\n
+Response: {"ok": true, ...}\\n
 
 Commands sent by this client
 ----------------------------
-get_state -> { ok, is_playing: bool, voice_prompt_wav: str }
+
+ping -> { ok, cmd }
+get_state ->
+{
+    ok,
+    is_playing: bool,
+    pending_audio: int,
+    pending_synth: int,
+    voice_prompt_wav: str,
+    active_streams: int
+}
+set_voice_prompt -> { ok }
+set_voice -> { ok }
+speak -> { ok, accepted: int } | { ok:false, error:"busy" }
+begin_stream / stream_begin -> { ok, stream_id }
+stream_push -> { ok } fire and forget
+stream_finish -> { ok } fire and forget
+stream_abort -> { ok }
+stream_status -> { ok, done: bool }
 stop_all -> { ok }
 stop_and_clear -> { ok }
-set_voice_prompt -> { ok }
-speak -> { ok }
-begin_stream -> { ok, stream_id }
-stream_push (fire-and-forget) -> no response expected
-stream_finish (fire-and-forget) -> no response expected
-stream_status -> { ok, done: bool }
 
-===============================================================================
 DESIGN NOTES
-===============================================================================
-- Protocol/transport is isolated in JsonLineClient.
-- speak() is intentionally blocking; streaming calls are non-blocking.
-- stream_push/stream_finish use fire-and-forget semantics to avoid stalling
-  GPT token streaming or UI threads.
-- Local is_playing/voice_prompt_wav are convenience mirrors; the server is the
-  source of truth.
-===============================================================================
+* Protocol/transport is isolated in JsonLineClient.
+* speak() queues synthesis and playback asynchronously; it does not wait for audio.
+* stream_push/stream_finish are fire-and-forget to avoid stalling GPT or UI threads.
+* Stream.wait_gone() only tracks session lifetime, not playback completion.
+* Local state mirrors (is_playing, voice_prompt_wav, etc.) are conveniences;
+  the server remains the source of truth.
 """
 
 from __future__ import annotations
@@ -94,7 +133,10 @@ from typing import Any, Optional
 @dataclass(frozen=True)
 class RemoteState:
     is_playing: bool = False
+    pending_audio: int = 0
+    pending_synth: int = 0
     voice_prompt_wav: str = ""
+    active_streams: int = 0
 
 
 # =============================================================================
@@ -104,6 +146,7 @@ class RemoteState:
 class JsonLineClient:
     """
     Minimal newline-delimited JSON client.
+
     - request(): send payload, wait for one JSON line response
     - send_only(): best-effort send payload, do not wait for a response
     """
@@ -119,7 +162,6 @@ class JsonLineClient:
             s.sendall(data)
 
             buf = b""
-            # read one line (newline-delimited protocol)
             while b"\n" not in buf:
                 chunk = s.recv(65536)
                 if not chunk:
@@ -153,7 +195,6 @@ class JsonLineClient:
                 except Exception:
                     pass
         except Exception:
-            # best-effort; caller must remain non-blocking
             pass
 
 
@@ -163,24 +204,17 @@ class JsonLineClient:
 
 class TTSClient:
     """
-    Remote IndexTTS2 controller.
+    Remote controller for the IndexTTS2 server.
 
-    Exposed, compatibility-oriented surface:
-      - playback_lock (RLock)
-      - is_playing (best-effort shadow state; also polled from server)
-      - voice_prompt_wav (best-effort shadow state; also polled from server)
-      - close()
-      - get_state()
+    Compatibility-oriented surface:
+      - playback_lock
+      - is_playing
+      - voice_prompt_wav
       - stop_all()
       - stop_and_clear()
       - set_voice_prompt()
-      - speak()
+      - speak()          (async server-side)
       - begin_stream()
-
-    Notes
-    - The local is_playing/voice_prompt_wav are NOT authoritative. They are convenience mirrors.
-    - speak() is a blocking request (server may block until audio drains); this is intentional.
-    - stream_push/stream_finish are sent via send_only() to keep GPT streaming responsive.
     """
 
     def __init__(
@@ -190,17 +224,18 @@ class TTSClient:
         *,
         poll_interval_s: float = 0.15,
         request_timeout_s: float = 3.0,
-        speak_timeout_s: float = 10.0,
     ) -> None:
         self._rpc = JsonLineClient(host, port)
         self._request_timeout_s = float(request_timeout_s)
-        self._speak_timeout_s = float(speak_timeout_s)
 
         self.playback_lock = threading.RLock()
 
         self._state_lock = threading.Lock()
         self.is_playing: bool = False
         self.voice_prompt_wav: str = ""
+        self.pending_audio: int = 0
+        self.pending_synth: int = 0
+        self.active_streams: int = 0
 
         self._poll_interval_s = float(poll_interval_s)
         self._stop = threading.Event()
@@ -215,35 +250,15 @@ class TTSClient:
         self._stop.set()
 
     # -------------------------
-    # State polling
-    # -------------------------
-
-    def _poll_loop(self) -> None:
-        while not self._stop.is_set():
-            try:
-                st = self.get_state()
-                with self._state_lock:
-                    self.is_playing = st.is_playing
-                    if st.voice_prompt_wav:
-                        self.voice_prompt_wav = st.voice_prompt_wav
-            except Exception:
-                with self._state_lock:
-                    self.is_playing = False
-
-            self._stop.wait(self._poll_interval_s)
-
-    # -------------------------
-    # RPC helpers
+    # Internal helpers
     # -------------------------
 
     def _call(self, cmd: str, payload: Optional[dict[str, Any]] = None, *, timeout: Optional[float] = None) -> dict[str, Any]:
         body: dict[str, Any] = {"cmd": cmd}
         if payload:
             body.update(payload)
-
         t = self._request_timeout_s if timeout is None else float(timeout)
-        resp = self._rpc.request(body, timeout=t)
-        return resp
+        return self._rpc.request(body, timeout=t)
 
     @staticmethod
     def _require_ok(resp: dict[str, Any], context: str) -> dict[str, Any]:
@@ -251,31 +266,71 @@ class TTSClient:
             return resp
         raise RuntimeError(resp.get("error") or f"{context} failed")
 
-    def _set_local_playing(self, value: bool) -> None:
+    def _apply_state(self, st: RemoteState) -> None:
         with self._state_lock:
-            self.is_playing = bool(value)
+            self.is_playing = st.is_playing
+            self.pending_audio = st.pending_audio
+            self.pending_synth = st.pending_synth
+            self.active_streams = st.active_streams
+            if st.voice_prompt_wav:
+                self.voice_prompt_wav = st.voice_prompt_wav
 
     # -------------------------
-    # Public API
+    # Polling
     # -------------------------
+
+    def _poll_loop(self) -> None:
+        while not self._stop.is_set():
+            try:
+                st = self.get_state()
+                self._apply_state(st)
+            except Exception:
+                with self._state_lock:
+                    self.is_playing = False
+            self._stop.wait(self._poll_interval_s)
+
+    # -------------------------
+    # Health / State
+    # -------------------------
+
+    def ping(self) -> None:
+        resp = self._call("ping")
+        self._require_ok(resp, "ping")
 
     def get_state(self) -> RemoteState:
         resp = self._call("get_state")
         self._require_ok(resp, "get_state")
         return RemoteState(
             is_playing=bool(resp.get("is_playing", False)),
+            pending_audio=int(resp.get("pending_audio", 0) or 0),
+            pending_synth=int(resp.get("pending_synth", 0) or 0),
             voice_prompt_wav=str(resp.get("voice_prompt_wav", "")),
+            active_streams=int(resp.get("active_streams", 0) or 0),
         )
+
+    # -------------------------
+    # Control
+    # -------------------------
 
     def stop_all(self) -> None:
         resp = self._call("stop_all")
         self._require_ok(resp, "stop_all")
-        self._set_local_playing(False)
+        # do not assume queues are cleared, but playback is stopped
+        with self._state_lock:
+            self.is_playing = False
 
     def stop_and_clear(self) -> None:
         resp = self._call("stop_and_clear")
         self._require_ok(resp, "stop_and_clear")
-        self._set_local_playing(False)
+        with self._state_lock:
+            self.is_playing = False
+            self.pending_audio = 0
+            self.pending_synth = 0
+            self.active_streams = 0
+
+    # -------------------------
+    # Voice
+    # -------------------------
 
     def set_voice_prompt(self, wav_path: str) -> None:
         resp = self._call("set_voice_prompt", {"wav_path": wav_path})
@@ -283,16 +338,32 @@ class TTSClient:
         with self._state_lock:
             self.voice_prompt_wav = str(wav_path)
 
-    def speak(self, text: str) -> None:
-        # speak is treated as an exclusive operation from the caller perspective
+    def set_voice(self, wav_path: str) -> None:
+        resp = self._call("set_voice", {"wav": wav_path})
+        self._require_ok(resp, "set_voice")
+        with self._state_lock:
+            self.voice_prompt_wav = str(wav_path)
+
+    # -------------------------
+    # Speech
+    # -------------------------
+
+    def speak(self, text: str) -> int:
+        """
+        Asynchronous server-side: returns quickly after queueing.
+        Returns 'accepted' (number of segmented units accepted).
+        Raises RuntimeError on busy / failure.
+        """
         with self.playback_lock:
-            self._set_local_playing(True)
-            try:
-                resp = self._call("speak", {"text": text}, timeout=self._speak_timeout_s)
-                self._require_ok(resp, "speak")
-            except Exception:
-                self._set_local_playing(False)
-                raise
+            resp = self._call("speak", {"text": text}, timeout=self._request_timeout_s)
+            self._require_ok(resp, "speak")
+            accepted = int(resp.get("accepted", 0) or 0)
+
+            # best-effort mirror: if we accepted anything, assume playback will happen
+            if accepted > 0:
+                with self._state_lock:
+                    self.is_playing = True
+            return accepted
 
     # =============================================================================
     # Streaming
@@ -300,13 +371,12 @@ class TTSClient:
 
     class Stream:
         """
-        Sentence streaming helper.
+        Streaming session wrapper.
 
-        Design goals:
-        - push() is non-blocking
-        - network sends happen in a single worker to preserve order
-        - finish() is best-effort and does not block long
-        - wait() optionally polls the server for done=true
+        Implementation detail:
+        - push() enqueues text; a single sender thread sends stream_push in-order.
+        - finish()/abort() send the final control messages.
+        - wait_gone() polls stream_status.done (means session removed; not audio done).
         """
 
         def __init__(self, parent: "TTSClient", stream_id: str) -> None:
@@ -315,10 +385,14 @@ class TTSClient:
 
             self._q: "queue.Queue[Optional[str]]" = queue.Queue()
             self._stop = threading.Event()
-            self._sentinel_enqueued = False
+            self._closed = False
 
             self._sender_done = threading.Event()
-            self._sender = threading.Thread(target=self._send_loop, name=f"TTSStreamSender:{stream_id}", daemon=True)
+            self._sender = threading.Thread(
+                target=self._send_loop,
+                name=f"TTSStreamSender:{stream_id}",
+                daemon=True,
+            )
             self._sender.start()
 
         def _send_loop(self) -> None:
@@ -332,7 +406,8 @@ class TTSClient:
                     if item is None:
                         break
 
-                    # preserve order via single sender thread
+                    # Fire-and-forget to keep callers (GPT thread) non-blocking.
+                    # If you want error visibility, switch to _parent._call("stream_push", ...) instead.
                     self._parent._rpc.send_only(
                         {"cmd": "stream_push", "stream_id": self.stream_id, "text": item},
                         timeout=0.25,
@@ -340,36 +415,60 @@ class TTSClient:
             finally:
                 self._sender_done.set()
 
-        def push(self, sentence: str) -> None:
-            s = (sentence or "").strip()
-            if not s:
+        def push(self, text: str) -> None:
+            if self._closed:
                 return
-            if self._sentinel_enqueued:
-                # ignore pushes after finish() was requested
+            s = (text or "").strip()
+            if not s:
                 return
             self._q.put(s)
 
         def finish(self) -> None:
-            if not self._sentinel_enqueued:
-                self._sentinel_enqueued = True
-                self._q.put(None)
+            if self._closed:
+                return
+            self._closed = True
 
+            # stop sender after draining queued items
+            self._q.put(None)
             self._stop.set()
-
-            # bounded wait to let sender flush queued pushes
             self._sender_done.wait(timeout=1.0)
 
-            # fire-and-forget finish (do not block GPT path)
+            # fire-and-forget finish
             self._parent._rpc.send_only(
                 {"cmd": "stream_finish", "stream_id": self.stream_id},
                 timeout=0.25,
             )
 
-        def wait(self, timeout: Optional[float] = None) -> bool:
+        def abort(self) -> None:
+            if self._closed:
+                return
+            self._closed = True
+
+            # stop sender immediately; drop pending queued items
+            self._stop.set()
+            try:
+                while True:
+                    self._q.get_nowait()
+            except queue.Empty:
+                pass
+            self._q.put(None)
+            self._sender_done.wait(timeout=1.0)
+
+            # abort is a real request (you likely want to know if id was unknown)
+            resp = self._parent._call("stream_abort", {"stream_id": self.stream_id})
+            self._parent._require_ok(resp, "stream_abort")
+
+        def wait_gone(self, timeout: Optional[float] = None) -> bool:
+            """
+            Wait until stream_status.done==True, meaning the stream id no longer exists
+            in the server registry.
+
+            IMPORTANT: This does not mean audio playback has finished.
+            """
             t0 = time.monotonic()
             while True:
                 resp = self._parent._call("stream_status", {"stream_id": self.stream_id})
-                if resp.get("ok") and resp.get("done"):
+                if resp.get("ok") and bool(resp.get("done", False)):
                     return True
 
                 if timeout is not None and (time.monotonic() - t0) >= float(timeout):
@@ -377,16 +476,26 @@ class TTSClient:
 
                 time.sleep(0.05)
 
-    def begin_stream(self) -> "TTSClient.Stream":
+    def begin_stream(self, stream_id: Optional[str] = None) -> "TTSClient.Stream":
+        """
+        If stream_id is provided, uses stream_begin with an explicit id.
+        Otherwise uses begin_stream and accepts the server-generated id.
+        """
         with self.playback_lock:
-            self._set_local_playing(True)
-            try:
+            if stream_id:
+                # server accepts {"stream_id": "..."} or {"id": "..."}; we send stream_id
+                resp = self._call("stream_begin", {"stream_id": stream_id})
+                self._require_ok(resp, "stream_begin")
+            else:
                 resp = self._call("begin_stream")
                 self._require_ok(resp, "begin_stream")
-                stream_id = str(resp.get("stream_id") or "")
-                if not stream_id:
-                    raise RuntimeError("begin_stream failed: missing stream_id")
-                return TTSClient.Stream(self, stream_id)
-            except Exception:
-                self._set_local_playing(False)
-                raise
+
+            sid = str(resp.get("stream_id") or "")
+            if not sid:
+                raise RuntimeError("begin_stream failed: missing stream_id")
+
+            # best-effort mirror: starting a stream generally implies future playback
+            with self._state_lock:
+                self.is_playing = True
+
+            return TTSClient.Stream(self, sid)
