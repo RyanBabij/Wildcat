@@ -115,7 +115,6 @@ class TextOverlay:
           * whitespace does not immediately render; it marks a pending boundary
           * when a word starts, a single space is inserted if boundary pending and not at line start
           * if a word hits the boundary, the word continues on the next line (as it types)
-          * if a single word exceeds wrap_cols, it is split across lines
 
     Colors:
       - each chunk is assigned a Win32 RGB colour (COLORREF)
@@ -135,15 +134,13 @@ class TextOverlay:
         y: int = 20,
         w: int = 520,
         h: int = 240,
-        max_lines: int = 20,
-        wrap_cols: int = 60,
+        max_lines: int = 200,
         cpm: int = 900,
         font_name: str = "OCR A Extended",
         font_height: int = 16,
     ):
         self.x, self.y, self.w, self.h = x, y, w, h
         self.max_lines = max(2, int(max_lines))
-        self.wrap_cols = max(1, int(wrap_cols))
 
         self._cpm = max(1, int(cpm))
         self._font_name = font_name
@@ -461,7 +458,6 @@ class TextOverlay:
 
         if self._space_pending:
             cur_len = self._current_line_len()
-            width = self.wrap_cols
 
             # If we're at/near the boundary, don't end the line with a trailing space.
             # Wrap first, then start the word on the next line with no leading space.

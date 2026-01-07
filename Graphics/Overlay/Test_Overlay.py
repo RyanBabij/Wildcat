@@ -30,7 +30,6 @@ def main():
         w=680,
         h=420,
         max_lines=18,
-        wrap_cols=44,
         cpm=cpm,
     )
 
