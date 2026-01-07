@@ -6,13 +6,24 @@ AI Code
 
 Very simple module to create and talk to a ChatGPT instance. Loads and saves context.
 
-Update (streaming):
-- Added listen_stream() generator for incremental text deltas
-- listen() now uses streaming under the hood for a single code path
+Public API
+
+speak(text) -> None - Queue a user message for the next model call.
+listen() -> str - Send queued input and return the full assistant reply.
+listen_stream(on_delta=None) -> Iterator[str] - Stream the assistant reply as text deltas.
+start_session(label=None) - Insert a [SESSION START] marker into history.
+end_session() - Insert a [SESSION END] marker into history.
+reset() - Clear conversation state (keeps system prompt).
+set_model(name_or_model_id) -> str - Switch active model (profile name or raw id).
+set_models(models: dict) - Replace model profile map.
+save_json(path) - Persist full module state to disk.
+load_json(path, *, api_key=None, request_timeout_s=None, auto_resume_session=True) -> ChatGPTModule
+    Load state from disk and return a ready instance.
+ChatGPTModule(...) - Public constructor for configuring the module.
 
 Notes:
-- Uses the OpenAI Responses API via the official Python SDK.
-- Streaming event schemas can vary across SDK versions; listen_stream() is defensive.
+* Uses the OpenAI Responses API via the official Python SDK.
+* Streaming event schemas can vary across SDK versions; listen_stream() is defensive.
 """
 
 from __future__ import annotations
