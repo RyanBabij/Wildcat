@@ -1,7 +1,7 @@
 """
 Overlay.py
 Wildcat/Graphics/Overlay/Overlay.py
-Wildcat.Graphics.Overlay
+Wildcat.Graphics.Overlay.Overlay
 
 TextOverlay implements a lightweight Win32 topmost text overlay with a typewriter-style renderer.
 
@@ -32,15 +32,10 @@ Notes
 - Rendering is double-buffered in WM_PAINT and invalidation is throttled to reduce flicker.
 
 TextOverlay.feed(text, rgb) - Queue text for typewriter-style output at the current CPM rate.
-
 TextOverlay.instant(text, rgb) - Flush any pending output and render text immediately (still wrapped).
-
 TextOverlay.set_cpm(cpm) - Change characters-per-minute pacing for the feeder thread.
-
 TextOverlay.clear() - Clear all buffered text, history, and pending output.
-
 TextOverlay.show() / hide() / toggle() - Control overlay visibility.
-
 TextOverlay.close() - Stop background threads and signal shutdown.
 """
 
