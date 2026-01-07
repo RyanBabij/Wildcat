@@ -38,6 +38,15 @@ from typing import Callable, Dict, Iterable, Iterator, List, Optional
 
 from openai import OpenAI
 
+import base64
+import re
+from pathlib import Path
+
+LOG_DIR = Path("logs")
+LOG_DIR.mkdir(exist_ok=True)
+
+IMAGE_DIR = Path("generated_images")
+IMAGE_DIR.mkdir(parents=True, exist_ok=True)
 
 def _now_iso() -> str:
     # Local timezone, second precision (good enough for audit/troubleshooting)
@@ -74,9 +83,10 @@ class ChatGPTModule:
         *,
         api_key: Optional[str] = None,
         model: str = "gpt-4.1-mini",
+        image_model: str = "gpt-image-1",
         models: Optional[Dict[str, str]] = None,
         system_prompt: str = "You are a helpful assistant.",
-        max_turns_kept: int = 24,
+        max_turns_kept: int = 500,
         enable_summary: bool = True,
         summarize_trigger_turns: int = 40,
         summarizer_model: Optional[str] = None,
@@ -85,12 +95,13 @@ class ChatGPTModule:
         session_label: str = "default",
     ) -> None:
         self.client = OpenAI(api_key=api_key or os.environ["OPENAI_API_KEY"])
-
+        
         # Model selection
         self.models: Dict[str, str] = dict(models or {})
-        self.model = model
-        self.summarizer_model = summarizer_model or model
-
+        self.model = self._resolve_model_id(model)
+        self.summarizer_model = self._resolve_model_id(summarizer_model or model)
+        self.image_model = self._resolve_model_id(image_model)
+        
         # Prompts / context
         self.system_prompt = system_prompt
         self.max_turns_kept = max(4, int(max_turns_kept))
@@ -109,41 +120,70 @@ class ChatGPTModule:
         if auto_start_session:
             self.start_session(label=session_label)
 
+    def _log_io(self, *, role: str, content: str) -> None:
+        """
+        Append a single I/O event to the audit log.
+        One JSON object per line for easy parsing.
+        """
+        try:
+            rec = {
+                "ts": _now_iso(),
+                "session": self._session_label,
+                "role": role,
+                "content": content,
+                "model": self.model,
+            }
+            path = LOG_DIR / "chat_io.log"
+            with path.open("a", encoding="utf-8") as f:
+                f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+        except Exception:
+            # Logging must never break chat
+            pass
+
     # -------------------------
     # Session markers
     # -------------------------
 
     def start_session(self, *, label: Optional[str] = None) -> None:
-        """Append a session-start marker into context."""
+        """Append a session-start marker into context (timestamped)."""
         if self._session_open:
             return
         if label is not None:
             self._session_label = label
         self._session_open = True
-        self._turns.append(
-            ChatTurn(
-                "system",
-                f"[SESSION START] label={self._session_label} ts={_now_iso()}",
-                _now_iso(),
-            )
-        )
+
+        ts = _now_iso()
+        marker = f"[SESSION START] label={self._session_label} ts={ts}"
+
+        self._turns.append(ChatTurn("system", marker, ts))
+        self._log_io(role="system", content=marker)
+
 
     def end_session(self) -> None:
-        """Append a session-end marker into context."""
+        """Append a session-end marker into context (timestamped)."""
         if not self._session_open:
             return
         self._session_open = False
-        self._turns.append(
-            ChatTurn(
-                "system",
-                f"[SESSION END] label={self._session_label} ts={_now_iso()}",
-                _now_iso(),
-            )
-        )
+
+        ts = _now_iso()
+        marker = f"[SESSION END] label={self._session_label} ts={ts}"
+
+        self._turns.append(ChatTurn("system", marker, ts))
+        self._log_io(role="system", content=marker)
+
+
+
 
     # -------------------------
     # Model profiles
     # -------------------------
+    
+    def _resolve_model_id(self, name_or_model_id: Optional[str]) -> str:
+        raw = (name_or_model_id or "").strip()
+        if not raw:
+            return self.model
+        return self.models.get(raw, raw)
+
 
     def set_model(self, name_or_model_id: str) -> str:
         """
@@ -204,6 +244,7 @@ class ChatGPTModule:
         If auto_resume_session is True, appends a resume marker so the model can
         see that a new runtime session began.
         """
+
         p = Path(path)
         raw = json.loads(p.read_text(encoding="utf-8"))
 
@@ -243,14 +284,12 @@ class ChatGPTModule:
             inst._turns = [ChatTurn("system", system_prompt, _now_iso())]
 
         if auto_resume_session:
-            inst._turns.append(
-                ChatTurn(
-                    "system",
-                    f"[SESSION RESUME] loaded_from={p.name} ts={_now_iso()}",
-                    _now_iso(),
-                )
-            )
+            ts = _now_iso()
+            marker = f"[SESSION RESUME] loaded_from={p.name} ts={ts}"
+            inst._turns.append(ChatTurn("system", marker, ts))
+            inst._log_io(role="system", content=marker)
             inst._session_open = True
+
 
         return inst
 
@@ -270,7 +309,12 @@ class ChatGPTModule:
         text = (text or "").strip()
         if not text:
             return
+
+        # LOG input
+        self._log_io(role="user", content=text)
+
         self._pending_user = text
+
 
     def listen(self) -> str:
         """Send the queued user message to the model and return the assistant reply."""
@@ -307,8 +351,8 @@ class ChatGPTModule:
         self._turns.append(ChatTurn("user", user_text, _now_iso()))
 
         # Manage context growth BEFORE calling the model
-        self._maybe_summarize()
-        self._trim_turns()
+        # self._maybe_summarize()
+        # self._trim_turns()
 
         input_messages = self._build_messages_for_request()
 
@@ -319,7 +363,7 @@ class ChatGPTModule:
         # The official SDK exposes a context manager for streaming.
         # We keep this defensive because event shapes can differ across SDK versions.
         try:
-            with self.client.responses.stream(model=self.model, input=input_messages) as stream:
+            with self.client.responses.stream(model=self._resolve_model_id(self.model), input=input_messages) as stream:
                 for event in stream:
                     delta = self._extract_text_delta(event)
                     if delta:
@@ -336,14 +380,23 @@ class ChatGPTModule:
                     pass
 
         except Exception:
-            # Fallback: non-streaming call (still yields once)
-            full = self._call_model(input_messages)
-            full = (full or "")
-            if full:
-                reply_parts = [full]
-                if on_delta is not None:
-                    on_delta(full)
-                yield full
+            # If we already streamed anything, do NOT replay the full response;
+            # just finish using what we already have (prevents duplicate on_delta).
+            if reply_parts:
+                # Option A: swallow the error and continue (best for UI continuity)
+                pass
+                # Option B: re-raise to surface real streaming errors (stricter)
+                # raise
+            else:
+                # Fallback: non-streaming call (yields once)
+                full = self._call_model(input_messages)
+                full = (full or "")
+                if full:
+                    reply_parts = [full]
+                    if on_delta is not None:
+                        on_delta(full)
+                    yield full
+
 
         # Timeout check (best-effort; this measures total stream wall time)
         if self.request_timeout_s is not None:
@@ -351,21 +404,97 @@ class ChatGPTModule:
                 raise TimeoutError(f"OpenAI request exceeded timeout ({self.request_timeout_s}s).")
 
         reply = "".join(reply_parts).strip()
+
+        # LOG output
+        if reply:
+            self._log_io(role="assistant", content=reply)
+
         self._turns.append(ChatTurn("assistant", reply, _now_iso()))
         self._trim_turns()
+
+
+    def generate_image(
+        self,
+        prompt: str,
+        *,
+        size: str = "1024x1024",
+        n: int = 1,
+        quality: Optional[str] = None,        # accepted, not forwarded unless you explicitly wire it
+        style: Optional[str] = None,          # accepted, not forwarded
+        response_format: Optional[str] = None,# accepted, not forwarded
+        out_dir: str | Path = IMAGE_DIR,      # you already have IMAGE_DIR
+        model: Optional[str] = None,
+        **_ignored: object,                   # swallow any extra kwargs safely
+    ) -> str:
+        """
+        Generate an image and save it to disk.
+        Returns the saved PNG filepath as a string (or raises on hard failures).
+        """
+        import uuid
+        import base64
+
+        prompt = (prompt or "").strip()
+        if not prompt:
+            raise ValueError("generate_image(): empty prompt")
+
+        use_model = self._resolve_model_id(model or self.image_model)
+
+        # normalize n (we only return one path for overlay use)
+        try:
+            n = int(n)
+        except Exception:
+            n = 1
+        n = 1 if n <= 0 else min(n, 8)
+
+        out_path = Path(out_dir)
+        out_path.mkdir(parents=True, exist_ok=True)
+
+        # IMPORTANT: Only pass parameters you know the endpoint accepts.
+        # Do NOT pass response_format/quality/style unless you have verified support.
+        result = self.client.images.generate(
+            model=use_model,
+            prompt=prompt,
+            size=size,
+        )
+
+        # OpenAI images.generate commonly returns base64 JSON in data[0].b64_json
+        b64 = getattr(result.data[0], "b64_json", None) if result and getattr(result, "data", None) else None
+        if not b64:
+            # Defensive: if your SDK returns dicts
+            try:
+                b64 = result["data"][0].get("b64_json")
+            except Exception:
+                b64 = None
+
+        if not b64:
+            raise RuntimeError("generate_image(): no b64_json returned by images.generate()")
+
+        file_path = out_path / f"{uuid.uuid4().hex}.png"
+        file_path.write_bytes(base64.b64decode(b64))
+        return str(file_path)
+
+
+    @staticmethod
+    def _safe_stamp(ts_iso: str) -> str:
+        # Make ISO timestamp filename-safe: 2026-01-07T19:05:22+10:30 -> 20260107_190522p1030
+        s = ts_iso
+        s = s.replace(":", "").replace("-", "")
+        s = s.replace("T", "_")
+        s = s.replace("+", "p").replace("Z", "z")
+        # Trim fractional if present, keep offset if present
+        s = re.sub(r"\.\d+", "", s)
+        return s
+
 
     # -------------------------
     # Internal: context handling
     # -------------------------
 
     def _build_messages_for_request(self) -> List[Dict[str, str]]:
-        """Assemble messages for the request."""
         msgs: List[Dict[str, str]] = []
 
-        # Base system prompt
         msgs.append({"role": "system", "content": self.system_prompt})
 
-        # Running summary (system)
         if self._summary.strip():
             msgs.append(
                 {
@@ -374,14 +503,12 @@ class ChatGPTModule:
                 }
             )
 
-        # Include timestamped turns as-is (including system markers)
+        # Send turns WITHOUT timestamps
         for t in self._turns[1:]:
-            # Put timestamp into the content for better chronological grounding.
-            # This is intentionally simple and model-friendly.
-            content = f"[{t.ts}] {t.content}"
-            msgs.append({"role": t.role, "content": content})
+            msgs.append({"role": t.role, "content": t.content})
 
         return msgs
+
 
     def _trim_turns(self) -> None:
         """Keep the system prompt plus a rolling window of recent turns."""
@@ -450,63 +577,37 @@ class ChatGPTModule:
     # -------------------------
 
     @staticmethod
+    # Important note: Sometimes duplicate deltas can come through here if you are too permissive for some reason
     def _extract_text_delta(event: object) -> str:
-        """
-        Best-effort extraction of a text delta from a Responses streaming event.
-
-        The SDK event type(s) typically include one (or more) of:
-          - response.output_text.delta
-          - response.output_text
-          - response.delta
-
-        We support both dict-like and attribute-like objects.
-        """
-
         def _get(obj: object, key: str, default: object = None) -> object:
             if isinstance(obj, dict):
                 return obj.get(key, default)
             return getattr(obj, key, default)
 
-        etype = _get(event, "type", "") or ""
+        etype = (_get(event, "type", "") or "").strip()
 
-        # Common: {"type": "response.output_text.delta", "delta": "..."}
-        if "output_text" in etype and "delta" in etype:
+        # Only accept explicit output_text delta events.
+        if etype == "response.output_text.delta":
             delta = _get(event, "delta", "")
-            if isinstance(delta, str):
-                return delta
+            return delta if isinstance(delta, str) else ""
 
-        # Some SDKs: event has an "output_text" payload or similar
-        delta = _get(event, "delta", None)
-        if isinstance(delta, str) and delta:
-            return delta
-
-        text = _get(event, "text", None)
-        if isinstance(text, str) and text:
-            return text
-
-        # Sometimes nested payload: event.data.delta
-        data = _get(event, "data", None)
-        if data is not None:
-            d = _get(data, "delta", None)
-            if isinstance(d, str) and d:
-                return d
-            t = _get(data, "text", None)
-            if isinstance(t, str) and t:
-                return t
+        # Optional: if your SDK uses a slightly different naming, add it here,
+        # but do it explicitly (do not fall back to generic fields).
+        # if etype == "response.text.delta":
+        #     ...
 
         return ""
+
 
     # -------------------------
     # Internal: model call
     # -------------------------
 
     def _call_model(self, input_messages: List[Dict[str, str]], model: Optional[str] = None) -> str:
-        use_model = model or self.model
         t0 = time.perf_counter()
-        resp = self.client.responses.create(
-            model=use_model,
-            input=input_messages,
-        )
+        use_model = model or self.model
+        use_model = self._resolve_model_id(model or self.model)
+        resp = self.client.responses.create(model=use_model, input=input_messages)
         if self.request_timeout_s is not None:
             if (time.perf_counter() - t0) > float(self.request_timeout_s):
                 raise TimeoutError(f"OpenAI request exceeded timeout ({self.request_timeout_s}s).")
