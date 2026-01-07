@@ -139,7 +139,7 @@ class TextOverlay:
         self._history_lock = threading.Lock()
 
         # Seed history with initial message and newline to match _lines
-        self._history.append(Run("Overlay ready.\n", win32api.RGB(230, 230, 255)))
+        # self._history.append(Run("Overlay ready.\n", win32api.RGB(230, 230, 255)))
 
         # Typewriter emission queue (text, colorref)
         self._pending: Deque[Tuple[str, int]] = deque()
@@ -311,7 +311,7 @@ class TextOverlay:
         if s:
             self._emit_text_immediately(s, color)
 
-        self._invalidate()
+        self._invalidate(force=True)
 
     def close(self) -> None:
         self._stop_event.set()
@@ -358,7 +358,9 @@ class TextOverlay:
                 emitted_any = True
 
             if emitted_any:
-                self._invalidate()
+                # Normal invalidate while streaming; force one final repaint when we go idle
+                self._invalidate(force=not self._has_pending())
+
 
             # Limit loop rate (doesn't limit chars, just CPU churn)
             time.sleep(min(frame_dt, 0.005))
@@ -664,14 +666,14 @@ class TextOverlay:
     # Paint invalidation (throttled)
     # -------------------------
 
-    def _invalidate(self) -> None:
+    def _invalidate(self, force: bool = False) -> None:
         if not self.hwnd:
             return
 
         now = time.monotonic()
-        min_interval = 1.0 / 60.0  # match your frame cadence; 60 FPS
+        min_interval = 1.0 / 60.0
 
-        if now - self._last_paint < min_interval:
+        if not force and (now - self._last_paint < min_interval):
             return
 
         self._last_paint = now
