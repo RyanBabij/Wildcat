@@ -1,4 +1,3 @@
-
 """
 ChatGPT.py
 Wildcat/AI/ChatGPT.py
@@ -6,6 +5,14 @@ Wildcat.AI.ChatGPT
 AI Code
 
 Very simple module to create and talk to a ChatGPT instance. Loads and saves context.
+
+Update (streaming):
+- Added listen_stream() generator for incremental text deltas
+- listen() now uses streaming under the hood for a single code path
+
+Notes:
+- Uses the OpenAI Responses API via the official Python SDK.
+- Streaming event schemas can vary across SDK versions; listen_stream() is defensive.
 """
 
 from __future__ import annotations
@@ -16,7 +23,7 @@ import json
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Callable, Dict, Iterable, Iterator, List, Optional
 
 from openai import OpenAI
 
@@ -39,7 +46,8 @@ class ChatGPTModule:
 
     Public surface:
       - speak(text): queue user input
-      - listen() -> str: get assistant reply
+      - listen() -> str: get assistant reply (non-streaming convenience)
+      - listen_stream() -> Iterator[str]: stream assistant reply deltas
 
     Added features:
       - JSON save/load of state (history + summary + model selection)
@@ -210,13 +218,14 @@ class ChatGPTModule:
         inst._session_label = raw.get("session_label", "default")
         inst._session_open = bool(raw.get("session_open", False))
 
-        turns = []
+        turns: List[ChatTurn] = []
         for t in raw.get("turns", []):
             try:
                 turns.append(ChatTurn(role=t["role"], content=t["content"], ts=t.get("ts") or _now_iso()))
             except Exception:
                 # Skip malformed entries
                 continue
+
         if turns:
             inst._turns = turns
         else:
@@ -246,7 +255,7 @@ class ChatGPTModule:
         self._session_open = False
 
     def speak(self, text: str) -> None:
-        """Queue a user message to be answered by the next listen()."""
+        """Queue a user message to be answered by the next listen() / listen_stream()."""
         text = (text or "").strip()
         if not text:
             return
@@ -254,8 +263,27 @@ class ChatGPTModule:
 
     def listen(self) -> str:
         """Send the queued user message to the model and return the assistant reply."""
+        out: List[str] = []
+        for chunk in self.listen_stream():
+            out.append(chunk)
+        return "".join(out)
+
+    def listen_stream(self, *, on_delta: Optional[Callable[[str], None]] = None) -> Iterator[str]:
+        """
+        Send the queued user message to the model and stream back text deltas.
+
+        Yields:
+          - str: incremental text chunks (deltas)
+
+        Also:
+          - if on_delta is provided, it is called for each delta (useful for UI).
+
+        Side effects:
+          - Appends the full assistant reply to history as one ChatTurn.
+          - Performs summarization and trimming consistent with listen().
+        """
         if not self._pending_user:
-            raise RuntimeError("listen() called with no pending user input. Call speak(text) first.")
+            raise RuntimeError("listen_stream() called with no pending user input. Call speak(text) first.")
 
         if not self._session_open:
             # Ensure there is always a visible session boundary
@@ -271,12 +299,49 @@ class ChatGPTModule:
         self._maybe_summarize()
         self._trim_turns()
 
-        reply = self._call_model(self._build_messages_for_request())
+        input_messages = self._build_messages_for_request()
 
-        reply = (reply or "").strip()
+        reply_parts: List[str] = []
+        t0 = time.perf_counter()
+
+        # Primary path: Responses streaming API
+        # The official SDK exposes a context manager for streaming.
+        # We keep this defensive because event shapes can differ across SDK versions.
+        try:
+            with self.client.responses.stream(model=self.model, input=input_messages) as stream:
+                for event in stream:
+                    delta = self._extract_text_delta(event)
+                    if delta:
+                        reply_parts.append(delta)
+                        if on_delta is not None:
+                            on_delta(delta)
+                        yield delta
+
+                # Ensure the stream is fully consumed and errors are surfaced.
+                # Many SDKs provide get_final_response(); some do not.
+                try:
+                    _ = stream.get_final_response()
+                except Exception:
+                    pass
+
+        except Exception:
+            # Fallback: non-streaming call (still yields once)
+            full = self._call_model(input_messages)
+            full = (full or "")
+            if full:
+                reply_parts = [full]
+                if on_delta is not None:
+                    on_delta(full)
+                yield full
+
+        # Timeout check (best-effort; this measures total stream wall time)
+        if self.request_timeout_s is not None:
+            if (time.perf_counter() - t0) > float(self.request_timeout_s):
+                raise TimeoutError(f"OpenAI request exceeded timeout ({self.request_timeout_s}s).")
+
+        reply = "".join(reply_parts).strip()
         self._turns.append(ChatTurn("assistant", reply, _now_iso()))
         self._trim_turns()
-        return reply
 
     # -------------------------
     # Internal: context handling
@@ -294,8 +359,7 @@ class ChatGPTModule:
             msgs.append(
                 {
                     "role": "system",
-                    "content": f"Conversation summary (for continuity):
-{self._summary.strip()}",
+                    "content": "Conversation summary (for continuity):\n" + self._summary.strip(),
                 }
             )
 
@@ -341,29 +405,15 @@ class ChatGPTModule:
             {
                 "role": "user",
                 "content": (
-                    "Update the running summary based on the additional chat log.
-
-"
-                    "Rules:
-"
-                    "- Keep it compact.
-"
-                    "- Preserve user goals, preferences, decisions, and key facts.
-"
-                    "- Preserve any important names, file paths, constraints.
-"
-                    "- Keep explicit session boundaries (SESSION START/END/RESUME).
-"
-                    "- Do not include irrelevant chatter.
-
-"
-                    f"Current summary:
-{self._summary.strip() or '(none)'}
-
-"
-                    f"Additional chat log:
-{old_text}
-"
+                    "Update the running summary based on the additional chat log.\n\n"
+                    "Rules:\n"
+                    "- Keep it compact.\n"
+                    "- Preserve user goals, preferences, decisions, and key facts.\n"
+                    "- Preserve any important names, file paths, constraints.\n"
+                    "- Keep explicit session boundaries (SESSION START/END/RESUME).\n"
+                    "- Do not include irrelevant chatter.\n\n"
+                    f"Current summary:\n{self._summary.strip() or '(none)'}\n\n"
+                    f"Additional chat log:\n{old_text}\n"
                 ),
             },
         ]
@@ -382,8 +432,58 @@ class ChatGPTModule:
         for t in turns:
             role = t.role.upper()
             lines.append(f"[{t.ts}] {role}: {t.content}")
-        return "
-".join(lines)
+        return "\n".join(lines)
+
+    # -------------------------
+    # Internal: streaming helpers
+    # -------------------------
+
+    @staticmethod
+    def _extract_text_delta(event: object) -> str:
+        """
+        Best-effort extraction of a text delta from a Responses streaming event.
+
+        The SDK event type(s) typically include one (or more) of:
+          - response.output_text.delta
+          - response.output_text
+          - response.delta
+
+        We support both dict-like and attribute-like objects.
+        """
+
+        def _get(obj: object, key: str, default: object = None) -> object:
+            if isinstance(obj, dict):
+                return obj.get(key, default)
+            return getattr(obj, key, default)
+
+        etype = _get(event, "type", "") or ""
+
+        # Common: {"type": "response.output_text.delta", "delta": "..."}
+        if "output_text" in etype and "delta" in etype:
+            delta = _get(event, "delta", "")
+            if isinstance(delta, str):
+                return delta
+
+        # Some SDKs: event has an "output_text" payload or similar
+        delta = _get(event, "delta", None)
+        if isinstance(delta, str) and delta:
+            return delta
+
+        text = _get(event, "text", None)
+        if isinstance(text, str) and text:
+            return text
+
+        # Sometimes nested payload: event.data.delta
+        data = _get(event, "data", None)
+        if data is not None:
+            d = _get(data, "delta", None)
+            if isinstance(d, str) and d:
+                return d
+            t = _get(data, "text", None)
+            if isinstance(t, str) and t:
+                return t
+
+        return ""
 
     # -------------------------
     # Internal: model call
@@ -406,6 +506,7 @@ class ChatGPTModule:
 # Tiny interactive test
 # -------------------------
 
+
 def _demo() -> None:
     state_path = Path("chat_state.json")
 
@@ -423,8 +524,10 @@ def _demo() -> None:
             session_label="cmd",
         )
 
-    print("ChatGPTModule demo. Commands: /reset /save /load /model <nameOrId> /end /exit
-")
+    print(
+        "ChatGPTModule demo. Commands: /reset /save /load /model <nameOrId> /end /exit\n"
+        "Streaming: replies are printed as they arrive.\n"
+    )
 
     while True:
         user = input("You: ").strip()
@@ -438,44 +541,38 @@ def _demo() -> None:
 
         if user.lower() == "/reset":
             gpt.reset()
-            print("(reset)
-")
+            print("(reset)\n")
             continue
 
         if user.lower() == "/end":
             gpt.end_session()
-            print("(session ended)
-")
+            print("(session ended)\n")
             continue
 
         if user.lower() == "/save":
             gpt.save_json(state_path)
-            print(f"(saved to {state_path})
-")
+            print(f"(saved to {state_path})\n")
             continue
 
         if user.lower() == "/load":
             if state_path.exists():
                 gpt = ChatGPTModule.load_json(state_path, auto_resume_session=True)
-                print(f"(loaded from {state_path})
-")
+                print(f"(loaded from {state_path})\n")
             else:
-                print(f"(no state file at {state_path})
-")
+                print(f"(no state file at {state_path})\n")
             continue
 
         if user.lower().startswith("/model "):
             target = user.split(" ", 1)[1].strip()
             resolved = gpt.set_model(target)
-            print(f"(model set to: {resolved})
-")
+            print(f"(model set to: {resolved})\n")
             continue
 
         gpt.speak(user)
-        reply = gpt.listen()
-        print(f"
-GPT: {reply}
-")
+        print("\nGPT: ", end="", flush=True)
+        for chunk in gpt.listen_stream():
+            print(chunk, end="", flush=True)
+        print("\n")
 
 
 if __name__ == "__main__":
