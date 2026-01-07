@@ -2,41 +2,29 @@
 Overlay.py
 Wildcat/Graphics/Overlay/Overlay.py
 Wildcat.Graphics.Overlay.Overlay
+AI Code
 
 TextOverlay implements a lightweight Win32 topmost text overlay with a typewriter-style renderer.
 
-Key features
-- Topmost, layered overlay using a colorkey background (magenta) for transparency.
-- Click-through window except for two hotspots:
-    * Drag handle (top-left square) to move the overlay.
-    * Resize grip (bottom-right square) to resize (minimum dimensions enforced).
-- Typewriter output:
-    * feed(text, rgb): enqueue text chunks and render at a configurable characters-per-minute rate.
-    * instant(text, rgb): flush pending output and render immediately (still uses wrapping).
-- Word-aware wrapping:
-    * whitespace is deferred and emitted as a single space when the next word begins
-    * avoids trailing spaces at line ends
-    * long words are split across lines as needed
-- Color runs:
-    * each emitted chunk is tagged with a Win32 COLORREF; adjacent runs of the same color are merged.
-- Resize-safe layout:
-    * canonical history of emitted runs is retained and reflowed on WM_SIZE so wrapping stays correct.
+Public functions:
 
-Threading / lifecycle
-- Creates its own Win32 window message loop on a dedicated thread.
-- Runs a feeder thread that emits characters at CPM pacing.
-- Call close() to stop the feeder; the window thread exits when the window is destroyed.
+    TextOverlay.feed(text, rgb) - Queue text for typewriter-style output at the current CPM rate.
+    TextOverlay.instant(text, rgb) - Flush any pending output and render text immediately (still wrapped).
+    TextOverlay.set_cpm(cpm) - Change characters-per-minute pacing for the feeder thread.
+    TextOverlay.clear() - Clear all buffered text, history, and pending output.
+    TextOverlay.show() / hide() / toggle() - Control overlay visibility.
+    TextOverlay.close() - Stop background threads and signal shutdown.
+
+Key features
+    * Always on top click-through overlay using a colorkey background (magenta) for transparency.
+    * Drag and resize hotspots.
+    * Adjustable typewriter output with RGB support.
+    * Live wrapping.
+    * Threaded
 
 Notes
-- Requires pywin32 (win32api/win32con/win32gui/win32ui).
-- Rendering is double-buffered in WM_PAINT and invalidation is throttled to reduce flicker.
-
-TextOverlay.feed(text, rgb) - Queue text for typewriter-style output at the current CPM rate.
-TextOverlay.instant(text, rgb) - Flush any pending output and render text immediately (still wrapped).
-TextOverlay.set_cpm(cpm) - Change characters-per-minute pacing for the feeder thread.
-TextOverlay.clear() - Clear all buffered text, history, and pending output.
-TextOverlay.show() / hide() / toggle() - Control overlay visibility.
-TextOverlay.close() - Stop background threads and signal shutdown.
+    * Requires pywin32 (win32api/win32con/win32gui/win32ui).
+    * Rendering is double-buffered in WM_PAINT and invalidation is throttled to reduce flicker.
 """
 
 
