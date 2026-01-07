@@ -84,14 +84,6 @@ def _rgb_to_colorref(rgb: Tuple[int, int, int]) -> int:
     r, g, b = rgb
     return win32api.RGB(_clamp8(int(r)), _clamp8(int(g)), _clamp8(int(b)))
 
-
-def overlay_trim(s: str, max_chars: int = 240) -> str:
-    s = (s or "").strip()
-    if len(s) <= max_chars:
-        return s
-    return s[: max_chars - 1].rstrip() + "…"
-
-
 # ============================================================
 # Overlay
 # ============================================================
