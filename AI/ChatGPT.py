@@ -451,12 +451,14 @@ class ChatGPTModule:
 
         # IMPORTANT: Only pass parameters you know the endpoint accepts.
         # Do NOT pass response_format/quality/style unless you have verified support.
+        print("\nGENNING IMAGE\n")
         result = self.client.images.generate(
             model=use_model,
             prompt=prompt,
             size=size,
         )
-
+        print("\nGENNING IMAGE FINISHED\n")
+        
         # OpenAI images.generate commonly returns base64 JSON in data[0].b64_json
         b64 = getattr(result.data[0], "b64_json", None) if result and getattr(result, "data", None) else None
         if not b64:
@@ -472,6 +474,197 @@ class ChatGPTModule:
         file_path = out_path / f"{uuid.uuid4().hex}.png"
         file_path.write_bytes(base64.b64decode(b64))
         return str(file_path)
+
+
+    # -------------------------
+    # Public API: vision helper
+    # -------------------------
+
+    def _latest_generated_image(self) -> Optional[str]:
+        """
+        Return the most recently modified image file in IMAGE_DIR,
+        or None if no images exist.
+        """
+        try:
+            if not IMAGE_DIR.exists():
+                return None
+
+            files = [
+                p for p in IMAGE_DIR.iterdir()
+                if p.is_file() and p.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp", ".gif"}
+            ]
+            if not files:
+                return None
+
+            latest = max(files, key=lambda p: p.stat().st_mtime)
+            return str(latest.resolve())
+        except Exception:
+            return None
+
+
+    def see_image(
+        self,
+        image_path_or_b64: Optional[str] = None,
+        prompt: str = "Describe what you see in this image.",
+        *,
+        detail: str = "auto",
+        model: Optional[str] = None,
+    ) -> str:
+
+        """
+        Send an image + prompt to a vision-capable model and return the assistant text.
+
+        - Persists the exchange in _turns (so it is saved/loaded with save_json/load_json).
+        - Writes audit entries via _log_io (user + assistant).
+        - Accepts:
+            * a filesystem path to an image, OR
+            * a data URL (data:image/png;base64,...) OR
+            * raw base64 image bytes (no header)
+
+        detail: "low" | "high" | "auto" (model-dependent; safe to pass)
+        """
+        # If no image specified, fall back to most recent generated image
+        if not image_path_or_b64:
+            image_path_or_b64 = self._latest_generated_image()
+            if not image_path_or_b64:
+                raise ValueError(
+                    "see_image(): no image provided and no generated images found in IMAGE_DIR"
+                )
+
+        if not self._session_open:
+            self.start_session(label=self._session_label)
+
+        prompt = (prompt or "").strip()
+        if not prompt:
+            prompt = "Describe what you see in this image."
+
+        # Resolve the image to a data URL
+        data_url = self._image_to_data_url(image_path_or_b64)
+
+        # Record a compact marker in conversation memory (avoid stuffing base64 into _turns)
+        ts_user = _now_iso()
+        marker = f"[SEE_IMAGE] prompt={prompt}"
+        self._turns.append(ChatTurn("user", marker, ts_user))
+        self._log_io(role="user", content=f"{marker} (image={self._redact_image_ref(image_path_or_b64)})")
+
+        use_model = self._resolve_model_id(model or self.model)
+
+        # Build a vision-capable Responses input
+        # Note: The SDK accepts "input" as a list of items; for multimodal, we use content parts.
+        input_payload = [
+            {
+                "role": "system",
+                "content": self.system_prompt,
+            }
+        ]
+
+        # Include running summary for continuity
+        # if self._summary.strip():
+            # input_payload.append(
+                # {
+                    # "role": "system",
+                    # "content": "Conversation summary (for continuity):\n" + self._summary.strip(),
+                # }
+            # )
+
+        # Include recent turns (without timestamps, consistent with your current build)
+        # for t in self._turns[1:]:
+            # input_payload.append({"role": t.role, "content": t.content})
+
+        # Append the actual multimodal message (prompt + image)
+        input_payload.append(
+            {
+                "role": "user",
+                "content": [
+                    {"type": "input_text", "text": prompt},
+                    {"type": "input_image", "image_url": data_url, "detail": detail},
+                ],
+            }
+        )
+
+        # Call model (non-streaming)
+        t0 = time.perf_counter()
+        resp = self.client.responses.create(
+            model=use_model,
+            input=input_payload,
+        )
+
+        if self.request_timeout_s is not None:
+            if (time.perf_counter() - t0) > float(self.request_timeout_s):
+                raise TimeoutError(f"OpenAI request exceeded timeout ({self.request_timeout_s}s).")
+
+        reply = (getattr(resp, "output_text", "") or "").strip()
+
+        # Log + persist assistant reply
+        if reply:
+            self._log_io(role="assistant", content=reply)
+
+        self._turns.append(ChatTurn("assistant", reply, _now_iso()))
+        self._trim_turns()
+
+        return ""
+
+    def _image_to_data_url(self, image_path_or_b64: str) -> str:
+        """
+        Convert an image path / data URL / raw base64 string into a data URL suitable
+        for Responses multimodal input.
+        """
+        s = (image_path_or_b64 or "").strip()
+        if not s:
+            raise ValueError("_image_to_data_url(): empty input")
+
+        # Already a data URL?
+        if s.lower().startswith("data:image/") and "base64," in s.lower():
+            return s
+
+        # If it's a file path, read bytes and infer mime from suffix
+        p = Path(s)
+        if p.exists() and p.is_file():
+            data = p.read_bytes()
+            b64 = base64.b64encode(data).decode("ascii")
+            mime = self._infer_image_mime(p.suffix)
+            return f"data:{mime};base64,{b64}"
+
+        # Otherwise treat as raw base64 (no header)
+        # Validate lightly by attempting a decode
+        try:
+            _ = base64.b64decode(s, validate=True)
+        except Exception as e:
+            raise ValueError(f"_image_to_data_url(): not a file and not valid base64: {e}") from e
+
+        # Default mime when unknown
+        return f"data:image/png;base64,{s}"
+
+    @staticmethod
+    def _infer_image_mime(suffix: str) -> str:
+        ext = (suffix or "").lower().lstrip(".")
+        if ext in {"jpg", "jpeg"}:
+            return "image/jpeg"
+        if ext == "webp":
+            return "image/webp"
+        if ext == "gif":
+            return "image/gif"
+        # default
+        return "image/png"
+
+    @staticmethod
+    def _redact_image_ref(image_path_or_b64: str) -> str:
+        """
+        Avoid logging base64 blobs; keep logs readable.
+        """
+        s = (image_path_or_b64 or "").strip()
+        if not s:
+            return ""
+        if s.lower().startswith("data:image/"):
+            return "data_url"
+        p = Path(s)
+        if p.exists():
+            try:
+                return str(p.resolve())
+            except Exception:
+                return str(p)
+        # raw base64
+        return f"base64(len={len(s)})"
 
 
     @staticmethod
