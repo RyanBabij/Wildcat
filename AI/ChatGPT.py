@@ -540,7 +540,7 @@ class ChatGPTModule:
                     detail=remember_detail,
                 )
                 # Optional: audit log (keeps your logs useful)
-                self._log_io(role="system", content=f"[REMEMBER_IMAGE] path={file_path.name}")
+                # self._log_io(role="system", content=f"[REMEMBER_IMAGE] path={file_path.name}")
             except Exception:
                 # Do not break image generation if remembering fails
                 pass
