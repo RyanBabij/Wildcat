@@ -42,6 +42,9 @@ import base64
 import re
 from pathlib import Path
 
+from typing import Any
+
+
 LOG_DIR = Path("logs")
 LOG_DIR.mkdir(exist_ok=True)
 
@@ -119,6 +122,13 @@ class ChatGPTModule:
         self._session_open = False
         if auto_start_session:
             self.start_session(label=session_label)
+            
+        # -------------------------
+        # Runtime-only multimodal context (NOT persisted)
+        # -------------------------
+        self._mm_ctx: List[dict] = []  # each item is a Responses "message" dict
+        self._mm_ctx_limit: int = 2    # keep last 2 images by default
+
 
     def _log_io(self, *, role: str, content: str) -> None:
         """
@@ -139,6 +149,55 @@ class ChatGPTModule:
         except Exception:
             # Logging must never break chat
             pass
+
+    # -------------------------
+    # Public API: multimodal context memory (runtime-only)
+    # -------------------------
+
+    def set_mm_ctx_limit(self, n: int) -> None:
+        """Set how many multimodal messages to retain (runtime-only)."""
+        try:
+            n = int(n)
+        except Exception:
+            n = 2
+        self._mm_ctx_limit = max(0, min(n, 8))  # hard cap for safety
+        if self._mm_ctx_limit == 0:
+            self._mm_ctx = []
+        else:
+            self._mm_ctx = self._mm_ctx[-self._mm_ctx_limit :]
+
+    def clear_mm_ctx(self) -> None:
+        """Drop all remembered images (runtime-only)."""
+        self._mm_ctx = []
+
+    def remember_image(
+        self,
+        image_path_or_b64: str,
+        *,
+        prompt: str = "Image context for follow-up questions.",
+        detail: str = "auto",
+    ) -> None:
+        """
+        Store an image as runtime-only context so future chat turns can reference it.
+        This does NOT call the model. It simply ensures the image is re-sent each turn.
+        """
+        if not image_path_or_b64:
+            return
+
+        data_url = self._image_to_data_url(image_path_or_b64)
+
+        msg = {
+            "role": "user",
+            "content": [
+                {"type": "input_text", "text": (prompt or "Image context.").strip()},
+                {"type": "input_image", "image_url": data_url, "detail": detail},
+            ],
+        }
+
+        self._mm_ctx.append(msg)
+        if self._mm_ctx_limit > 0 and len(self._mm_ctx) > self._mm_ctx_limit:
+            self._mm_ctx = self._mm_ctx[-self._mm_ctx_limit :]
+
 
     # -------------------------
     # Session markers
@@ -303,6 +362,7 @@ class ChatGPTModule:
         self._summary = ""
         self._turns = [ChatTurn("system", self.system_prompt, _now_iso())]
         self._session_open = False
+        self._mm_ctx = []
 
     def speak(self, text: str) -> None:
         """Queue a user message to be answered by the next listen() / listen_stream()."""
@@ -501,7 +561,6 @@ class ChatGPTModule:
         except Exception:
             return None
 
-
     def see_image(
         self,
         image_path_or_b64: Optional[str] = None,
@@ -510,33 +569,22 @@ class ChatGPTModule:
         detail: str = "auto",
         model: Optional[str] = None,
     ) -> str:
-
         """
         Send an image + prompt to a vision-capable model and return the assistant text.
 
         - Persists the exchange in _turns (so it is saved/loaded with save_json/load_json).
         - Writes audit entries via _log_io (user + assistant).
-        - Accepts:
-            * a filesystem path to an image, OR
-            * a data URL (data:image/png;base64,...) OR
-            * raw base64 image bytes (no header)
-
-        detail: "low" | "high" | "auto" (model-dependent; safe to pass)
         """
         # If no image specified, fall back to most recent generated image
         if not image_path_or_b64:
             image_path_or_b64 = self._latest_generated_image()
             if not image_path_or_b64:
-                raise ValueError(
-                    "see_image(): no image provided and no generated images found in IMAGE_DIR"
-                )
+                raise ValueError("see_image(): no image provided and no generated images found in IMAGE_DIR")
 
         if not self._session_open:
             self.start_session(label=self._session_label)
 
-        prompt = (prompt or "").strip()
-        if not prompt:
-            prompt = "Describe what you see in this image."
+        prompt = (prompt or "").strip() or "Describe what you see in this image."
 
         # Resolve the image to a data URL
         data_url = self._image_to_data_url(image_path_or_b64)
@@ -549,27 +597,22 @@ class ChatGPTModule:
 
         use_model = self._resolve_model_id(model or self.model)
 
-        # Build a vision-capable Responses input
-        # Note: The SDK accepts "input" as a list of items; for multimodal, we use content parts.
-        input_payload = [
-            {
-                "role": "system",
-                "content": self.system_prompt,
-            }
-        ]
+        # Build context INCLUDING prior turns, but EXCLUDING the just-added marker.
+        input_payload = [{"role": "system", "content": self.system_prompt}]
 
-        # Include running summary for continuity
-        # if self._summary.strip():
-            # input_payload.append(
-                # {
-                    # "role": "system",
-                    # "content": "Conversation summary (for continuity):\n" + self._summary.strip(),
-                # }
-            # )
+        if self._summary.strip():
+            input_payload.append(
+                {
+                    "role": "system",
+                    "content": "Conversation summary (for continuity):\n" + self._summary.strip(),
+                }
+            )
 
-        # Include recent turns (without timestamps, consistent with your current build)
-        # for t in self._turns[1:]:
-            # input_payload.append({"role": t.role, "content": t.content})
+        # Include prior turns (without timestamps), excluding:
+        # - the system prompt at index 0
+        # - the marker we just appended (last turn)
+        for t in self._turns[1:-1]:
+            input_payload.append({"role": t.role, "content": t.content})
 
         # Append the actual multimodal message (prompt + image)
         input_payload.append(
@@ -602,7 +645,8 @@ class ChatGPTModule:
         self._turns.append(ChatTurn("assistant", reply, _now_iso()))
         self._trim_turns()
 
-        return ""
+        return reply
+
 
     def _image_to_data_url(self, image_path_or_b64: str) -> str:
         """
@@ -683,8 +727,8 @@ class ChatGPTModule:
     # Internal: context handling
     # -------------------------
 
-    def _build_messages_for_request(self) -> List[Dict[str, str]]:
-        msgs: List[Dict[str, str]] = []
+    def _build_messages_for_request(self) -> List[dict]:
+        msgs: List[dict] = []
 
         msgs.append({"role": "system", "content": self.system_prompt})
 
@@ -696,11 +740,28 @@ class ChatGPTModule:
                 }
             )
 
-        # Send turns WITHOUT timestamps
-        for t in self._turns[1:]:
-            msgs.append({"role": t.role, "content": t.content})
+        # Build from saved turns WITHOUT timestamps
+        # We will inject mm context right before the most recent user message (the current prompt)
+        turns = [{"role": t.role, "content": t.content} for t in self._turns[1:]]
+
+        if self._mm_ctx and turns:
+            last = turns[-1]
+            if last.get("role") == "user":
+                # everything except the current user prompt
+                msgs.extend(turns[:-1])
+                # runtime-only image context
+                msgs.extend(self._mm_ctx)
+                # current user prompt
+                msgs.append(last)
+                return msgs
+
+        # fallback: no special placement
+        msgs.extend(turns)
+        if self._mm_ctx:
+            msgs.extend(self._mm_ctx)
 
         return msgs
+
 
 
     def _trim_turns(self) -> None:
