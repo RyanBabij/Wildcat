@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+import base64
 import json
 import os
 import queue
@@ -14,6 +16,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 
+import websockets  # pip install websockets
+
 from elevenlabs import VoiceSettings
 from elevenlabs.client import ElevenLabs
 
@@ -26,20 +30,12 @@ from Wildcat.Audio.AudioPlayer import GlobalAudioPlayer
 HOST = "127.0.0.1"
 PORT = 17777
 
-# ElevenLabs auth: keep this server-side
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "").strip()
 
-# Default voice/model. You should override these via env or set_voice/set_voice_prompt.
-# Example voice_id from docs is fine for testing; replace with your preferred voice.
-# DEFAULT_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "pNInz6obpgDQGcFmaJgB").strip()
 DEFAULT_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "Y8CIE2UXHetTCsBPUIBa").strip()
 DEFAULT_MODEL_ID = os.getenv("ELEVENLABS_MODEL_ID", "eleven_turbo_v2_5").strip()
-
-# We request PCM so we can write a WAV for your GlobalAudioPlayer.
-# Supported output formats include pcm_16000/22050/24000/32000/44100/etc. :contentReference[oaicite:2]{index=2}
 OUTPUT_FORMAT = os.getenv("ELEVENLABS_OUTPUT_FORMAT", "pcm_22050").strip()
 
-# Voice settings: tune as desired (or expose via protocol later).
 VOICE_SETTINGS = VoiceSettings(
     stability=float(os.getenv("ELEVENLABS_STABILITY", "0.6")),
     similarity_boost=float(os.getenv("ELEVENLABS_SIMILARITY_BOOST", "0.6")),
@@ -48,16 +44,16 @@ VOICE_SETTINGS = VoiceSettings(
     speed=float(os.getenv("ELEVENLABS_SPEED", "1.1")),
 )
 
+# Optional: chunk schedule can reduce latency at cost of quality by generating more frequently. :contentReference[oaicite:4]{index=4}
+CHUNK_LENGTH_SCHEDULE = [120, 160, 250, 290]
+
 TTS_MAX_CHARS = 320
 PLAYBACK_GAP_S = 0.8
 
 TTS_OUT_DIR = Path(r"R:\outputs_tts_server")
 TTS_OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# Backpressure: bound *synthesis* queue (more important than bounding playback queue)
 SYNTH_Q_MAX = 256
-
-# Playback queue bounds still matter, but use them as a “secondary” safety net.
 MAX_PLAY_QUEUE = 256
 
 
@@ -74,13 +70,6 @@ def normalize_ws(s: str) -> str:
 
 
 def segment_stream(text: str) -> list[str]:
-    """
-    Streaming segmentation:
-      - normalize CRLF
-      - split on newlines first
-      - then sentence-ish split on . ! ?
-      - hard wrap to max chars
-    """
     if not text:
         return []
     text = text.replace("\r\n", "\n").replace("\r", "\n")
@@ -111,15 +100,6 @@ def hard_wrap(units: list[str], max_chars: int) -> list[str]:
 
 
 def _parse_pcm_sample_rate(output_format: str) -> int:
-    """
-    output_format examples:
-      - pcm_16000
-      - pcm_22050
-      - pcm_24000
-      - pcm_44100
-
-    Defaults to 22050 if not parseable.
-    """
     m = re.match(r"^pcm_(\d+)$", (output_format or "").strip())
     if not m:
         return 22050
@@ -130,16 +110,9 @@ def _parse_pcm_sample_rate(output_format: str) -> int:
 
 
 def _write_wav_s16le_mono(out_wav: Path, pcm_bytes: bytes, sample_rate: int) -> None:
-    """
-    Wrap raw PCM S16LE mono bytes into a WAV container.
-    ElevenLabs PCM is documented as 16-bit depth (S16LE). :contentReference[oaicite:3]{index=3}
-    """
     out_wav.parent.mkdir(parents=True, exist_ok=True)
-
-    # Ensure alignment (16-bit = 2 bytes/sample)
     if len(pcm_bytes) % 2 != 0:
         pcm_bytes = pcm_bytes[:-1]
-
     with wave.open(str(out_wav), "wb") as wf:
         wf.setnchannels(1)
         wf.setsampwidth(2)  # 16-bit
@@ -148,19 +121,20 @@ def _write_wav_s16le_mono(out_wav: Path, pcm_bytes: bytes, sample_rate: int) -> 
 
 
 # ----------------------------
-# Synthesis queue
+# Synthesis queue (non-stream speak())
 # ----------------------------
 @dataclass(frozen=True)
 class SynthJob:
     job_id: str
-    stream_id: Optional[str]   # None for non-stream speak()
+    stream_id: Optional[str]
     text: str
     created_s: float
 
 
 class SynthesisQueue:
     """
-    Single FIFO queue that enforces global ordering for synthesis -> playback.
+    FIFO queue for non-stream synthesis (speak()).
+    Streams use WebSockets and bypass this queue.
     """
     def __init__(self, server: "TTSServer", maxsize: int = SYNTH_Q_MAX) -> None:
         self.server = server
@@ -210,12 +184,11 @@ class SynthesisQueue:
             i += 1
 
             try:
-                self.server._synth_one(text, out_wav)
+                self.server._synth_one_http(text, out_wav)
             except Exception:
                 traceback.print_exc()
                 continue
 
-            # Secondary safety: if playback queue is full, drop or wait briefly.
             if self.server.player.pending_items() >= MAX_PLAY_QUEUE:
                 time.sleep(0.01)
 
@@ -223,15 +196,256 @@ class SynthesisQueue:
 
 
 # ----------------------------
-# Streams
+# ElevenLabs WebSocket stream session
 # ----------------------------
-class SpeechStream:
+class ElevenLabsWSStream:
     """
-    A stream only buffers partial text and emits segmented units into the global synth queue.
+    One stream-input WebSocket session per protocol stream_id.
+
+    Current sink behavior:
+      - buffer all PCM bytes in-memory (bytearray)
+      - on final, write a WAV and enqueue it
+
+    Later:
+      - replace _on_audio_bytes(...) with a true PCM streaming sink to GlobalAudioPlayer.
     """
     def __init__(self, server: "TTSServer", stream_id: str) -> None:
         self.server = server
         self.stream_id = stream_id
+
+        self._out_q: "asyncio.Queue[Optional[dict[str, Any]]]" = asyncio.Queue()
+        self._done = threading.Event()
+        self._aborted = threading.Event()
+        self._error_lock = threading.Lock()
+        self._error: Optional[str] = None
+
+        self._pcm = bytearray()
+        self._pcm_lock = threading.Lock()
+
+        self._loop_ready = threading.Event()
+        self._loop: Optional[asyncio.AbstractEventLoop] = None
+
+        self._thread = threading.Thread(target=self._thread_main, name=f"ELWS:{stream_id}", daemon=True)
+        self._thread.start()
+
+        # Wait briefly for loop init so push() can schedule safely.
+        self._loop_ready.wait(timeout=2.0)
+
+    def is_done(self) -> bool:
+        return self._done.is_set()
+
+    def get_error(self) -> Optional[str]:
+        with self._error_lock:
+            return self._error
+
+    def _set_error(self, msg: str) -> None:
+        with self._error_lock:
+            self._error = msg
+
+    def abort(self) -> None:
+        self._aborted.set()
+        self._enqueue_ws_message_threadsafe(None)  # signal sender to close
+
+        # Also try to stop the loop promptly
+        if self._loop is not None:
+            try:
+                self._loop.call_soon_threadsafe(lambda: None)
+            except Exception:
+                pass
+
+    def push_units(self, units: list[str]) -> None:
+        """
+        Enqueue one or more text units to the websocket sender.
+        We include try_trigger_generation to reduce latency. :contentReference[oaicite:5]{index=5}
+        """
+        for u in units:
+            s = (u or "").strip()
+            if not s or self._aborted.is_set():
+                continue
+            self._enqueue_ws_message_threadsafe({"text": s, "try_trigger_generation": True})
+
+    def finish(self) -> None:
+        """
+        Signal end-of-text to server by sending {"text": ""}. :contentReference[oaicite:6]{index=6}
+        """
+        if self._aborted.is_set():
+            return
+        self._enqueue_ws_message_threadsafe({"text": ""})
+
+    # --- internals ---
+
+    def _enqueue_ws_message_threadsafe(self, msg: Optional[dict[str, Any]]) -> None:
+        if self._loop is None:
+            # loop not ready yet; best-effort drop
+            return
+
+        def _put() -> None:
+            self._out_q.put_nowait(msg)
+
+        try:
+            self._loop.call_soon_threadsafe(_put)
+        except Exception:
+            pass
+
+    def _thread_main(self) -> None:
+        try:
+            asyncio.run(self._run())
+        except Exception as e:
+            self._set_error(f"stream thread crashed: {e}")
+        finally:
+            self._done.set()
+
+    async def _run(self) -> None:
+        self._loop = asyncio.get_running_loop()
+        self._loop_ready.set()
+
+        voice_id = (self.server.voice_prompt_wav or "").strip() or DEFAULT_VOICE_ID
+        model_id = (self.server.model_id or "").strip() or DEFAULT_MODEL_ID
+        output_format = (self.server.output_format or "").strip() or OUTPUT_FORMAT
+
+        # Stream-input endpoint and message schema from ElevenLabs docs. :contentReference[oaicite:7]{index=7}
+        uri = (
+            f"wss://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream-input"
+            f"?model_id={model_id}&output_format={output_format}"
+        )
+
+        # The docs show xi-api-key in headers and/or in init payload.
+        # We'll do both for robustness; server-side only. :contentReference[oaicite:8]{index=8}
+        headers = {"xi-api-key": ELEVENLABS_API_KEY}
+
+        sample_rate = _parse_pcm_sample_rate(output_format)
+
+        try:
+            async with websockets.connect(uri, extra_headers=headers, ping_interval=20, ping_timeout=20) as ws:
+                # Init message: must set voice settings first; docs use text=" " and xi_api_key in payload. :contentReference[oaicite:9]{index=9}
+                init = {
+                    "text": " ",
+                    "xi_api_key": ELEVENLABS_API_KEY,
+                    "voice_settings": {
+                        "stability": VOICE_SETTINGS.stability,
+                        "similarity_boost": VOICE_SETTINGS.similarity_boost,
+                        "style": VOICE_SETTINGS.style,
+                        "use_speaker_boost": VOICE_SETTINGS.use_speaker_boost,
+                        "speed": VOICE_SETTINGS.speed,
+                    },
+                    "generation_config": {"chunk_length_schedule": CHUNK_LENGTH_SCHEDULE},
+                }
+                await ws.send(json.dumps(init))
+
+                sender = asyncio.create_task(self._sender_loop(ws))
+                receiver = asyncio.create_task(self._receiver_loop(ws))
+
+                done, pending = await asyncio.wait(
+                    {sender, receiver},
+                    return_when=asyncio.FIRST_EXCEPTION,
+                )
+
+                for t in pending:
+                    t.cancel()
+
+                # Ensure connection closed promptly if we aborted
+                if self._aborted.is_set():
+                    try:
+                        await ws.close()
+                    except Exception:
+                        pass
+
+        except Exception as e:
+            self._set_error(f"websocket error: {e}")
+            return
+
+        # If we got audio and we weren't aborted, emit a WAV file now
+        if not self._aborted.is_set():
+            with self._pcm_lock:
+                pcm = bytes(self._pcm)
+
+            if pcm:
+                out_wav = TTS_OUT_DIR / f"stream_{self.stream_id}.wav"
+                try:
+                    _write_wav_s16le_mono(out_wav, pcm, sample_rate=sample_rate)
+                    if self.server.player.pending_items() >= MAX_PLAY_QUEUE:
+                        time.sleep(0.01)
+                    self.server.player.enqueue(str(out_wav), delete_after=True)
+                except Exception as e:
+                    self._set_error(f"finalize wav failed: {e}")
+
+        # Finally, tell server to remove the session (stream_status becomes done=True)
+        self.server._end_stream_session(self.stream_id)
+
+    async def _sender_loop(self, ws) -> None:
+        while True:
+            if self._aborted.is_set():
+                # best-effort close sequence
+                try:
+                    await ws.send(json.dumps({"text": ""}))
+                except Exception:
+                    pass
+                return
+
+            msg = await self._out_q.get()
+            if msg is None:
+                # Abort signal from host
+                try:
+                    await ws.send(json.dumps({"text": ""}))
+                except Exception:
+                    pass
+                return
+
+            try:
+                await ws.send(json.dumps(msg))
+            except Exception as e:
+                self._set_error(f"send failed: {e}")
+                return
+
+            # If this was the explicit end marker, sender can stop;
+            # receiver will continue until isFinal. :contentReference[oaicite:10]{index=10}
+            if msg.get("text", None) == "":
+                return
+
+    async def _receiver_loop(self, ws) -> None:
+        while True:
+            if self._aborted.is_set():
+                return
+            try:
+                raw = await ws.recv()
+            except Exception as e:
+                self._set_error(f"recv failed: {e}")
+                return
+
+            try:
+                data = json.loads(raw)
+            except Exception:
+                continue
+
+            # WebSocket API returns base64 audio chunks and isFinal flag. :contentReference[oaicite:11]{index=11}
+            a64 = data.get("audio")
+            if a64:
+                try:
+                    chunk = base64.b64decode(a64)
+                    if chunk:
+                        with self._pcm_lock:
+                            self._pcm += chunk
+                        # Future hook: server/player streaming sink here
+                except Exception:
+                    pass
+
+            if bool(data.get("isFinal", False)):
+                return
+
+
+# ----------------------------
+# Streams (protocol wrapper)
+# ----------------------------
+class SpeechStream:
+    """
+    Protocol-facing stream object.
+    Buffers partial text, segments it, and feeds units into ElevenLabsWSStream.
+    """
+    def __init__(self, server: "TTSServer", stream_id: str, ws: ElevenLabsWSStream) -> None:
+        self.server = server
+        self.stream_id = stream_id
+        self._ws = ws
+
         self._buf = ""
         self._closed = False
         self._aborted = False
@@ -259,13 +473,7 @@ class SpeechStream:
                 emit = units
                 self._buf = ""
 
-        for u in emit:
-            if not u.strip():
-                continue
-            job = SynthJob(job_id=uuid.uuid4().hex, stream_id=self.stream_id, text=u, created_s=time.time())
-            ok = self.server.synth_q.put(job, block=False)
-            if not ok:
-                break
+        self._ws.push_units(emit)
 
     def finish(self) -> None:
         with self._lock:
@@ -276,23 +484,24 @@ class SpeechStream:
             self._buf = ""
 
         units = hard_wrap(segment_stream(leftover), TTS_MAX_CHARS) if leftover else []
-        for u in units:
-            if not u.strip():
-                continue
-            job = SynthJob(job_id=uuid.uuid4().hex, stream_id=self.stream_id, text=u, created_s=time.time())
-            self.server.synth_q.put(job, block=False)
+        if units:
+            self._ws.push_units(units)
+
+        self._ws.finish()
 
     def abort(self) -> None:
         with self._lock:
             self._aborted = True
             self._closed = True
             self._buf = ""
+        self._ws.abort()
 
 
 @dataclass
 class Session:
     stream: SpeechStream
     stream_id: str
+    ws: ElevenLabsWSStream
 
 
 # ----------------------------
@@ -303,10 +512,8 @@ class TTSServer:
         if not ELEVENLABS_API_KEY:
             raise RuntimeError("Missing ELEVENLABS_API_KEY env var (server-side).")
 
-        print("[tts_server] Initializing ElevenLabs client...")
+        print("[tts_server] Initializing ElevenLabs client (HTTP fallback for speak)...")
         self.eleven = ElevenLabs(api_key=ELEVENLABS_API_KEY)
-
-        # Synthesis lock: preserves ordering and avoids concurrent SDK calls if desired.
         self._synth_lock = threading.Lock()
 
         self.player = GlobalAudioPlayer(playback_gap_s=PLAYBACK_GAP_S, max_queue=MAX_PLAY_QUEUE)
@@ -315,27 +522,20 @@ class TTSServer:
         self._sessions_lock = threading.Lock()
         self._sessions: dict[str, Session] = {}
 
-        # Compatibility field name; now holds ElevenLabs voice_id (not a wav path).
+        # Compatibility field name; stores voice_id now
         self.voice_prompt_wav = DEFAULT_VOICE_ID
 
-        # Stored for transparency / diagnostics
         self.model_id = DEFAULT_MODEL_ID
         self.output_format = OUTPUT_FORMAT
 
-    def _synth_one(self, text: str, out_wav: Path) -> None:
-        """
-        Generate PCM audio via ElevenLabs, then wrap into WAV for GlobalAudioPlayer.
-
-        Docs: output_format includes PCM variants; SDK supports convert() streaming bytes. :contentReference[oaicite:4]{index=4}
-        """
+    # --- HTTP synthesis for non-stream speak() ---
+    def _synth_one_http(self, text: str, out_wav: Path) -> None:
         voice_id = (self.voice_prompt_wav or "").strip() or DEFAULT_VOICE_ID
         model_id = (self.model_id or "").strip() or DEFAULT_MODEL_ID
         output_format = (self.output_format or "").strip() or "pcm_22050"
-
         sample_rate = _parse_pcm_sample_rate(output_format)
 
         with self._synth_lock:
-            # convert() yields chunks of audio bytes
             response = self.eleven.text_to_speech.convert(
                 voice_id=voice_id,
                 output_format=output_format,
@@ -343,7 +543,6 @@ class TTSServer:
                 model_id=model_id,
                 voice_settings=VOICE_SETTINGS,
             )
-
             pcm = bytearray()
             for chunk in response:
                 if chunk:
@@ -352,11 +551,6 @@ class TTSServer:
         _write_wav_s16le_mono(out_wav, bytes(pcm), sample_rate=sample_rate)
 
     def set_voice_prompt(self, maybe_voice_id: str) -> None:
-        """
-        Compatibility method:
-        - If maybe_voice_id is an existing local file path, reject (ElevenLabs doesn't accept this here).
-        - Otherwise treat it as an ElevenLabs voice_id string.
-        """
         s = (maybe_voice_id or "").strip()
         if not s:
             raise ValueError("empty voice id")
@@ -375,6 +569,7 @@ class TTSServer:
         with self._sessions_lock:
             sessions = list(self._sessions.values())
             self._sessions.clear()
+
         for s in sessions:
             try:
                 s.stream.abort()
@@ -385,6 +580,10 @@ class TTSServer:
         with self._sessions_lock:
             return self._sessions.get(sid)
 
+    def _end_stream_session(self, sid: str) -> None:
+        with self._sessions_lock:
+            self._sessions.pop(sid, None)
+
     def handle(self, req: dict[str, Any]) -> dict[str, Any]:
         cmd = (req.get("cmd") or "").strip()
 
@@ -392,15 +591,16 @@ class TTSServer:
             return {"ok": True, "cmd": "ping"}
 
         if cmd == "get_state":
+            with self._sessions_lock:
+                active_streams = len(self._sessions)
             return {
                 "ok": True,
                 "cmd": "get_state",
                 "is_playing": bool(self.player.is_playing()),
                 "pending_audio": int(self.player.pending_items()),
                 "pending_synth": int(self.synth_q.q.qsize()),
-                "voice_prompt_wav": str(self.voice_prompt_wav),  # now a voice_id
-                "active_streams": len(self._sessions),
-                # extra (non-breaking): useful diagnostics
+                "voice_prompt_wav": str(self.voice_prompt_wav),
+                "active_streams": active_streams,
                 "model_id": str(self.model_id),
                 "output_format": str(self.output_format),
             }
@@ -423,6 +623,7 @@ class TTSServer:
             self.stop_and_clear()
             return {"ok": True, "cmd": "stop_and_clear"}
 
+        # Non-stream speak(): still uses synth queue + HTTP convert()
         if cmd == "speak":
             text = normalize_ws(req.get("text") or "")
             if not text:
@@ -440,11 +641,16 @@ class TTSServer:
                 return {"ok": False, "error": "busy"}
             return {"ok": True, "cmd": "speak", "accepted": accepted}
 
+        # Stream commands now create a WebSocket stream-input session
         if cmd in ("stream_begin", "begin_stream"):
             sid = ((req.get("id") or req.get("stream_id") or "").strip()) or uuid.uuid4().hex
-            stream = SpeechStream(self, stream_id=sid)
+
+            ws = ElevenLabsWSStream(self, stream_id=sid)
+            stream = SpeechStream(self, stream_id=sid, ws=ws)
+
             with self._sessions_lock:
-                self._sessions[sid] = Session(stream=stream, stream_id=sid)
+                self._sessions[sid] = Session(stream=stream, stream_id=sid, ws=ws)
+
             return {"ok": True, "cmd": cmd, "stream_id": sid}
 
         if cmd == "stream_push":
@@ -475,8 +681,7 @@ class TTSServer:
             if s is None:
                 return {"ok": False, "error": f"unknown stream id: {sid}"}
             s.stream.abort()
-            with self._sessions_lock:
-                self._sessions.pop(sid, None)
+            self._end_stream_session(sid)
             return {"ok": True}
 
         if cmd == "stream_status":
@@ -484,8 +689,12 @@ class TTSServer:
             if not sid:
                 return {"ok": False, "error": "missing stream_id"}
             s = self._get_session(sid)
-            done = s is None
-            return {"ok": True, "cmd": "stream_status", "stream_id": sid, "done": done}
+            if s is None:
+                return {"ok": True, "cmd": "stream_status", "stream_id": sid, "done": True}
+
+            # "done" means session removed; report extra diagnostics non-breaking
+            err = s.ws.get_error()
+            return {"ok": True, "cmd": "stream_status", "stream_id": sid, "done": False, "error": err or ""}
 
         return {"ok": False, "error": f"unknown cmd: {cmd}"}
 
@@ -546,7 +755,7 @@ def main() -> None:
     sock.bind((HOST, PORT))
     sock.listen(8)
 
-    print(f"[tts_server] listening on {HOST}:{PORT} (ElevenLabs backend)")
+    print(f"[tts_server] listening on {HOST}:{PORT} (ElevenLabs backend + WS stream-input)")
     print(f"[tts_server] default voice_id={srv.voice_prompt_wav} model_id={srv.model_id} output_format={srv.output_format}")
 
     while True:
