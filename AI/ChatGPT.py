@@ -166,10 +166,6 @@ class ChatGPTModule:
         else:
             self._mm_ctx = self._mm_ctx[-self._mm_ctx_limit :]
 
-    def clear_mm_ctx(self) -> None:
-        """Drop all remembered images (runtime-only)."""
-        self._mm_ctx = []
-
     def remember_image(
         self,
         image_path_or_b64: str,
@@ -231,7 +227,12 @@ class ChatGPTModule:
         self._log_io(role="system", content=marker)
 
 
-
+    def forget_images(self) -> None:
+        """
+        Forget all remembered images (runtime-only multimodal context).
+        This does not touch disk images; it only stops re-sending them in future requests.
+        """
+        self._mm_ctx = []
 
     # -------------------------
     # Model profiles
@@ -479,17 +480,16 @@ class ChatGPTModule:
         *,
         size: str = "1024x1024",
         n: int = 1,
-        quality: Optional[str] = None,        # accepted, not forwarded unless you explicitly wire it
-        style: Optional[str] = None,          # accepted, not forwarded
-        response_format: Optional[str] = None,# accepted, not forwarded
-        out_dir: str | Path = IMAGE_DIR,      # you already have IMAGE_DIR
+        quality: Optional[str] = None,
+        style: Optional[str] = None,
+        response_format: Optional[str] = None,
+        out_dir: str | Path = IMAGE_DIR,
         model: Optional[str] = None,
-        **_ignored: object,                   # swallow any extra kwargs safely
+        remember: bool = True,                       # NEW
+        remember_prompt: Optional[str] = None,       # NEW
+        remember_detail: str = "auto",               # NEW
+        **_ignored: object,
     ) -> str:
-        """
-        Generate an image and save it to disk.
-        Returns the saved PNG filepath as a string (or raises on hard failures).
-        """
         import uuid
         import base64
 
@@ -499,7 +499,6 @@ class ChatGPTModule:
 
         use_model = self._resolve_model_id(model or self.image_model)
 
-        # normalize n (we only return one path for overlay use)
         try:
             n = int(n)
         except Exception:
@@ -509,20 +508,17 @@ class ChatGPTModule:
         out_path = Path(out_dir)
         out_path.mkdir(parents=True, exist_ok=True)
 
-        # IMPORTANT: Only pass parameters you know the endpoint accepts.
-        # Do NOT pass response_format/quality/style unless you have verified support.
-        print("\nGENNING IMAGE\n")
         result = self.client.images.generate(
             model=use_model,
             prompt=prompt,
             size=size,
+            output_format="jpeg",
+            quality="low",
         )
-        print("\nGENNING IMAGE FINISHED\n")
-        
-        # OpenAI images.generate commonly returns base64 JSON in data[0].b64_json
+
+
         b64 = getattr(result.data[0], "b64_json", None) if result and getattr(result, "data", None) else None
         if not b64:
-            # Defensive: if your SDK returns dicts
             try:
                 b64 = result["data"][0].get("b64_json")
             except Exception:
@@ -533,7 +529,24 @@ class ChatGPTModule:
 
         file_path = out_path / f"{uuid.uuid4().hex}.png"
         file_path.write_bytes(base64.b64decode(b64))
+
+        # NEW: push into runtime multimodal context
+        if remember:
+            try:
+                rp = remember_prompt or f"Image generated from prompt: {prompt}"
+                self.remember_image(
+                    str(file_path),
+                    prompt=rp,
+                    detail=remember_detail,
+                )
+                # Optional: audit log (keeps your logs useful)
+                self._log_io(role="system", content=f"[REMEMBER_IMAGE] path={file_path.name}")
+            except Exception:
+                # Do not break image generation if remembering fails
+                pass
+
         return str(file_path)
+
 
 
     # -------------------------
